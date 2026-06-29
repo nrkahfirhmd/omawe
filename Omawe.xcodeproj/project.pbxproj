@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		8CF43A352FF2497200061915 /* Challenge4.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Challenge4.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		8CF43A372FF2497200061915 /* Challenge4 */ = {
+		8CF43A372FF2497200061915 /* Omawe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Challenge4;
+			path = Omawe;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		8CF43A2C2FF2497200061915 = {
 			isa = PBXGroup;
 			children = (
-				8CF43A372FF2497200061915 /* Challenge4 */,
+				8CF43A372FF2497200061915 /* Omawe */,
 				8CF43A362FF2497200061915 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		8CF43A362FF2497200061915 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8CF43A352FF2497200061915 /* Challenge4.app */,
+				8CF43A352FF2497200061915 /* Omawe.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8CF43A342FF2497200061915 /* Challenge4 */ = {
+		8CF43A342FF2497200061915 /* Omawe */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8CF43A402FF2497300061915 /* Build configuration list for PBXNativeTarget "Challenge4" */;
+			buildConfigurationList = 8CF43A402FF2497300061915 /* Build configuration list for PBXNativeTarget "Omawe" */;
 			buildPhases = (
 				8CF43A312FF2497200061915 /* Sources */,
 				8CF43A322FF2497200061915 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				8CF43A372FF2497200061915 /* Challenge4 */,
+				8CF43A372FF2497200061915 /* Omawe */,
 			);
-			name = Challenge4;
+			name = Omawe;
 			packageProductDependencies = (
 			);
 			productName = Challenge4;
-			productReference = 8CF43A352FF2497200061915 /* Challenge4.app */;
+			productReference = 8CF43A352FF2497200061915 /* Omawe.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 8CF43A302FF2497200061915 /* Build configuration list for PBXProject "Challenge4" */;
+			buildConfigurationList = 8CF43A302FF2497200061915 /* Build configuration list for PBXProject "Omawe" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8CF43A342FF2497200061915 /* Challenge4 */,
+				8CF43A342FF2497200061915 /* Omawe */,
 			);
 		};
 /* End PBXProject section */
@@ -256,6 +256,7 @@
 				DEVELOPMENT_TEAM = KP7V5MRL6Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +289,7 @@
 				DEVELOPMENT_TEAM = KP7V5MRL6Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -313,7 +315,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		8CF43A302FF2497200061915 /* Build configuration list for PBXProject "Challenge4" */ = {
+		8CF43A302FF2497200061915 /* Build configuration list for PBXProject "Omawe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8CF43A3E2FF2497300061915 /* Debug */,
@@ -322,7 +324,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8CF43A402FF2497300061915 /* Build configuration list for PBXNativeTarget "Challenge4" */ = {
+		8CF43A402FF2497300061915 /* Build configuration list for PBXNativeTarget "Omawe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8CF43A412FF2497300061915 /* Debug */,
