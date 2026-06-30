@@ -7,12 +7,10 @@
 
 import SwiftUI
 
-struct LocationModel: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
-
-#Preview {
-    LocationModel()
+struct LocationModel {
+    let id = UUID()
+    var tripCode: String
+    var userId: UUID
+    var location: Location
+    var lastUpdated: Date
 }
