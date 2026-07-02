@@ -1,12 +1,12 @@
 //
-//  DynamicBox2.swift
+//  DynamicBox.swift
 //  Omawe
 //
 //  Created by Gleenryan on 01/07/26.
 //
 import SwiftUI
 
-struct DynamicBox2<Content: View>: View {
+struct DynamicBox<Content: View>: View {
     var theme: AppTheme
     var icon: String?
     var title: String?
@@ -34,7 +34,7 @@ struct DynamicBox2<Content: View>: View {
     }
 
     var body: some View {
-        DynamicBox(theme: theme, footerTitle: footerTitle) {
+        DynamicBoxContent(theme: theme, footerTitle: footerTitle) {
             VStack(spacing: 0) {
                 if let icon {
                     Image(systemName: icon)
@@ -64,6 +64,8 @@ struct DynamicBox2<Content: View>: View {
             .padding(.top, 80)
 
             content
+            
+            Spacer()
 
             if let helperText {
                 Text(helperText)
@@ -75,10 +77,11 @@ struct DynamicBox2<Content: View>: View {
     }
 }
 
-struct DynamicBox<Content: View>: View {
+struct DynamicBoxContent<Content: View>: View {
     var theme: AppTheme
     var footerTitle: String
     private let content: Content
+    @State private var isContentVisible = false
 
     init(theme: AppTheme, footerTitle: String, @ViewBuilder content: () -> Content) {
         self.theme = theme
@@ -93,14 +96,17 @@ struct DynamicBox<Content: View>: View {
                     VStack(spacing: 0) {
                         content
                     }
-                    .frame(maxWidth: .infinity, alignment: .top)
+                    .opacity(isContentVisible ? 1 : 0)
+                    .offset(y: isContentVisible ? 0 : 14)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .background(GridGradientBackground(color: theme.boxColor))
                     .clipShape(RoundedRectangle(cornerRadius: 55, style: .continuous))
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
                     .padding(.top, 4)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 4)
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
 
                 Text(footerTitle)
                     .fontWidth(.expanded)
@@ -108,9 +114,18 @@ struct DynamicBox<Content: View>: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(5)
             }
-            .frame(maxWidth: .infinity, alignment: .top)
+            .frame(maxHeight: .infinity)
             .background(theme.gradientSoft)
             .clipShape(RoundedRectangle(cornerRadius: 56, style: .continuous))
+            .onAppear {
+                isContentVisible = false
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.42) {
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                        isContentVisible = true
+                    }
+                }
+            }
         }
         .padding(10)
     }
@@ -179,7 +194,7 @@ struct PlusPattern: View {
             
             VStack {
                 VStack {
-                    DynamicBox2(
+                    DynamicBox(
                         theme: Theme.themePrimary,
                         icon: "motorcycle",
                         title: "Text will go here",
