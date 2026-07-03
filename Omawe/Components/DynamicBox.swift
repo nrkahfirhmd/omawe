@@ -202,7 +202,6 @@ struct PlusPattern: View {
                         helperText: "Hello, World!",
                         footerTitle: "Creating a trip"
                     ) {
-                        
                     }
                 }
             }
