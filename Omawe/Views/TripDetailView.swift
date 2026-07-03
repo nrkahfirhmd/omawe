@@ -31,7 +31,7 @@ struct TripDetailView: View {
     
     var body: some View {
         ZStack(alignment: .top) {
-            Color.white
+            Theme.graybackground
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -137,7 +137,7 @@ struct TripDetailView: View {
                 }
             }
         }
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea()
     }
 }
 
