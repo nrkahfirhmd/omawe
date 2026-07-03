@@ -1,7 +1,30 @@
 import SwiftUI
 
+struct PeopleOrbitPerson: Identifiable, Hashable {
+    let id: String
+    var displayName: String?
+
+    var initials: String {
+        let trimmedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmedName.isEmpty {
+            let initials = trimmedName
+                .split(separator: " ")
+                .prefix(2)
+                .compactMap { $0.first }
+                .map(String.init)
+                .joined()
+
+            if !initials.isEmpty {
+                return initials.uppercased()
+            }
+        }
+
+        return String(id.prefix(1)).uppercased()
+    }
+}
+
 struct CirclesLayoutView: View {
-    let count: Int   // jumlah orang, auto-cap ke 6
+    let people: [PeopleOrbitPerson]
     
     private struct CircleSpec {
         let size: CGFloat
@@ -21,8 +44,18 @@ struct CirclesLayoutView: View {
         CircleSpec(size: 25, xRatio: 0.75, yRatio: 0.23, label: "F"), // atas kanan
     ]
     
-    private var visibleCount: Int {
-        min(max(count, 0), specs.count)
+    init(count: Int) {
+        self.people = (0..<max(count, 0)).map {
+            PeopleOrbitPerson(id: "person-\($0)", displayName: nil)
+        }
+    }
+
+    init(people: [PeopleOrbitPerson]) {
+        self.people = people
+    }
+
+    private var visiblePeople: [PeopleOrbitPerson] {
+        Array(people.prefix(specs.count))
     }
     
     var body: some View {
@@ -31,13 +64,13 @@ struct CirclesLayoutView: View {
             let height = geo.size.height
             
             ZStack {
-                ForEach(0..<visibleCount, id: \.self) { i in
+                ForEach(Array(visiblePeople.enumerated()), id: \.element.id) { i, person in
                     let spec = specs[i]
                     Circle()
                         .fill(Color.white)
                         .frame(width: spec.size, height: spec.size)
                         .overlay(
-                            Text(spec.label)
+                            Text(person.initials.isEmpty ? spec.label : person.initials)
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(Color.black)
@@ -86,18 +119,29 @@ struct ArcCircleBackgroundView: View {
 }
 
 struct PeopleOrbit: View{
-    var people: Int = 1
+    private var people: [PeopleOrbitPerson]
+
+    init(people: Int = 1) {
+        self.people = (0..<max(people, 0)).map {
+            PeopleOrbitPerson(id: "person-\($0)", displayName: nil)
+        }
+    }
+
+    init(people: [PeopleOrbitPerson]) {
+        self.people = people
+    }
+
     var body: some View{
         ZStack{
             ArcCircleBackgroundView(lineWidth: 1.25)
             ArcCircleBackgroundView(sizeRatio: 0.5, lineWidth: 1.25)
                 .offset(x: 0, y: 55)
-            CirclesLayoutView(count: people)
+            CirclesLayoutView(people: people)
 
             VStack{
                 Spacer()
                 VStack(spacing:4){
-                    Text("\(people)")
+                    Text("\(people.count)")
                         .font(.largeTitle)
                         .fontWeight(.semibold)
                         .fontWidth(.expanded)

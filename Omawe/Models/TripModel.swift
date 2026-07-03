@@ -6,20 +6,72 @@
 //
 
 import Foundation
+import SwiftData
 
-struct TripModel {
-    let id = UUID()
-    var name: String
-    var date: Date
-    var meetTime: Date
-    var destination: Location
-    var tripCode: String
-    
-    var users: [UserModel]
-    
-    var locations: [LocationModel]
-    
-    var tripCreator: UserModel
+@Model
+final class TripModel {
+    var id: UUID = UUID()
+    var name: String = ""
+    var startDate: Date = Date()
+    var meetTime: Date = Date()
+    var locationName: String = ""
+    var locationAddress: String?
+    var locationNote: String?
+    var locationDisplayName: String?
+    var latitude: Double?
+    var longitude: Double?
+    var ownerUserID: String = ""
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
+    var memberIdentifiers: [String] = []
+    var invitationCode: String?
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        startDate: Date,
+        meetTime: Date,
+        locationName: String,
+        locationAddress: String? = nil,
+        locationNote: String? = nil,
+        locationDisplayName: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        ownerUserID: String,
+        createdAt: Date = .now,
+        updatedAt: Date = .now,
+        memberIdentifiers: [String] = [],
+        invitationCode: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.startDate = startDate
+        self.meetTime = meetTime
+        self.locationName = locationName
+        self.locationAddress = locationAddress
+        self.locationNote = locationNote
+        self.locationDisplayName = locationDisplayName
+        self.latitude = latitude
+        self.longitude = longitude
+        self.ownerUserID = ownerUserID
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.memberIdentifiers = memberIdentifiers
+        self.invitationCode = invitationCode
+    }
+
+    var destination: Location? {
+        guard let latitude, let longitude else { return nil }
+        return Location(latitude: latitude, longitude: longitude)
+    }
+
+    var tripCode: String {
+        invitationCode ?? ""
+    }
+
+    var creatorOwnerIdentifier: String {
+        ownerUserID
+    }
 }
 
 //// connecting user -> location

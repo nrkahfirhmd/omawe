@@ -17,6 +17,7 @@ struct CreateJoinButton: View {
         case none
         case create
         case join
+        case view
     }
     
     @State private var selection: Selection = .none
