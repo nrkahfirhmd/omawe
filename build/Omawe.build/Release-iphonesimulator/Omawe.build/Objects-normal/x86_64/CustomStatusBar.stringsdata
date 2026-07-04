@@ -1,0 +1,16 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Components/CustomStatusBar.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 53
+        }
+      }
+    ]
+  },
+  "version": 1
+}

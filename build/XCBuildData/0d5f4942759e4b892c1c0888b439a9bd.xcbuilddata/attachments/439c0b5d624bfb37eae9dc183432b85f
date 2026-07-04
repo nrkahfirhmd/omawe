@@ -1,0 +1,46 @@
+{
+  "" : {
+    "const-values" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.swiftconstvalues",
+    "dependencies" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.d",
+    "diagnostics" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary-emit-module.dia",
+    "pch" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.swiftdeps"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/AppIntent.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/AppIntent.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/AppIntent.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/AppIntent.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidget.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidget.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidget.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidget.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidgetBundle.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetBundle.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetBundle.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetBundle.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidgetControl.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetControl.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetControl.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetControl.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidgetLiveActivity.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivity.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivity.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivity.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidgetLiveActivityView.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivityView.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivityView.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetLiveActivityView.o"
+  },
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o"
+  }
+}

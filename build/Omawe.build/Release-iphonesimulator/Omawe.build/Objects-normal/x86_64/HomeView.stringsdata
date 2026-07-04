@@ -1,0 +1,48 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Views/HomeView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "You have no trip yet",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "Let's create or join a trip now",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hi Beani!",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 82
+        }
+      },
+      {
+        "comment": "",
+        "key": "Let's make your\nfirst Omawe",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Next step",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 164
+        }
+      }
+    ]
+  },
+  "version": 1
+}

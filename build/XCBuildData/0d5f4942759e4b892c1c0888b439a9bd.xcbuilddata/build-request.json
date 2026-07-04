@@ -1,0 +1,45 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildAndRun"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "b644d62e50e50fd4eead9c178eae4f56e4246ed1a1d340479116c6161d9835ae"
+    },
+    {
+      "guid" : "b644d62e50e50fd4eead9c178eae4f5671d4126d1cd57cc4defc812ecb4d5caa"
+    },
+    {
+      "guid" : "b644d62e50e50fd4eead9c178eae4f56e4246ed1a1d340479116c6161d9835ae"
+    }
+  ],
+  "containerPath" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+          "SDKROOT" : "iphonesimulator26.5"
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "NO"
+        }
+      }
+    }
+  },
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : false,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

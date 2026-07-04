@@ -1,0 +1,16 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Views/TripNotStartedView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Start trip now",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 124
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct OmaweWidgetControl: ControlWidget {
-    static let kind: String = "com.gleen.Challenge4.OmaweWidget"
+    static let kind: String = "com.exboyfriends.omawe.OmaweWidget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

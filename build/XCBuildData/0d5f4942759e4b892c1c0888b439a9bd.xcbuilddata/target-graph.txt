@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'Omawe' in project 'Omawe'
+➜ Explicit dependency on target 'OmaweWidgetExtension' in project 'Omawe'
+Target 'OmaweWidgetExtension' in project 'Omawe' (no dependencies)

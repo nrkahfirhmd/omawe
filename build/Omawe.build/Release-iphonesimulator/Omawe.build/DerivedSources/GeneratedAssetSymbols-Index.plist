@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>colors</key>
+	<array>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACColorNamePrimary</string>
+			<key>relativePath</key>
+			<string>./Primary.colorset</string>
+			<key>swiftSymbol</key>
+			<string>primary</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACColorNamePrimarySoft</string>
+			<key>relativePath</key>
+			<string>./PrimarySoft.colorset</string>
+			<key>swiftSymbol</key>
+			<string>primarySoft</string>
+		</dict>
+	</array>
+	<key>images</key>
+	<array>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameFrame74</string>
+			<key>relativePath</key>
+			<string>./Frame 74.imageset</string>
+			<key>swiftSymbol</key>
+			<string>frame74</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameHomeBackground</string>
+			<key>relativePath</key>
+			<string>./HomeBackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>homeBackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameHomeCircleSlide</string>
+			<key>relativePath</key>
+			<string>./HomeCircleSlide.imageset</string>
+			<key>swiftSymbol</key>
+			<string>homeCircleSlide</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSliderButton</string>
+			<key>relativePath</key>
+			<string>./SliderButton.imageset</string>
+			<key>swiftSymbol</key>
+			<string>sliderButton</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameStar</string>
+			<key>relativePath</key>
+			<string>./Star.imageset</string>
+			<key>swiftSymbol</key>
+			<string>star</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameTapCircleSlide</string>
+			<key>relativePath</key>
+			<string>./TapCircleSlide.imageset</string>
+			<key>swiftSymbol</key>
+			<string>tapCircleSlide</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameTimeChip</string>
+			<key>relativePath</key>
+			<string>./TimeChip.imageset</string>
+			<key>swiftSymbol</key>
+			<string>timeChip</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameTripStatusBar</string>
+			<key>relativePath</key>
+			<string>./Trip_Status_Bar.imageset</string>
+			<key>swiftSymbol</key>
+			<string>tripStatusBar</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameAvatar</string>
+			<key>relativePath</key>
+			<string>./avatar.imageset</string>
+			<key>swiftSymbol</key>
+			<string>avatar</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameOmaweCircle</string>
+			<key>relativePath</key>
+			<string>./omaweCircle.imageset</string>
+			<key>swiftSymbol</key>
+			<string>omaweCircle</string>
+		</dict>
+	</array>
+	<key>symbols</key>
+	<array/>
+</dict>
+</plist>
