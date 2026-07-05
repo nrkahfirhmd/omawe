@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CustomDynamicIsland: View {
     private let color: Color
+    private let fillColor: Color
     private let borderColor: LinearGradient
     private let borderWidth: CGFloat
     private let width: CGFloat
@@ -26,6 +27,7 @@ struct CustomDynamicIsland: View {
             startPoint: .leading,
             endPoint: .trailing
         ),
+        fillColor: Color = .white,
         borderWidth: CGFloat = 0,
         width: CGFloat = 126,
         height: CGFloat = 37,
@@ -33,6 +35,7 @@ struct CustomDynamicIsland: View {
     ) {
         self.color = color
         self.borderColor = borderColor
+        self.fillColor = fillColor
         self.borderWidth = borderWidth
         self.width = width
         self.height = height
@@ -42,7 +45,7 @@ struct CustomDynamicIsland: View {
     var body: some View {
         ZStack {
             Capsule()
-                .fill(.white)
+                .fill(fillColor)
                 .overlay {
                     Capsule(style: .continuous)
                         .stroke(borderColor, lineWidth: max(borderWidth, 1))
