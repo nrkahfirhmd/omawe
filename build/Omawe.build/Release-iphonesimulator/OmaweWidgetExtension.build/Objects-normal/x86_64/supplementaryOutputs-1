@@ -1,0 +1,12 @@
+{
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/AppIntent.swift" : {
+    "abi-baseline-json" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension.abi.json",
+    "const-values" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.swiftconstvalues",
+    "dependencies" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.d",
+    "diagnostics" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-primary.dia",
+    "objc-header" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension-Swift.h",
+    "swiftdoc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension.swiftdoc",
+    "swiftmodule" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension.swiftmodule",
+    "swiftsourceinfo" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/OmaweWidgetExtension.build/Objects-normal/x86_64/OmaweWidgetExtension.swiftsourceinfo"
+  }
+}
