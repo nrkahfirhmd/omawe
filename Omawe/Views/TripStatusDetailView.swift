@@ -54,7 +54,14 @@ struct TripStatusDetailView: View {
                                 TripStatusPageContentView(
                                     trip: trip,
                                     members: memberDisplays(for: trip),
-                                    totalTripCount: trips.count
+                                    totalTripCount: trips.count,
+                                    subtitle: [
+                                        ownerDisplayName(for: trip),
+                                        trip.startDate.formatted(.dateTime.day().month(.abbreviated).year()),
+                                        trip.meetTime.formatted(date: .omitted, time: .shortened)
+                                    ]
+                                    .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                                    .joined(separator: " • ")
                                 )
                                 .tag(index)
                             }
@@ -126,7 +133,8 @@ private struct TripStatusPageContentView: View {
     let trip: TripModel
     let members: [TripStatusMemberDisplay]
     let totalTripCount: Int
-
+    let subtitle: String
+    
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
             PeopleOrbitPerson(
@@ -154,7 +162,19 @@ private struct TripStatusPageContentView: View {
             HStack(spacing: 12) {
                 StartTripButton()
 
-                Button {
+                NavigationLink {
+                    TripDetailView(
+                        trip: trip,
+                        subtitle: subtitle,
+                        members: members.map {
+                            TripDetailMember(
+                                id: $0.userID,
+                                name: displayName(for: $0),
+                                isOwner: $0.userID == trip.ownerUserID
+                            )
+                        }
+                    )
+                    .navigationBarBackButtonHidden(true)
                 } label: {
                     Image(systemName: "list.bullet.indent")
                         .font(.largeTitle)

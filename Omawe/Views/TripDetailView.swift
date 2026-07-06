@@ -6,22 +6,33 @@
 //
 
 import SwiftUI
+import SwiftData
+
+struct TripDetailMember: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let isOwner: Bool
+}
 
 // MARK: - Trip Detail View
 struct TripDetailView: View {
-    var trip: TripData
-    var members: [String]
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    var trip: TripModel
+    var subtitle: String
+    var members: [TripDetailMember]
     @State private var currentMemberPage = 0
     @State private var isEditing = false
-    @State private var editableMembers: [String] = []
+    @State private var editableMembers: [TripDetailMember] = []
+    @State private var showDeleteConfirmation = false
     
     private let membersPerPage = 5
     
-    private var displayMembers: [String] {
+    private var displayMembers: [TripDetailMember] {
         isEditing ? editableMembers : members
     }
     
-    private var memberPages: [[String]] {
+    private var memberPages: [[TripDetailMember]] {
         let source = displayMembers
         guard !source.isEmpty else { return [[]] }
         return stride(from: 0, to: source.count, by: membersPerPage).map {
@@ -58,10 +69,10 @@ struct TripDetailView: View {
                     // Title, Subtitle and (optional) Trash Button
                 HStack(alignment: .top) {
                     VStack(alignment: isEditing ? .leading : .center, spacing: 4) {
-                        Text(trip.title.replacingOccurrences(of: "\n", with: " "))
+                        Text(trip.name.isEmpty ? "Untitled trip" : trip.name.replacingOccurrences(of: "\n", with: " "))
                             .font(.title2.weight(.bold))
                             .fontWidth(.expanded)
-                            .foregroundStyle(trip.theme.gradientSoft)
+                            .foregroundStyle(Theme.themeSecondary.gradientSoft)
                             .multilineTextAlignment(isEditing ? .leading : .center)
                             .lineLimit(2)
                         
@@ -73,7 +84,7 @@ struct TripDetailView: View {
                     if isEditing {
                         Spacer()
                         Button {
-                            // Delete trip action
+                            showDeleteConfirmation = true
                         } label: {
                             Image(systemName: "trash")
                                 .font(.body.weight(.medium))
@@ -91,27 +102,27 @@ struct TripDetailView: View {
                     VStack(spacing: 0){
                         
                         // People Count
-                        HStack(alignment: .center, spacing: 8) {
-                            Text("\(displayMembers.count)")
-                                .font(.system(size: 56, weight: .semibold))
-                                .fontWidth(.expanded)
-                                .foregroundStyle(Theme.secondarySoft)
-                                .contentTransition(.numericText())
-                            Text("People")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        //                .padding(.top, 20)
-                        
-                        // Date & Time
-                        HStack(spacing: 2) {
-                            Image(systemName: "calendar.circle.fill")
-                            Text(trip.subtitle
-                                .replacingOccurrences(of: "by @Bintang • ", with: "")
-                                .replacingOccurrences(of: "by @Kahfi • ", with: "")
-                                .replacingOccurrences(of: "by @Ryan • ", with: "")
-                            )
-                        }
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(displayMembers.count)")
+                        .font(.system(size: 64, weight: .semibold))
+                        .fontWidth(.expanded)
+                        .foregroundStyle(Theme.themeSecondary.gradientSoft)
+                        .contentTransition(.numericText())
+                    Text("People")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .padding(.top, 8)
+                
+                // Date & Time
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                    Text(subtitle
+                        .replacingOccurrences(of: "by @Bintang • ", with: "")
+                        .replacingOccurrences(of: "by @Kahfi • ", with: "")
+                        .replacingOccurrences(of: "by @Ryan • ", with: "")
+                    )
+                }                  
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
                         .padding(.bottom, 24)
@@ -121,9 +132,9 @@ struct TripDetailView: View {
                             pages: memberPages,
                             currentPage: $currentMemberPage,
                             isEditing: isEditing,
-                            onRemove: { name in
+                            onRemove: { member in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    editableMembers.removeAll { $0 == name }
+                                    editableMembers.removeAll { $0.id == member.id }
                                     let maxPage = max(0, memberPages.count - 1)
                                     if currentMemberPage > maxPage {
                                         currentMemberPage = maxPage
@@ -131,8 +142,6 @@ struct TripDetailView: View {
                                 }
                             }
                         )
-                        
-                        //                    .padding(.top, 24)
                         
                         // Page indicator
                         
@@ -161,7 +170,8 @@ struct TripDetailView: View {
                         },
                         onSave: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                // apply editableMembers to members (if state were mutable here)
+                                trip.memberIdentifiers = editableMembers.map { $0.id }
+                                try? modelContext.save()
                                 isEditing = false
                             }
                         }
@@ -176,6 +186,9 @@ struct TripDetailView: View {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isEditing = true
                             }
+                        },
+                        onBack: {
+                            dismiss()
                         }
                     )
                     .padding(.horizontal, 24)
@@ -185,6 +198,17 @@ struct TripDetailView: View {
             }
         }
         .ignoresSafeArea()
+        .navigationBarBackButtonHidden(true)
+        .alert("Delete Trip", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                modelContext.delete(trip)
+                try? modelContext.save()
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete this trip? This action cannot be undone.")
+        }
     }
     
     // MARK: - Subviews
@@ -221,12 +245,11 @@ struct TripDetailView: View {
     }
     
     private var locationTitleText: String {
-        trip.location.split(separator: ",", maxSplits: 1).first.map(String.init) ?? "Location"
+        trip.locationName.isEmpty ? "Location" : trip.locationName
     }
     
     private var locationAddressText: String {
-        let components = trip.location.split(separator: ",", maxSplits: 1)
-        return components.count > 1 ? String(components[1]).trimmingCharacters(in: .whitespaces) : trip.location
+        trip.locationAddress ?? "No address available"
     }
     
     private var locationCard: some View {
@@ -260,20 +283,20 @@ struct TripDetailView: View {
 
 // MARK: - Paginated Member List
 struct PaginatedMemberList: View {
-    var pages: [[String]]
+    var pages: [[TripDetailMember]]
     @Binding var currentPage: Int
     var isEditing: Bool
-    var onRemove: ((String) -> Void)?
+    var onRemove: ((TripDetailMember) -> Void)?
     
     var body: some View {
         TabView(selection: $currentPage) {
             ForEach(pages.indices, id: \.self) { pageIndex in
                 VStack(spacing: 12) {
-                    ForEach(Array(pages[pageIndex].enumerated()), id: \.offset) { _, name in
+                    ForEach(pages[pageIndex]) { member in
                         MemberRow(
-                            name: name,
+                            member: member,
                             isEditing: isEditing,
-                            onRemove: { onRemove?(name) }
+                            onRemove: { onRemove?(member) }
                         )
                     }
                 }
@@ -308,7 +331,7 @@ struct MemberPageIndicator: View {
 
 // MARK: - Member Row
 struct MemberRow: View {
-    var name: String
+    var member: TripDetailMember
     var isEditing: Bool = false
     var onRemove: (() -> Void)?
     
@@ -319,7 +342,7 @@ struct MemberRow: View {
                 .fill(Color(hex: "F2F2F7"))
                 .frame(width: 36, height: 36)
                 .overlay(
-                    Text(String(name.prefix(1)))
+                    Text(String(member.name.prefix(1)))
                         .font(.subheadline.bold())
                         .foregroundStyle(Color.orange.opacity(0.8))
                 )
@@ -328,13 +351,13 @@ struct MemberRow: View {
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
             
-            Text(name)
+            Text(member.name)
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.9))
             
             Spacer()
             
-            if isEditing {
+            if isEditing && !member.isOwner {
                 Button {
                     onRemove?()
                 } label: {
@@ -355,12 +378,13 @@ struct MemberRow: View {
 // MARK: - Bottom Bar (View Mode)
 struct TripDetailBottomBar: View {
     var onEdit: () -> Void
+    var onBack: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
             // Back Button
             Button {
-                // Back action
+                onBack()
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.title2.weight(.medium))
@@ -482,27 +506,22 @@ fileprivate struct DetailSpotlightShape: Shape {
 // MARK: - Preview
 #Preview {
     TripDetailView(
-        trip: TripData(
-            theme: Theme.themeSecondary,
-            icon: "balloon.2",
-            title: "Ex-Boyfriends     \nCelebration!",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
-            people: 12,
-            location: "Fore Kopi, Jl. Dewi Sri No.69, Legian, Kec...",
-            footerTitle: "Trip is not starting yet"
+        trip: TripModel(
+            name: "Ex-Boyfriends\nCelebration!",
+            startDate: Date(),
+            meetTime: Date(),
+            locationName: "Fore Kopi",
+            locationAddress: "Jl. Dewi Sri No.69, Legian, Kec...",
+            ownerUserID: "user_owner_id"
         ),
+        subtitle: "by @Bintang • 27/06/2026 • 11:30",
         members: [
-            "Gleen Ryan",
-            "Bintang",
-            "Kahfi",
-            "Syed",
-            "Nguyen Minh Luat",
-            "Damar",
-            "Rizky",
-            "Aldo",
-            "Fajar",
-            "Dimas",
-            "Putra"
+            TripDetailMember(id: "1", name: "Gleen Ryan", isOwner: true),
+            TripDetailMember(id: "2", name: "Bintang", isOwner: false),
+            TripDetailMember(id: "3", name: "Kahfi", isOwner: false),
+            TripDetailMember(id: "4", name: "Syed", isOwner: false),
+            TripDetailMember(id: "5", name: "Nguyen Minh Luat", isOwner: false),
+            TripDetailMember(id: "6", name: "Damar", isOwner: false)
         ]
     )
 }
