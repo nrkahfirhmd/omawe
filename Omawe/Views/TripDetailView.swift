@@ -55,21 +55,38 @@ struct TripDetailView: View {
 //                        .padding(.top, 39)
                     
                     
-                    // Title and Subtitle
-                    VStack(spacing: 4) {
+                    // Title, Subtitle and (optional) Trash Button
+                HStack(alignment: .top) {
+                    VStack(alignment: isEditing ? .leading : .center, spacing: 4) {
                         Text(trip.title.replacingOccurrences(of: "\n", with: " "))
                             .font(.title2.weight(.bold))
                             .fontWidth(.expanded)
-                            .foregroundStyle(Theme.secondarySoft)
-                            .multilineTextAlignment(.center)
+                            .foregroundStyle(trip.theme.gradientSoft)
+                            .multilineTextAlignment(isEditing ? .leading : .center)
                             .lineLimit(2)
-//                            .padding(.horizontal, 16)
                         
-                        Text(isEditing ? "Edit your trip" : "You are the group creator")
+                        Text("You are the group creator")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.white.opacity(0.6))
                     }
-//                    .padding(.top, 29)
+                    
+                    if isEditing {
+                        Spacer()
+                        Button {
+                            // Delete trip action
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.08))
+                                .clipShape(Circle())
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: isEditing ? .leading : .center)
+                .padding(.horizontal, 24)
+
                     
                     VStack(spacing: 0){
                         
@@ -137,11 +154,14 @@ struct TripDetailView: View {
                 // Bottom buttons
                 if isEditing {
                     EditBottomBar(
-                        onDelete: {
-                            // Delete trip action
+                        onCancel: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isEditing = false
+                            }
                         },
                         onSave: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                // apply editableMembers to members (if state were mutable here)
                                 isEditing = false
                             }
                         }
@@ -159,7 +179,7 @@ struct TripDetailView: View {
                         }
                     )
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
@@ -390,43 +410,57 @@ struct TripDetailBottomBar: View {
 
 // MARK: - Bottom Bar (Edit Mode)
 struct EditBottomBar: View {
-    var onDelete: () -> Void
+    var onCancel: () -> Void
     var onSave: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
-            // Delete Button
+            // Cancel Button
             Button {
-                onDelete()
+                onCancel()
             } label: {
-                Image(systemName: "trash")
-                    .font(.title2.weight(.medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 55, height: 55)
-                    .background(Color.red.opacity(0.8))
-                    .clipShape(Circle())
+                HStack(spacing: 8) {
+                    Image(systemName: "xmark")
+                        .font(.headline)
+                    Text("Cancel")
+                        .font(.headline.weight(.bold))
+                        .fontWidth(.expanded)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(16)
+                .foregroundStyle(.white )
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.secondary, lineWidth: 1.5)
+                }
+            
+                .glassEffect(.clear)
             }
             
-            // Save Button
+            // Save/Done Button
             Button {
                 onSave()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark")
                         .font(.headline)
-                    Text("Save Changes")
+                    Text("Done")
                         .font(.headline.weight(.bold))
                         .fontWidth(.expanded)
                 }
-                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 55)
-                .background(Color(hex: "1F4D55"))
+                .padding(16)
+                .foregroundStyle(.white )
+                .background(Color(hex: "007A94"))
                 .clipShape(Capsule())
-                .overlay(
+                .overlay {
                     Capsule()
-                        .stroke(Color(hex: "03B9D6"), lineWidth: 1.5)
-                )
+                        .stroke(Theme.secondary, lineWidth: 1.5)
+                }
+            
+                .glassEffect(.clear)
+                
+                
             }
         }
     }
