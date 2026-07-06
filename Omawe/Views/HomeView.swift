@@ -28,6 +28,7 @@ struct HomeView: View {
     @State var dynamicBoxSize: CGSize = .zero
     @State var isDynamicBoxExpanded = false
     @State var isTransitioningTopPanel = false
+    @State var isProfilePresented = false
     // let screenSize = UIScreen.main.bounds.size
     
 var body: some View {
@@ -70,14 +71,29 @@ var body: some View {
                     
                     Spacer()
                     
-                    ZStack {
-                        Circle()
-                            .frame(width: 120)
-                            .foregroundColor(.white)
-                            .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
-                        Image(.frame74)
-                        Image(.avatar)
+//                    ZStack {
+//                        Circle()
+//                            .frame(width: 120)
+//                            .foregroundColor(.white)
+//                            .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+//                        Image(.frame74)
+//                        Image(.avatar)
+//                    }
+                    
+                    Button {
+                        isProfilePresented = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .frame(width: 120)
+                                .foregroundColor(.white)
+                                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+
+                            Image(.frame74)
+                            Image(.avatar)
+                        }
                     }
+                    .buttonStyle(.plain)
                     
                     VStack(spacing: 12) {
                         Text("Hi Beani!")
@@ -325,6 +341,11 @@ var body: some View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $isProfilePresented) {
+            ProfileView()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 }
