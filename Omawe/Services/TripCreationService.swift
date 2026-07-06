@@ -18,6 +18,7 @@ struct TripCreationInput {
     var locationDisplayName: String?
     var latitude: Double?
     var longitude: Double?
+    var invitationCode: String?
 
     var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -61,6 +62,10 @@ struct TripCreationService {
         let ownerUserID = try await identityService.currentUserID()
         let now = Date()
         try ensureUserProfileExists(userID: ownerUserID, now: now, in: modelContext)
+        let invitationCode = try uniqueInvitationCode(
+            preferredCode: input.invitationCode,
+            in: modelContext
+        )
 
         let trip = TripModel(
             name: input.trimmedName,
@@ -76,7 +81,7 @@ struct TripCreationService {
             createdAt: now,
             updatedAt: now,
             memberIdentifiers: [ownerUserID],
-            invitationCode: Self.makeInvitationCode()
+            invitationCode: invitationCode
         )
         print("[TripCreation] prepared TripModel insert: id=\(trip.id.uuidString), ownerUserID=\(ownerUserID)")
 
@@ -127,8 +132,35 @@ struct TripCreationService {
         print("[TripCreation] prepared UserProfile insert for CloudKit userID=\(userID)")
     }
 
-    private static func makeInvitationCode() -> String {
-        String(UUID().uuidString.prefix(8)).uppercased()
+    private func uniqueInvitationCode(preferredCode: String?, in modelContext: ModelContext) throws -> String {
+        let normalizedPreferred = preferredCode?.nilIfBlank?.uppercased()
+
+        if let normalizedPreferred,
+           try !invitationCodeExists(normalizedPreferred, in: modelContext) {
+            return normalizedPreferred
+        }
+
+        var generatedCode = Self.makeInvitationCode()
+        while try invitationCodeExists(generatedCode, in: modelContext) {
+            generatedCode = Self.makeInvitationCode()
+        }
+        return generatedCode
+    }
+
+    private func invitationCodeExists(_ code: String, in modelContext: ModelContext) throws -> Bool {
+        let descriptor = FetchDescriptor<TripModel>(
+            predicate: #Predicate { trip in
+                trip.invitationCode == code
+            }
+        )
+        return try modelContext.fetch(descriptor).isEmpty == false
+    }
+
+    static func makeInvitationCode() -> String {
+        let allowedCharacters = Array("ABCDEFGHJKMNPQRSTUVWXYZ23456789")
+        return String((0..<6).map { _ in
+            allowedCharacters.randomElement() ?? "A"
+        })
     }
 }
 
