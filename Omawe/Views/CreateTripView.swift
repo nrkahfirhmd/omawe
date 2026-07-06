@@ -8,6 +8,7 @@
 
 import SwiftUI
 import MapKit
+import SwiftData
 
 enum CreateTripStep: Int, CaseIterable {
     case tripName
@@ -25,6 +26,7 @@ private struct DynamicBoxSizePreferenceKey: PreferenceKey {
 }
 
 struct CreateTripView: View {
+    @Environment(\.modelContext) private var modelContext
     @Binding var selectedTripAction: TripAction?
     @Binding var nextStepRequest: Int
     @Binding var isNextStepEnabled: Bool
@@ -49,6 +51,9 @@ struct CreateTripView: View {
     @StateObject private var locationSearchService = LocationSearchService()
     @State private var selectedLocationCoordinate: CLLocationCoordinate2D?
     @State private var isResolvingLocation = false
+    @State private var isSavingTrip = false
+    @State private var hasCreatedTrip = false
+    @State private var creationErrorMessage: String?
 
     init(
         selectedTripAction: Binding<TripAction?>,
@@ -67,7 +72,7 @@ struct CreateTripView: View {
     private var title: String {
         switch currentStep {
         case .tripName:
-            return "Text will go here"
+            return "Enter your trip name"
         case .destination:
             return "Destination"
         case .dateAndArrival:
@@ -120,10 +125,21 @@ struct CreateTripView: View {
         tripName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var trimmedLocationName: String {
+        locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canConfirmTripCreation: Bool {
+        !trimmedTripName.isEmpty
+            && !trimmedLocationName.isEmpty
+            && !isSavingTrip
+            && !hasCreatedTrip
+    }
+
     private func goToNextStep() {
         guard currentStep != .invitationPreview else { return }
         guard currentStep != .tripName || !trimmedTripName.isEmpty else { return }
-        guard currentStep != .destination || !locationName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard currentStep != .destination || !trimmedLocationName.isEmpty else { return }
 
         guard let nextStep = CreateTripStep(rawValue: currentStep.rawValue + 1) else { return }
 
@@ -137,9 +153,77 @@ struct CreateTripView: View {
         case .tripName:
             isNextStepEnabled = !trimmedTripName.isEmpty
         case .destination:
-            isNextStepEnabled = !locationName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            isNextStepEnabled = !trimmedLocationName.isEmpty
         case .dateAndArrival, .invitationPreview:
             isNextStepEnabled = true
+        }
+    }
+
+    private func confirmTripCreation() {
+        guard canConfirmTripCreation else {
+            creationErrorMessage = "Please add a trip name and location before creating the trip."
+            return
+        }
+
+        isSavingTrip = true
+        creationErrorMessage = nil
+
+        Task {
+            do {
+                let input = TripCreationInput(
+                    name: tripName,
+                    startDate: arrivalDate,
+                    meetTime: arrivalDate,
+                    locationName: locationName,
+                    locationAddress: locationAddress,
+                    locationNote: apartmentUnitFloor,
+                    locationDisplayName: locationNameOpt,
+                    latitude: selectedLocationCoordinate?.latitude,
+                    longitude: selectedLocationCoordinate?.longitude
+                )
+
+                let trip = try await TripCreationService().createTrip(from: input, in: modelContext)
+                print("[TripCreation] CreateTripView received successful trip creation: id=\(trip.id.uuidString)")
+
+                isSavingTrip = false
+                hasCreatedTrip = true
+
+                try? await Task.sleep(for: .seconds(1.1))
+                resetCreateTripFlow(closeFlow: true)
+            } catch {
+                isSavingTrip = false
+                creationErrorMessage = error.localizedDescription
+                print("[TripCreation] CreateTripView trip creation failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func resetCreateTripFlow(closeFlow: Bool) {
+        currentStep = .tripName
+        tripName = ""
+        arrivalDate = Date()
+        selectedTimeZone = TimeZone.current.identifier
+        isCalendarPresented = false
+        isEditingInvitationDetails = false
+        locationName = ""
+        locationAddress = ""
+        locationSearchQuery = ""
+        apartmentUnitFloor = ""
+        locationNameOpt = ""
+        isEditingLocation = false
+        isLocationSheetPresented = false
+        selectedLocationCoordinate = nil
+        isResolvingLocation = false
+        isSavingTrip = false
+        hasCreatedTrip = false
+        creationErrorMessage = nil
+        nextStepRequest = 0
+        updateNextStepAvailability()
+
+        guard closeFlow else { return }
+
+        withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
+            selectedTripAction = nil
         }
     }
     
@@ -189,6 +273,10 @@ struct CreateTripView: View {
         }
         .onChange(of: locationName) { _, _ in
             updateNextStepAvailability()
+        }
+        .onChange(of: selectedTripAction) { _, action in
+            guard action != .create else { return }
+            resetCreateTripFlow(closeFlow: false)
         }
         .onAppear {
             updateNextStepAvailability()
@@ -882,17 +970,46 @@ struct CreateTripView: View {
                     .buttonBorderShape(.circle)
                     .accessibilityLabel("Edit invitation details")
 
-                    Button { } label: {
+                    Button {
+                        confirmTripCreation()
+                    } label: {
                         HStack(spacing: 14) {
-                            Text("Share link")
-                            Image(systemName: "link")
+                            if isSavingTrip {
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Saving...")
+                            } else if hasCreatedTrip {
+                                Text("Trip created")
+                                Image(systemName: "checkmark.circle.fill")
+                            } else {
+                                Text("Create trip")
+                                Image(systemName: "checkmark")
+                            }
                         }
                         .font(.system(size: 23, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(canConfirmTripCreation || isSavingTrip || hasCreatedTrip ? .white : .white.opacity(0.52))
                         .frame(maxWidth: .infinity)
                         .frame(height: 55)
                     }
                     .buttonStyle(.glass)
+                    .disabled(!canConfirmTripCreation)
+                }
+
+                if let creationErrorMessage {
+                    VStack(spacing: 8) {
+                        Text(creationErrorMessage)
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.red.opacity(0.95))
+
+                        Button("Try again") {
+                            confirmTripCreation()
+                        }
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .disabled(!canConfirmTripCreation)
+                    }
+                    .padding(.top, 2)
                 }
             }
         }
@@ -959,6 +1076,15 @@ private struct CreateTripStepPreview: View {
                 initiallyPresentLocationSheet: initiallyPresentLocationSheet
             )
             .padding(.top, 10)
+            .modelContainer(
+                for: [
+                    TripModel.self,
+                    TripMember.self,
+                    LocationUpdate.self,
+                    UserProfile.self
+                ],
+                inMemory: true
+            )
         }
     }
 }

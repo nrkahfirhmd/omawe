@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum TripAction {
     case create
@@ -13,13 +14,20 @@ enum TripAction {
 }
 
 struct HomeView: View {
+    @Query(sort: \TripModel.createdAt, order: .reverse) private var trips: [TripModel]
+    @Query(sort: \TripMember.joinedAt, order: .forward) private var tripMembers: [TripMember]
+    @Query(sort: \UserProfile.createdAt, order: .forward) private var userProfiles: [UserProfile]
     @State private var selectedTripAction: TripAction?
     @State private var nextStepRequest = 0
     @State private var isNextStepEnabled = false
+    @State private var isTripStatusExpanded = false
+    @State private var isTripStatusPresented = false
+    @State private var selectedTripIndex = 0
     @Namespace private var dynamicIslandNamespace
     @State private var createSlideProgress: CGFloat = 0
     @State private var dynamicBoxSize: CGSize = .zero
     @State private var isDynamicBoxExpanded = false
+    @State private var isTransitioningTopPanel = false
     private let collapsedIslandWidth: CGFloat = 125
     private let expandedIslandWidth: CGFloat = 360
     private let dynamicIslandHeight: CGFloat = 35
@@ -48,16 +56,18 @@ struct HomeView: View {
                 ], startPoint: UnitPoint.leading, endPoint: .trailing)
             )
             .padding(.top, 8)
-            .opacity(selectedTripAction != .none ? 0 : 1)
+            .opacity(selectedTripAction != .none || isTripStatusExpanded ? 0 : 1)
+            
             VStack {
                 ZStack {
-                    Image(.tripStatusBar)
+                    Image(trips.isEmpty ? .tripStatusBar : .tripStatusBarCreated)
+
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("You have no trip yet")
+                            Text(trips.isEmpty ? "You have no trip yet" : "\(trips.count) upcoming \(trips.count == 1 ? "trip" : "trips")")
                                 .font(.headline)
-                            
-                            Text("Let's create or join a trip now")
+
+                            Text(trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -94,22 +104,50 @@ struct HomeView: View {
                 
                 CreateJoinButton(
                     createAction: {
-                        selectedTripAction = .create
-                        isDynamicBoxExpanded = false
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
-                            withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
-                                isDynamicBoxExpanded = true
+                        guard !isTransitioningTopPanel else { return }
+                        if isTripStatusPresented {
+                            closeTripStatusPanel()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                                selectedTripAction = .create
+                                isDynamicBoxExpanded = false
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                                    withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                                        isDynamicBoxExpanded = true
+                                    }
+                                }
+                            }
+                        } else {
+                            selectedTripAction = .create
+                            isDynamicBoxExpanded = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                                withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                                    isDynamicBoxExpanded = true
+                                }
                             }
                         }
                     },
                     joinAction: {
-                        withAnimation(.spring(response: 0.82, dampingFraction: 0.86)) {
-                            isDynamicBoxExpanded = false
-                            selectedTripAction = .join
+                        guard !isTransitioningTopPanel else { return }
+                        if isTripStatusPresented {
+                            closeTripStatusPanel()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                                withAnimation(.spring(response: 0.82, dampingFraction: 0.86)) {
+                                    isDynamicBoxExpanded = false
+                                    selectedTripAction = .join
+                                }
+                            }
+                        } else {
+                            withAnimation(.spring(response: 0.82, dampingFraction: 0.86)) {
+                                isDynamicBoxExpanded = false
+                                selectedTripAction = .join
+                            }
                         }
                     },
                     resetAction: {
+                        if isTripStatusPresented {
+                            closeTripStatusPanel()
+                            return
+                        }
                         withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
                             isDynamicBoxExpanded = false
                             selectedTripAction = nil
@@ -124,7 +162,6 @@ struct HomeView: View {
                 .padding(.bottom, bottomSliderBottomPadding)
             }
             .padding(.horizontal, 10)
-            .padding(.top, 12)
             
             GeometryReader { proxy in
                 let flowBottomInset = bottomSliderReservedHeight + createFlowBottomGap
@@ -136,27 +173,24 @@ struct HomeView: View {
                 )
 
                 VStack(spacing: nextStepTopGap) {
-                    CreateTripView(
-                        selectedTripAction: $selectedTripAction,
-                        nextStepRequest: $nextStepRequest,
-                        isNextStepEnabled: $isNextStepEnabled
-                    )
-                    .scaleEffect(
-                        isDynamicBoxExpanded ? 1 : 0.18,
-                        anchor: .top
-                    )
-                    .opacity(isDynamicBoxExpanded ? 1 : 0)
-                    .offset(y: isDynamicBoxExpanded ? 0 : -8)
-                    .allowsHitTesting(isDynamicBoxExpanded)
-                    .animation(.spring(response: 0.46, dampingFraction: 0.9), value: isDynamicBoxExpanded)
-                    .frame(
-                        maxWidth: .infinity,
-                        minHeight: 0,
-                        maxHeight: createTripViewportHeight,
-                        alignment: .top
-                    )
+                    topPanelView
+                        .scaleEffect(
+                            topPanelScale,
+                            anchor: .top
+                        )
+                        .opacity(topPanelOpacity)
+                        .offset(y: topPanelVerticalOffset)
+                        .allowsHitTesting(isDynamicBoxExpanded || isTripStatusExpanded)
+                        .animation(.spring(response: 0.46, dampingFraction: 0.9), value: isDynamicBoxExpanded)
+                        .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: 0,
+                            maxHeight: createTripViewportHeight,
+                            alignment: .top
+                        )
                     
-                    if nextStepRequest < 3 {
+                    if selectedTripAction == .create && nextStepRequest < 3 {
                         Button {
                             nextStepRequest += 1
                         } label: {
@@ -207,12 +241,23 @@ struct HomeView: View {
                 )
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
-            
-            
-            
-            
         }
+        .contentShape(Rectangle())
+        .simultaneousGesture(tripStatusOpenGesture)
         .animation(.spring(response: 0.5, dampingFraction: 0.9), value: selectedTripAction)
+        .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
+        .onChange(of: trips.count) { _, count in
+            if count == 0 {
+                isTripStatusExpanded = false
+                selectedTripIndex = 0
+            } else if selectedTripIndex >= count {
+                selectedTripIndex = max(0, count - 1)
+            }
+        }
+        .onChange(of: selectedTripAction) { _, action in
+            guard action != nil else { return }
+            isTripStatusExpanded = false
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
             Image(.homeBackground)
@@ -222,6 +267,100 @@ struct HomeView: View {
         }
         .ignoresSafeArea()
     }
+
+    @ViewBuilder
+    private var topPanelView: some View {
+        if isTripStatusPresented && !trips.isEmpty && selectedTripAction == nil {
+            TripStatusDetailView(
+                trips: trips,
+                members: tripMembers,
+                userProfiles: userProfiles,
+                selectedTripIndex: $selectedTripIndex,
+                onClose: closeTripStatusPanel
+            )
+        } else {
+            CreateTripView(
+                selectedTripAction: $selectedTripAction,
+                nextStepRequest: $nextStepRequest,
+                isNextStepEnabled: $isNextStepEnabled
+            )
+        }
+    }
+
+    private var topPanelScale: CGFloat {
+        // TripStatus uses presented and expanded states for animation, CreateTrip uses dynamicBox
+        if isTripStatusPresented && !isTripStatusExpanded {
+            return 0.18
+        } else if isTripStatusPresented && isTripStatusExpanded {
+            return 1
+        } else if isDynamicBoxExpanded {
+            return 1
+        } else {
+            return 0.18
+        }
+    }
+
+    private var topPanelOpacity: Double {
+        // Opacity is 1 whenever TripStatus is presented (even if not expanded), or CreateTrip is expanded
+        if isTripStatusPresented {
+            return 1
+        } else if isDynamicBoxExpanded {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    private var topPanelVerticalOffset: CGFloat {
+        // Offset is -8 while TripStatus is presented but not expanded, 0 when expanded
+        if isTripStatusPresented && !isTripStatusExpanded {
+            return -8
+        } else if isTripStatusPresented && isTripStatusExpanded {
+            return 0
+        } else if isDynamicBoxExpanded {
+            return 0
+        } else {
+            return -8
+        }
+    }
+
+    private var tripStatusOpenGesture: some Gesture {
+        DragGesture(minimumDistance: 18)
+            .onEnded { value in
+                guard !isTransitioningTopPanel else { return }
+                guard trips.isEmpty == false else { return }
+                guard selectedTripAction == nil else { return }
+                guard isTripStatusPresented == false else { return }
+                guard value.translation.height > 48 else { return }
+                guard abs(value.translation.width) < 72 else { return }
+
+                isTransitioningTopPanel = true
+                // Show panel in collapsed state, then animate to expanded (mirroring CreateTrip)
+                selectedTripIndex = min(selectedTripIndex, trips.count - 1)
+                isTripStatusPresented = true
+                isTripStatusExpanded = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                    withAnimation(.spring(response: 0.54, dampingFraction: 0.88)) {
+                        isTripStatusExpanded = true
+                    }
+                    // After expansion, allow transitions again
+                    isTransitioningTopPanel = false
+                }
+            }
+    }
+
+    private func closeTripStatusPanel() {
+        if isTransitioningTopPanel { return }
+        isTransitioningTopPanel = true
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.90)) {
+            isTripStatusExpanded = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            isTripStatusPresented = false
+            isTransitioningTopPanel = false
+        }
+    }
+
     private var dynamicBoxExpansionProgress: CGFloat {
         selectedTripAction == .create ? 1 : createSlideProgress
     }

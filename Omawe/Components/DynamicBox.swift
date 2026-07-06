@@ -48,9 +48,13 @@ struct DynamicBox<Content: View>: View {
                 if let title {
                     Text(title)
                         .font(.title2.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(theme.gradientSoft)
                         .fontWidth(.expanded)
+                        .foregroundStyle(theme.gradientSoft)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .minimumScaleFactor(0.9)
+                        .padding(.horizontal, 24)
                         .padding(.bottom, 4)
                 }
 
@@ -62,6 +66,7 @@ struct DynamicBox<Content: View>: View {
                 }
             }
             .padding(.top, 80)
+            .padding(.horizontal, 16)
 
             content
             
