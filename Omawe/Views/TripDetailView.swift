@@ -15,7 +15,7 @@ struct TripDetailView: View {
     @State private var isEditing = false
     @State private var editableMembers: [String] = []
     
-    private let membersPerPage = 6
+    private let membersPerPage = 5
     
     private var displayMembers: [String] {
         isEditing ? editableMembers : members
@@ -31,53 +31,73 @@ struct TripDetailView: View {
     
     var body: some View {
         ZStack(alignment: .top) {
-            Theme.graybackground
-                .ignoresSafeArea()
+            // Background
+            detailStageBackground
             
-            VStack(spacing: 0) {
-                DynamicBox(
-                    theme: trip.theme,
-                    title: trip.title,
-                    subtitle: isEditing
-                        ? trip.subtitle.replacingOccurrences(of: "by @Bintang • ", with: "by @Bintang • ")
-                        : "by @Bintang",
-                    helperText: "Swipe to see other friends",
-                    footerTitle: isEditing ? "Edit your trip" : "Trip detail"
-                ) {
-                    VStack(spacing: 0) {
-                        // People count
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            VStack() {
+                
+                // Top Custom Dynamic Island (Glowing Pill)
+                CustomDynamicIsland(
+                    color: .black,
+                    borderColor: Theme.secondarySoft,
+                    fillColor: .black
+                )
+                .padding(.top, 8)
+                .padding(.bottom, 39)
+                .fixedSize(horizontal: false, vertical: true)
+                
+                VStack(spacing:29){
+                    
+                    // Location Card
+                    locationCard
+                    //                    .padding(.top, 44)
+//                        .padding(.horizontal, 16)
+//                        .padding(.top, 39)
+                    
+                    
+                    // Title and Subtitle
+                    VStack(spacing: 4) {
+                        Text(trip.title.replacingOccurrences(of: "\n", with: " "))
+                            .font(.title2.weight(.bold))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(Theme.secondarySoft)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+//                            .padding(.horizontal, 16)
+                        
+                        Text(isEditing ? "Edit your trip" : "You are the group creator")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+//                    .padding(.top, 29)
+                    
+                    VStack(spacing: 0){
+                        
+                        // People Count
+                        HStack(alignment: .center, spacing: 8) {
                             Text("\(displayMembers.count)")
-                                .font(.largeTitle)
-                                .fontWeight(.semibold)
+                                .font(.system(size: 56, weight: .semibold))
                                 .fontWidth(.expanded)
-                                .foregroundStyle(trip.theme.gradientSoft)
+                                .foregroundStyle(Theme.secondarySoft)
                                 .contentTransition(.numericText())
                             Text("People")
                                 .font(.caption)
-                                .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
+                                .foregroundStyle(.white.opacity(0.7))
                         }
-                        .padding(.bottom, 12)
+                        //                .padding(.top, 20)
                         
-                        // Location + Date
-                        HStack(spacing: 16) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "location.circle.fill")
-                                Text(trip.location)
-                            }
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                Text(trip.subtitle
-                                    .replacingOccurrences(of: "by @Bintang • ", with: "")
-                                    .replacingOccurrences(of: "by @Kahfi • ", with: "")
-                                    .replacingOccurrences(of: "by @Ryan • ", with: "")
-                                )
-                            }
+                        // Date & Time
+                        HStack(spacing: 2) {
+                            Image(systemName: "calendar.circle.fill")
+                            Text(trip.subtitle
+                                .replacingOccurrences(of: "by @Bintang • ", with: "")
+                                .replacingOccurrences(of: "by @Kahfi • ", with: "")
+                                .replacingOccurrences(of: "by @Ryan • ", with: "")
+                            )
                         }
-                        .font(.caption.bold())
-                        .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-                        .padding(.bottom, 20)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.bottom, 24)
                         
                         // Paginated members list
                         PaginatedMemberList(
@@ -87,7 +107,6 @@ struct TripDetailView: View {
                             onRemove: { name in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                     editableMembers.removeAll { $0 == name }
-                                    // Fix page index if current page no longer exists
                                     let maxPage = max(0, memberPages.count - 1)
                                     if currentMemberPage > maxPage {
                                         currentMemberPage = maxPage
@@ -96,16 +115,22 @@ struct TripDetailView: View {
                             }
                         )
                         
+                        //                    .padding(.top, 24)
+                        
                         // Page indicator
+                        
                         MemberPageIndicator(
                             totalPages: memberPages.count,
                             currentPage: currentMemberPage
                         )
-                        .padding(.top, 14)
-                        .padding(.bottom, 8)
+                        .padding(.top, 16)
                     }
+                    
+                    
+                    
                 }
-                .animation(.smooth(duration: 0.3), value: isEditing)
+                .padding(.horizontal, 16)
+                
                 
                 Spacer()
                 
@@ -121,7 +146,8 @@ struct TripDetailView: View {
                             }
                         }
                     )
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     TripDetailBottomBar(
@@ -132,12 +158,83 @@ struct TripDetailView: View {
                             }
                         }
                     )
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 20)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
         .ignoresSafeArea()
+    }
+    
+    // MARK: - Subviews
+    private var detailStageBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [.black, Theme.secondaryBox],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
+            PlusPattern()
+                .mask(
+                    LinearGradient(
+                        colors: [.clear, .white],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+//            
+            DetailSpotlightShape()
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.06), .white.opacity(0.01), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .blur(radius: 10)
+                .padding(.horizontal, 76)
+                .offset(y: 64)
+        }
+        .ignoresSafeArea()
+    }
+    
+    private var locationTitleText: String {
+        trip.location.split(separator: ",", maxSplits: 1).first.map(String.init) ?? "Location"
+    }
+    
+    private var locationAddressText: String {
+        let components = trip.location.split(separator: ",", maxSplits: 1)
+        return components.count > 1 ? String(components[1]).trimmingCharacters(in: .whitespaces) : trip.location
+    }
+    
+    private var locationCard: some View {
+        HStack(spacing: 14) {
+            // Icon Box
+            
+            Image(systemName: "location.app.fill")
+                .font(.largeTitle)
+                .foregroundStyle(Theme.primary)
+            
+            
+            VStack(alignment: .leading, spacing: 0) {
+                Text(locationTitleText)
+                    .font(.body)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                
+                Text(locationAddressText)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color(red: 242/255, green: 242/255, blue: 247/255).opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
     }
 }
 
@@ -151,7 +248,7 @@ struct PaginatedMemberList: View {
     var body: some View {
         TabView(selection: $currentPage) {
             ForEach(pages.indices, id: \.self) { pageIndex in
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     ForEach(Array(pages[pageIndex].enumerated()), id: \.offset) { _, name in
                         MemberRow(
                             name: name,
@@ -160,12 +257,12 @@ struct PaginatedMemberList: View {
                         )
                     }
                 }
-                .padding(.horizontal, 20)
+
                 .tag(pageIndex)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: 360)
+        .frame(height: 300)
     }
 }
 
@@ -196,20 +293,24 @@ struct MemberRow: View {
     var onRemove: (() -> Void)?
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
+            // Avatar Placeholder
             Circle()
-                .fill(Color.gray.opacity(0.4))
-                .frame(width: 38, height: 38)
+                .fill(Color(hex: "F2F2F7"))
+                .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.8))
+                    Text(String(name.prefix(1)))
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color.orange.opacity(0.8))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
             
             Text(name)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.9))
             
             Spacer()
             
@@ -224,10 +325,10 @@ struct MemberRow: View {
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(Color(hex: "F2F2F7").opacity(0.1)) // Dark translucent pill
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 }
 
@@ -237,35 +338,53 @@ struct TripDetailBottomBar: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            // Back Button
             Button {
                 // Back action
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .fontWeight(.semibold)
-                    Text("Back to Home")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                Image(systemName: "chevron.left")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(.black)
+                    .frame(width: 55, height: 55)
+                    .background(Color.white.opacity(0.7))
+                    .clipShape(Circle())
             }
             
+            // See Invitation Button
+            Button {
+            } label: {
+                HStack(spacing: 10) {
+                    
+                    Image(systemName:  "eyes")
+                        .font(.button())
+                }
+                
+                Text("See Invitation")
+                    .font(.button())
+                    .fontWidth(.expanded)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .foregroundStyle(.white )
+            .overlay {
+                Capsule()
+                    .stroke(Theme.secondary, lineWidth: 1.5)
+            }
+        
+            .glassEffect(.clear)
+            
+            // Edit Button
             Button {
                 onEdit()
             } label: {
-                Image(systemName: "pencil")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                Image(systemName: "pencil.line")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.black)
                     .frame(width: 55, height: 55)
-                    .background(Color(white: 0.08))
+                    .background(Color.white.opacity(0.7))
                     .clipShape(Circle())
             }
         }
-        .padding(.horizontal, 16)
     }
 }
 
@@ -276,74 +395,72 @@ struct EditBottomBar: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            // Delete Button
             Button {
                 onDelete()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "trash.fill")
-                    Text("Delete")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                Image(systemName: "trash")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 55, height: 55)
+                    .background(Color.red.opacity(0.8))
+                    .clipShape(Circle())
             }
             
+            // Save Button
             Button {
                 onSave()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "checkmark")
-                        .fontWeight(.semibold)
-                    Text("Save")
-                        .fontWeight(.semibold)
+                        .font(.headline)
+                    Text("Save Changes")
+                        .font(.headline.weight(.bold))
+                        .fontWidth(.expanded)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.05, green: 0.25, blue: 0.24),
-                            Color(red: 0.11, green: 0.35, blue: 0.32)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .frame(maxWidth: .infinity)
+                .frame(height: 55)
+                .background(Color(hex: "1F4D55"))
+                .clipShape(Capsule())
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(
-                            Color(red: 0.4, green: 0.85, blue: 0.9),
-                            lineWidth: 1.5
-                        )
-                        .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.4), radius: 6)
+                    Capsule()
+                        .stroke(Color(hex: "03B9D6"), lineWidth: 1.5)
                 )
             }
         }
-        .padding(.horizontal, 16)
     }
 }
 
+// MARK: - Spotlight Shape
+fileprivate struct DetailSpotlightShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX - 65, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX + 65, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX + 700, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX - 700, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Preview
 #Preview {
     TripDetailView(
         trip: TripData(
             theme: Theme.themeSecondary,
             icon: "balloon.2",
-            title: "Ex-Boyfriends\nCelebration!",
+            title: "Ex-Boyfriends     \nCelebration!",
             subtitle: "by @Bintang • 27/06/2026 • 11:30",
             people: 12,
-            location: "Toko Kopi Jaya, Kuta",
+            location: "Fore Kopi, Jl. Dewi Sri No.69, Legian, Kec...",
             footerTitle: "Trip is not starting yet"
         ),
         members: [
             "Gleen Ryan",
             "Bintang",
             "Kahfi",
-            "Sunny",
             "Syed",
             "Nguyen Minh Luat",
             "Damar",

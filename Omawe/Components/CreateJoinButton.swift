@@ -17,6 +17,7 @@ struct CreateJoinButton: View {
         case none
         case create
         case join
+        case view
     }
     
     @State private var selection: Selection = .none
@@ -317,4 +318,32 @@ struct CreateJoinButton: View {
         .buttonStyle(.plain)
     }
     
+}
+
+#Preview {
+    ZStack {
+        LinearGradient(
+            colors: [
+                Color.white,
+                Color.white
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+
+        VStack {
+            Spacer()
+
+            CreateJoinButton(
+                createAction: {},
+                joinAction: {},
+                resetAction: {},
+                createProgressChanged: { _ in }
+            )
+            .frame(height: 180)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 32)
+        }
+    }
 }

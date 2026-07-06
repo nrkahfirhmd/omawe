@@ -1,0 +1,12 @@
+{
+  "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Components/CreateJoinButton.swift" : {
+    "abi-baseline-json" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe.abi.json",
+    "const-values" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe-primary.swiftconstvalues",
+    "dependencies" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe-primary.d",
+    "diagnostics" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe-primary.dia",
+    "objc-header" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe-Swift.h",
+    "swiftdoc" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe.swiftdoc",
+    "swiftmodule" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe.swiftmodule",
+    "swiftsourceinfo" : "/Users/gleenryan/E/AAA APPLE/CH4/omawe/build/Omawe.build/Release-iphonesimulator/Omawe.build/Objects-normal/x86_64/Omawe.swiftsourceinfo"
+  }
+}

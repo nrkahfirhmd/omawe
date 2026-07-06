@@ -38,39 +38,45 @@ struct DynamicBox<Content: View>: View {
             VStack(spacing: 0) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.largeTitle.weight(.semibold))
-                        .foregroundStyle(theme.gradientSoft)
-                        
+                        .font(.largeTitle())
+                        .foregroundStyle(.white)
                         .padding(.bottom, 10)
                         .fontWidth(.expanded)
                 }
 
                 if let title {
                     Text(title)
-                        .font(.title2.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(theme.gradientSoft)
+                        .font(.title2())
                         .fontWidth(.expanded)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .minimumScaleFactor(0.9)
+                        .padding(.horizontal, 24)
                         .padding(.bottom, 4)
                 }
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
+                        .font(.caption1())
+                        .foregroundStyle(.background.tertiary.opacity(0.7))
                         .padding(.bottom, 48)
                 }
             }
             .padding(.top, 80)
+            .padding(.horizontal, 16)
 
-            content
-            
-            Spacer()
+            ScrollView(.vertical, showsIndicators: false) {
+                content
+            }
+            .scrollDismissesKeyboard(.interactively)
+
 
             if let helperText {
                 Text(helperText)
                     .font(.caption)
-                    .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.5))
+                    .foregroundStyle(.background.tertiary.opacity(0.7))
                     .padding(.bottom, 18)
             }
         }
@@ -98,7 +104,7 @@ struct DynamicBoxContent<Content: View>: View {
                     }
                     .opacity(isContentVisible ? 1 : 0)
                     .offset(y: isContentVisible ? 0 : 14)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .top)
                     .background(GridGradientBackground(color: theme.boxColor))
                     .clipShape(RoundedRectangle(cornerRadius: 55, style: .continuous))
                     .foregroundStyle(.white)
@@ -106,7 +112,7 @@ struct DynamicBoxContent<Content: View>: View {
                     .padding(.top, 4)
                     .padding(.horizontal, 4)
                 }
-                .frame(maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .top)
 
                 Text(footerTitle)
                     .fontWidth(.expanded)
@@ -114,7 +120,7 @@ struct DynamicBoxContent<Content: View>: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(5)
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, alignment: .top)
             .background(theme.gradientSoft)
             .clipShape(RoundedRectangle(cornerRadius: 56, style: .continuous))
             .onAppear {

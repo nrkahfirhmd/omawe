@@ -1,0 +1,40 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Components/DynamicContainer.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Heading to Bandung",
+        "location": {
+          "startingColumn": 1,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "View Trip",
+        "location": {
+          "startingColumn": 1,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "12 mins",
+        "location": {
+          "startingColumn": 1,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "4.2 km",
+        "location": {
+          "startingColumn": 1,
+          "startingLine": 43
+        }
+      }
+    ]
+  },
+  "version": 1
+}

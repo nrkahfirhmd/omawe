@@ -1,0 +1,304 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/Omawe/Views/CreateTripView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Trip name",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 201
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event Location",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 222
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose event location",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose a location",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 240
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search for a place to set your meeting point",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 244
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit location",
+        "location": {
+          "startingColumn": 45,
+          "startingLine": 294
+        }
+      },
+      {
+        "comment": "",
+        "key": "Pick Location",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 517
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search a place",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 321
+        }
+      },
+      {
+        "comment": "",
+        "key": "No matching places yet",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 351
+        }
+      },
+      {
+        "comment": "",
+        "key": "Getting location details…",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 345
+        }
+      },
+      {
+        "comment": "",
+        "key": "Selected Location",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 405
+        }
+      },
+      {
+        "comment": "",
+        "key": "No location selected",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 418
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search above and choose one of the results.",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 422
+        }
+      },
+      {
+        "comment": "",
+        "key": "Remove selected location",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 470
+        }
+      },
+      {
+        "comment": "",
+        "key": "Apartment, Unit, or Floor",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 478
+        }
+      },
+      {
+        "comment": "",
+        "key": "Optional",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 490
+        }
+      },
+      {
+        "comment": "",
+        "key": "Example: Apt 1A",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 482
+        }
+      },
+      {
+        "comment": "",
+        "key": "Loctation Name",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 496
+        }
+      },
+      {
+        "comment": "",
+        "key": "Optional",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 508
+        }
+      },
+      {
+        "comment": "",
+        "key": "Example: Kuta Beach Apt",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 500
+        }
+      },
+      {
+        "comment": "",
+        "key": "Time picker",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 599
+        }
+      },
+      {
+        "comment": "",
+        "key": ":",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 609
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 656
+        }
+      },
+      {
+        "comment": "",
+        "key": "Arrival date",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 625
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save invitation details",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 868
+        }
+      },
+      {
+        "comment": "",
+        "key": "+3",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 688
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event date",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 790
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event Date",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 698
+        }
+      },
+      {
+        "comment": "",
+        "key": "Meet Time",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 721
+        }
+      },
+      {
+        "comment": "",
+        "key": ":",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 731
+        }
+      },
+      {
+        "comment": "",
+        "key": "Location",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 746
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose invitation location",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 784
+        }
+      },
+      {
+        "comment": "",
+        "key": "Location",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 827
+        }
+      },
+      {
+        "comment": "",
+        "key": "No location selected",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 832
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 861
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit invitation details",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 883
+        }
+      },
+      {
+        "comment": "",
+        "key": "Share link",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 887
+        }
+      }
+    ]
+  },
+  "version": 1
+}

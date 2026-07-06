@@ -1,0 +1,32 @@
+{
+  "source": "/Users/gleenryan/E/AAA APPLE/CH4/omawe/OmaweWidget/OmaweWidgetLiveActivity.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lldm",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld/%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 56
+        }
+      }
+    ]
+  },
+  "version": 1
+}
