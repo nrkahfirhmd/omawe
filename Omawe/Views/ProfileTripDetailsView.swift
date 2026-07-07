@@ -7,11 +7,12 @@
 
 
 import SwiftUI
+import CloudKit
 
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    let trip: TripModel
+    let trip: Trip
     
     var body: some View {
         NavigationStack{
@@ -26,7 +27,7 @@ struct ProfileTripDetailsView: View {
                     tripDateCapsule
                         .padding(.top, 40)
                     
-                    Text(trip.name)
+                    Text(trip.title)
                         .font(.title1())
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
@@ -34,7 +35,7 @@ struct ProfileTripDetailsView: View {
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
                     
-                    Text("by @\(trip.ownerUserID)")
+                    Text("by @\(trip.ownerID.recordName)")
                         .font(.caption1())
                         .padding(.top, 5)
                     
@@ -74,7 +75,7 @@ struct ProfileTripDetailsView: View {
                         .font(.headline())
                         .padding(.top, 110)
                         .foregroundStyle(.gray)
-                    Text(trip.locationName)
+                    Text(trip.destination)
                         .font(.title3())
                         .fontWidth(.expanded)
                         .foregroundStyle(.white)
@@ -82,7 +83,7 @@ struct ProfileTripDetailsView: View {
                         .frame(maxWidth: 270)
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 3)
-                    Text(trip.locationAddress ?? "")
+                    Text("")
                         .font(.caption2)
                         .foregroundStyle(.white)
                         .lineLimit(2)
@@ -99,7 +100,7 @@ struct ProfileTripDetailsView: View {
                             .foregroundStyle(.white)
                             
                         Spacer()
-                        Text(trip.invitationCode ?? "")
+                        Text(trip.invitationCode)
                             .font(.button())
                             .fontWidth(.expanded)
                             .foregroundStyle(.white)
@@ -140,7 +141,7 @@ struct ProfileTripDetailsView: View {
     }
     
     private var formattedMeetTime: String {
-        trip.meetTime.formatted(
+        trip.startDate.formatted(
             .dateTime
                 .hour(.twoDigits(amPM: .omitted))
                 .minute(.twoDigits)
@@ -148,7 +149,7 @@ struct ProfileTripDetailsView: View {
     }
     
     private var locationNoteCapsule: some View {
-        Text(trip.locationNote ?? "No note provided.")
+        Text("No note provided.")
             .font(.subheadline)
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
@@ -201,28 +202,20 @@ struct TripParticipant: Identifiable {
 #Preview("Trip details") {
     NavigationStack {
         ProfileTripDetailsView(
-            trip: TripModel(
-                name: "Kuta Sunset Surf and Chill",
+            trip: Trip(
+                id: CKRecord.ID(recordName: "dummy-trip"),
+                title: "Kuta Sunset Surf and Chill",
+                destination: "Toko Kopi Jaya, Kuta",
                 startDate: Calendar.current.date(
                     from: DateComponents(year: 2026, month: 6, day: 30)
                 ) ?? .now,
-                meetTime: Calendar.current.date(
-                    from: DateComponents(hour: 17, minute: 0)
+                endDate: Calendar.current.date(
+                    from: DateComponents(year: 2026, month: 6, day: 30)
                 ) ?? .now,
-                locationName: "Toko Kopi Jaya, Kuta",
-                locationAddress: "Jl. Dewi Sri No. 99X, Legian, Kec. Kuta, Kabupaten Badung, Bali 80361",
-                locationNote: "Luat's House • Room 222",
-                locationDisplayName: "Toko Kopi Jaya, Kuta",
-                ownerUserID: "Bintang",
-                memberIdentifiers: [
-                    "user-1",
-                    "user-2",
-                    "user-3",
-                    "user-4",
-                    "user-5",
-                    "user-6"
-                ],
-                invitationCode: "1A6B7K"
+                ownerID: CKRecord.ID(recordName: "Bintang"),
+                invitationCode: "1A6B7K",
+                createdAt: .now,
+                updatedAt: .now
             )
         )
     }
