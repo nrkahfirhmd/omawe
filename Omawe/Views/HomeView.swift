@@ -26,8 +26,9 @@ struct HomeView: View {
     @State var dynamicBoxSize: CGSize = .zero
     @State var isDynamicBoxExpanded = false
     @State var isTransitioningTopPanel = false
+    @State var isProfilePresented = false
     @State private var isKeyboardVisible = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
@@ -69,6 +70,11 @@ struct HomeView: View {
             .background(homeBackground)
             .navigationDestination(isPresented: $viewModel.isInvitationPresented) {
                 tripInvitationDestination
+            }
+            .sheet(isPresented: $isProfilePresented) {
+                ProfileView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
@@ -216,6 +222,7 @@ struct HomeView: View {
                 Image(.avatar)
             }
         }
+        .buttonStyle(.plain)
     }
     
     /// Greeting text that displays the user's first name from Apple Sign In.
