@@ -29,6 +29,16 @@
 		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C543B2D22FFCC71E00AC62BA /* Exceptions for "Omawe" folder in "Omawe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8CF43A342FF2497200061915 /* Omawe */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8CD369A32FF265E500B103BD /* OmaweWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -37,6 +47,9 @@
 		};
 		8CF43A372FF2497200061915 /* Omawe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C543B2D22FFCC71E00AC62BA /* Exceptions for "Omawe" folder in "Omawe" target */,
+			);
 			path = Omawe;
 			sourceTree = "<group>";
 		};
@@ -301,6 +314,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = C338C32CCY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Omawe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -341,6 +355,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = C338C32CCY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Omawe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
