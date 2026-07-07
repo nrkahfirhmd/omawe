@@ -15,6 +15,7 @@ enum TripAction {
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \UserProfile.createdAt, order: .forward) private var userProfiles: [UserProfile]
     @State var selectedTripAction: TripAction?
     @State var viewModel = HomeViewModel()
@@ -43,6 +44,13 @@ struct HomeView: View {
             .onChange(of: viewModel.trips.count, handleTripsCountChange)
             .onChange(of: selectedTripAction, handleSelectedTripActionChange)
             .onChange(of: viewModel.isInvitationPresented, handleInvitationPresentedChange)
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .active {
+                    Task {
+                        await viewModel.loadTrips()
+                    }
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: CloudKitShareAcceptanceBridge.notificationName)) { notification in
                 Task { await viewModel.acceptShare(from: notification) }
             }
