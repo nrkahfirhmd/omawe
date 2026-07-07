@@ -44,6 +44,7 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .presentationBackground(.clear)
         }
     }
 
@@ -73,29 +74,44 @@ struct ProfileView: View {
 
     private var statsRow: some View {
         HStack(spacing: 16) {
-            ProfileStatCard(
-                background: .totalTripCardBG,
-                icon: "map",
-                title: "Total trip",
-                value: "8"
-            )
+            NavigationLink {
+                TripsListView(initialSegment: .totalTrips)
+            } label: {
+                ProfileStatCard(
+                    background: .totalTripCardBG,
+                    icon: "map",
+                    title: "Total trips",
+                    value: "8"
+                )
+            }
+            .buttonStyle(.plain)
 
-            ProfileStatCard(
-                background: .nextTripCardBG,
-                icon: "calendar.badge.clock",
-                title: "Next trip",
-                value: "2"
-            )
+            NavigationLink {
+                TripsListView(initialSegment: .nextTrips)
+            } label: {
+                ProfileStatCard(
+                    background: .nextTripCardBG,
+                    icon: "calendar.badge.clock",
+                    title: "Next trips",
+                    value: "2"
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
     private var settingsMenu: some View {
         VStack(spacing: 0) {
-            ProfileSettingsRow(
-                title: "Trips list",
-                trailingText: "Detail",
-                showChevron: true
-            )
+            NavigationLink {
+                TripsListView()
+            } label: {
+                ProfileSettingsRow(
+                    title: "Your trips",
+                    trailingText: "",
+                    showChevron: true
+                )
+            }
+            .buttonStyle(.plain)
 
             Divider()
 
@@ -107,11 +123,16 @@ struct ProfileView: View {
 
             Divider()
 
-            ProfileSettingsRow(
-                title: "Privacy & data",
-                trailingText: "Detail",
-                showChevron: true
-            )
+            NavigationLink {
+                        PrivacyDataView()
+                    } label: {
+                        ProfileSettingsRow(
+                            title: "Privacy & data",
+                            trailingText: "",
+                            showChevron: true
+                        )
+                    }
+                    .buttonStyle(.plain)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
@@ -237,13 +258,9 @@ struct HapticToggleRow: View {
     }
 }
 
-struct TripsListView: View {
-    var body: some View {
-        Text("Trips list")
-            .navigationTitle("Trips list")
-            .navigationBarTitleDisplayMode(.inline)
-    }
-}
+
+    
+
 
 struct PrivacyDataView: View {
     var body: some View {
