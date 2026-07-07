@@ -26,8 +26,9 @@ struct HomeView: View {
     @State var dynamicBoxSize: CGSize = .zero
     @State var isDynamicBoxExpanded = false
     @State var isTransitioningTopPanel = false
+    @State var isProfilePresented = false
     @State private var isKeyboardVisible = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
@@ -69,6 +70,11 @@ struct HomeView: View {
             .background(homeBackground)
             .navigationDestination(isPresented: $viewModel.isInvitationPresented) {
                 tripInvitationDestination
+            }
+            .sheet(isPresented: $isProfilePresented) {
+                ProfileView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
@@ -184,14 +190,23 @@ struct HomeView: View {
     }
     
     private var avatarView: some View {
-        ZStack {
-            Circle()
-                .frame(width: 120)
-                .foregroundColor(.white)
-                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
-            Image(.frame74)
-            Image(.avatar)
+        Button {
+            isProfilePresented = true
+        } label: {
+            ZStack {
+                Circle()
+                    .frame(width: 120)
+                    .foregroundColor(.white)
+                    .shadow(
+                        color: .init(hex: "#00C3FF").opacity(0.5),
+                        radius: 21
+                    )
+
+                Image(.frame74)
+                Image(.avatar)
+            }
         }
+        .buttonStyle(.plain)
     }
     
     private var greetingTextView: some View {
