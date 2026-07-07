@@ -7,8 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5FD9DE9B2FFCE76C0047FCF3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD3699F2FF265E400B103BD /* WidgetKit.framework */; };
+		5FD9DE9C2FFCE76C0047FCF3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD369A12FF265E500B103BD /* SwiftUI.framework */; };
+		5FD9DEAD2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C55095FF2FFB9056003A047B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C55095FE2FFB9056003A047B /* Lottie */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5FD9DEAB2FFCE76C0047FCF3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8CF43A2D2FF2497200061915 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5FD9DE992FFCE76C0047FCF3;
+			remoteInfo = OmaweWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		8CD369B42FF265E600B103BD /* Embed Foundation Extensions */ = {
@@ -17,6 +30,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				5FD9DEAD2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -24,6 +38,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OmaweWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CD3699F2FF265E400B103BD /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8CD369A12FF265E500B103BD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -37,11 +52,21 @@
 			);
 			target = 8CF43A342FF2497200061915 /* Omawe */;
 		};
+		5FD9DEB12FFCE76C0047FCF3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		8CD369A32FF265E500B103BD /* OmaweWidget */ = {
+		5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5FD9DEB12FFCE76C0047FCF3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */,
+			);
 			path = OmaweWidget;
 			sourceTree = "<group>";
 		};
@@ -56,6 +81,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5FD9DE972FFCE76C0047FCF3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD9DE9C2FFCE76C0047FCF3 /* SwiftUI.framework in Frameworks */,
+				5FD9DE9B2FFCE76C0047FCF3 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8CF43A322FF2497200061915 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -80,7 +114,7 @@
 			isa = PBXGroup;
 			children = (
 				8CF43A372FF2497200061915 /* Omawe */,
-				8CD369A32FF265E500B103BD /* OmaweWidget */,
+				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
 				8CD3699E2FF265E400B103BD /* Frameworks */,
 				8CF43A362FF2497200061915 /* Products */,
 			);
@@ -90,6 +124,7 @@
 			isa = PBXGroup;
 			children = (
 				8CF43A352FF2497200061915 /* Omawe.app */,
+				5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -97,6 +132,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5FD9DEAE2FFCE76C0047FCF3 /* Build configuration list for PBXNativeTarget "OmaweWidgetExtension" */;
+			buildPhases = (
+				5FD9DE962FFCE76C0047FCF3 /* Sources */,
+				5FD9DE972FFCE76C0047FCF3 /* Frameworks */,
+				5FD9DE982FFCE76C0047FCF3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
+			);
+			name = OmaweWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = OmaweWidgetExtension;
+			productReference = 5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		8CF43A342FF2497200061915 /* Omawe */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8CF43A402FF2497300061915 /* Build configuration list for PBXNativeTarget "Omawe" */;
@@ -109,6 +166,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				5FD9DEAC2FFCE76C0047FCF3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8CF43A372FF2497200061915 /* Omawe */,
@@ -134,6 +192,9 @@
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					5FD9DE992FFCE76C0047FCF3 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 					8CF43A342FF2497200061915 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -157,11 +218,19 @@
 			projectRoot = "";
 			targets = (
 				8CF43A342FF2497200061915 /* Omawe */,
+				5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5FD9DE982FFCE76C0047FCF3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8CF43A332FF2497200061915 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -172,6 +241,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5FD9DE962FFCE76C0047FCF3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8CF43A312FF2497200061915 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -181,7 +257,85 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5FD9DEAC2FFCE76C0047FCF3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */;
+			targetProxy = 5FD9DEAB2FFCE76C0047FCF3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		5FD9DEAF2FFCE76C0047FCF3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = C338C32CCY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OmaweWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OmaweWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exboyfriends.omaweapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Omawe Widget";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5FD9DEB02FFCE76C0047FCF3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = C338C32CCY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OmaweWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OmaweWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exboyfriends.omaweapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Omawe Widget";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		8CF43A3E2FF2497300061915 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -388,6 +542,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5FD9DEAE2FFCE76C0047FCF3 /* Build configuration list for PBXNativeTarget "OmaweWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD9DEAF2FFCE76C0047FCF3 /* Debug */,
+				5FD9DEB02FFCE76C0047FCF3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		8CF43A302FF2497200061915 /* Build configuration list for PBXProject "Omawe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -1,8 +1,8 @@
 //
 //  OmaweWidgetLiveActivityView.swift
-//  OmaweWidget
+//  OmaweWidgetExtension
 //
-//  Created by Gleenryan on 03/07/26.
+//  Created by Muhammad Bintang Al-Fath on 07/07/26.
 //
 
 import SwiftUI
