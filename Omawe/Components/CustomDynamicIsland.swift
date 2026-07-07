@@ -51,10 +51,12 @@ struct CustomDynamicIsland: View {
                         .stroke(borderColor, lineWidth: max(borderWidth, 1))
                 }
                 .frame(width: width + 10, height: height + 10)
+            
 
             Capsule(style: .continuous)
                 .fill(color)
                 .frame(width: width, height: height)
+                
         }
         .opacity(isContentVisible ? 0 : 1)
         .allowsHitTesting(!isContentVisible)
@@ -72,7 +74,7 @@ struct CustomDynamicIsland: View {
             .ignoresSafeArea()
 
         CustomDynamicIsland(
-            color: .black,
+            color: .yellow,
             borderWidth: 2,
             width: 126,
             height: 37,
