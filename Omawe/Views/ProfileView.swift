@@ -7,9 +7,23 @@
 
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var selectedAvatarFrame: AvatarFrameStyle = .dark
+    
+    private let trips = PlaceholderTrip.samples
+
+    private var totalTripsCount: Int {
+        trips.count
+    }
+
+    private var upcomingTripsCount: Int {
+        let today = Calendar.current.startOfDay(for: .now)
+        return trips.filter { $0.startDate >= today }.count
+    }
 
     var body: some View {
         
@@ -55,11 +69,11 @@ struct ProfileView: View {
                 .foregroundColor(.white)
                 .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
 
-            Image(.frame74)
+            Image(selectedAvatarFrame.image)
             Image(.avatar)
             
-            Button {
-                // edit avatar action later
+            NavigationLink {
+                EditProfileView(selectedAvatarFrame: $selectedAvatarFrame)
             } label: {
                 Image(systemName: "paintbrush")
                     .font(.title3)
@@ -81,7 +95,7 @@ struct ProfileView: View {
                     background: .totalTripCardBG,
                     icon: "map",
                     title: "Total trips",
-                    value: "8"
+                    value: "\(totalTripsCount)"
                 )
             }
             .buttonStyle(.plain)
@@ -93,7 +107,7 @@ struct ProfileView: View {
                     background: .nextTripCardBG,
                     icon: "calendar.badge.clock",
                     title: "Next trips",
-                    value: "2"
+                    value: "\(upcomingTripsCount)"
                 )
             }
             .buttonStyle(.plain)
@@ -139,6 +153,22 @@ struct ProfileView: View {
         .frame(width: 362)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+}
+
+enum AvatarFrameStyle: String, CaseIterable, Identifiable {
+    case dark
+    case light
+
+    var id: String { rawValue }
+
+    var image: ImageResource {
+        switch self {
+        case .dark:
+            return .darkAvatarFrame
+        case .light:
+            return .lightAvatarFrame
+        }
     }
 }
 
@@ -258,16 +288,215 @@ struct HapticToggleRow: View {
     }
 }
 
+struct EditProfileView: View {
+    @Binding var selectedAvatarFrame: AvatarFrameStyle
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var nickname = ""
+    @State private var dateOfBirth = Calendar.current.date(
+        from: DateComponents(year: 2005, month: 3, day: 26)
+    ) ?? .now
+    @State private var gender = ""
+    
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var selectedAvatarImage: Image?
+
+    var body: some View {
+        ZStack {
+            Image(.homeBackground)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+            
+
+            VStack(spacing: 28) {
+                ZStack {
+                    Circle()
+                        .frame(width: 120)
+                        .foregroundColor(.white)
+                        .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+
+                    Image(selectedAvatarFrame.image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 102)
+
+                    // selected photo does NOT persist yet
+                    
+                    if let selectedAvatarImage {
+                        selectedAvatarImage
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 72, height: 72)
+                            .clipShape(Circle())
+                    } else {
+                        Image(.avatar)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 72, height: 72)
+                    }
+                }
+                .padding(.top, 80)
+
+                Text("Hi Baeni")
+                    .font(.largeTitle())
+                    .fontWidth(.expanded)
+                    .fontWeight(.semibold)
+
+                PhotosPicker(
+                    selection: $selectedPhotoItem,
+                    matching: .images
+                ) {
+                    Label("Change image", systemImage: "photo")
+                        .font(.headline())
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 22)
+                        .frame(height: 46)
+                        .background(.black.opacity(0.08))
+                        .clipShape(Capsule())
+                }
+                .onChange(of: selectedPhotoItem) { _, newItem in
+                    Task {
+                        guard let data = try? await newItem?.loadTransferable(type: Data.self),
+                              let uiImage = UIImage(data: data) else {
+                            return
+                        }
+
+                        selectedAvatarImage = Image(uiImage: uiImage)
+                    }
+                }
+
+                Picker("", selection: $selectedAvatarFrame) {
+                    Text("Dark frame").tag(AvatarFrameStyle.dark)
+                    Text("Light frame").tag(AvatarFrameStyle.light)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 30)
+
+                profileInfoCard
+
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+        }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+            }
+        }
+    }
+
+    private var profileInfoCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Nickname")
+                    .font(.bodyText())
+
+                Spacer()
+
+                TextField("Nickname", text: $nickname)
+                    .font(.bodyText())
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(height: 56)
+
+            Divider()
+
+            DatePicker(
+                "Date of Birth",
+                selection: $dateOfBirth,
+                displayedComponents: .date
+            )
+            .font(.bodyText())
+            .frame(height: 56)
+            .tint(.cyan)
+
+            Divider()
+
+            HStack {
+                Text("Gender")
+                    .font(.bodyText())
+
+                Spacer()
+
+                Picker("Gender", selection: $gender) {
+                    Text("Female").tag("Female")
+                    Text("Male").tag("Male")
+                    Text("Other").tag("Other")
+                    Text("Prefer not to say").tag("Prefer not to say")
+                }
+                .pickerStyle(.menu)
+                .tint(.cyan)
+            }
+            .frame(height: 56)
+        }
+        .padding(.horizontal, 18)
+        .frame(width: 362)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+}
+
+struct EditProfileRow: View {
+    let title: String
+    let value: String
+    
+    
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.bodyText())
+
+            Spacer()
+
+            Text(value)
+                .font(.bodyText())
+                .foregroundStyle(.secondary)
+        }
+        .frame(height: 56)
+    }
+}
+
 
     
 
 
 struct PrivacyDataView: View {
     var body: some View {
-        Text("Privacy & data")
-            .navigationTitle("Privacy & data")
-            .navigationBarTitleDisplayMode(.inline)
+        
+        ZStack {
+            Image(.homeBackground)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+            VStack {
+                
+                //Spacer()
+                
+                Text("At Omawe, privacy comes first. Your location is only shared with the friends you choose and only for the duration of an active trip. Once the trip ends, location sharing automatically stops. \n\n We collect only the information necessary to provide core features such as real-time trip tracking, arrival updates, and route coordination. We do not sell personal data or use precise location for advertising purposes.\n \n Users have full control over their privacy: \n • Start or stop location sharing at any time.\n • Share location only with invited trip members.\n • Remove yourself from a trip whenever you want.\n • Manage notification and location permissions in the app.\n\n All communication is ensured a safe and reliable group travel experience.")
+
+                    .padding()
+                    .padding(.top, 70)
+                    
+                Spacer()
+                
+            }
+            
+        }
+        .navigationTitle("Privacy & data")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        
     }
+    
 }
 
 #Preview {

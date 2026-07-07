@@ -11,30 +11,32 @@ import SwiftUI
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    let trip: TripModel
+    let trip: PlaceholderTrip
     
     var body: some View {
         NavigationStack{
             ZStack {
             
-                Image(.tripDetailsSheetBG)
+                Image(backgroundImage)
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
                 
                 VStack {
                     tripDateCapsule
-                        .padding(.top, 40)
+                        .padding(.top, 60)
                     
                     Text(trip.name)
                         .font(.title1())
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .frame(height: 68, alignment: .center)
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
                     
-                    Text("by @\(trip.ownerUserID)")
+                    Text("by @\(trip.ownerUsername)")
                         .font(.caption1())
                         .padding(.top, 5)
                     
@@ -51,46 +53,52 @@ struct ProfileTripDetailsView: View {
                     
                     //Spacer()
                     
-                    Text("Event Date")
-                        .font(.headline())
-                        .padding(.top, 40)
-                        .foregroundStyle(.gray)
-                    Text(formattedTripDate)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        
+                    VStack(spacing: 28) {
 
-                        //.padding(.top, 5)
+                        VStack(spacing: 8) {
+                            Text("Event Date")
+                                .font(.headline())
+                                .foregroundStyle(.gray)
 
-                    Text("Meet Time")
-                        .font(.headline())
-                        .padding(.top, 40)
-                        .foregroundStyle(.gray)
-                    Text(formattedMeetTime)
-                        .font(.title3())
-                        .fontWidth(.expanded)
+                            Text(formattedTripDate)
+                                .font(.title3())
+                                .fontWidth(.expanded)
+                        }
+
+                        VStack(spacing: 8) {
+                            Text("Meet Time")
+                                .font(.headline())
+                                .foregroundStyle(.gray)
+
+                            Text(formattedMeetTime)
+                                .font(.title3())
+                                .fontWidth(.expanded)
+                        }
+                    }
+                    .padding(.top, 40)
                     
-                    Text("Location")
-                        .font(.headline())
-                        .padding(.top, 110)
-                        .foregroundStyle(.gray)
-                    Text(trip.locationName)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: 270)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 3)
-                    Text(trip.locationAddress ?? "")
-                        .font(.caption2)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: 270)
-                        .multilineTextAlignment(.center)
-                    
-                    locationNoteCapsule
-                        .padding(.top, 20)
+                    VStack(spacing: 6) {
+
+                        Text("Location")
+                            .font(.headline())
+                            .foregroundStyle(.gray)
+
+                        Text(trip.locationName)
+                            .font(.title3())
+                            .fontWidth(.expanded)
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+
+                        Text(trip.locationAddress)
+                            .font(.caption2())
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 270)
+
+                        locationNoteCapsule
+                            .padding(.top, 14)
+                    }
+                    .padding(.top, 80)
                     
                     HStack {
                         Text("#Code")
@@ -99,15 +107,16 @@ struct ProfileTripDetailsView: View {
                             .foregroundStyle(.white)
                             
                         Spacer()
-                        Text(trip.invitationCode ?? "")
+                        Text(trip.invitationCode)
                             .font(.button())
                             .fontWidth(.expanded)
                             .foregroundStyle(.white)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 40)
                     
-                    Spacer()
+                    //Spacer()
                 }
                 
                 
@@ -120,12 +129,12 @@ struct ProfileTripDetailsView: View {
     }
     
     private var tripDateCapsule: some View {
-        Text("The trip took place on \(formattedTripDate)")
+        Text(tripDateCapsuleText)
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(tripDateCapsuleTextColor)
             .padding(.horizontal, 18)
             .frame(height: 36)
-            .background(.black.opacity(0.05))
+            .background(tripDateCapsuleBackground)
             .clipShape(Capsule())
     }
     
@@ -148,7 +157,7 @@ struct ProfileTripDetailsView: View {
     }
     
     private var locationNoteCapsule: some View {
-        Text(trip.locationNote ?? "No note provided.")
+        Text(trip.locationNote)
             .font(.subheadline)
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
@@ -156,6 +165,37 @@ struct ProfileTripDetailsView: View {
             .frame(maxWidth: 250)
             .background(.white.opacity(0.25))
             .clipShape(Capsule())
+    }
+    
+    // DATE CAPSULE LOGIC
+    private var hasTripPassed: Bool {
+        trip.startDate < Calendar.current.startOfDay(for: .now)
+    }
+
+    private var tripDateCapsuleText: String {
+        if hasTripPassed {
+            return "This trip took place on \(formattedTripDate)"
+        } else {
+            return "This trip is scheduled for \(formattedTripDate)"
+        }
+    }
+
+    private var tripDateCapsuleBackground: Color {
+        hasTripPassed
+        ? .black.opacity(0.05)
+        : .green
+    }
+
+    private var tripDateCapsuleTextColor: Color {
+        hasTripPassed
+        ? .secondary
+        : .white
+    }
+    // DATE CAPSULE LOGIC END
+    
+    // IMAGE CHANGE LOGIC
+    private var backgroundImage: ImageResource {
+        hasTripPassed ? .tripDetailsSheetBG : .upcomingTripDetailsSheetBG
     }
 }
 
@@ -198,32 +238,10 @@ struct TripParticipant: Identifiable {
 
 
 
-#Preview("Trip details") {
+#Preview {
     NavigationStack {
         ProfileTripDetailsView(
-            trip: TripModel(
-                name: "Kuta Sunset Surf and Chill",
-                startDate: Calendar.current.date(
-                    from: DateComponents(year: 2026, month: 6, day: 30)
-                ) ?? .now,
-                meetTime: Calendar.current.date(
-                    from: DateComponents(hour: 17, minute: 0)
-                ) ?? .now,
-                locationName: "Toko Kopi Jaya, Kuta",
-                locationAddress: "Jl. Dewi Sri No. 99X, Legian, Kec. Kuta, Kabupaten Badung, Bali 80361",
-                locationNote: "Luat's House • Room 222",
-                locationDisplayName: "Toko Kopi Jaya, Kuta",
-                ownerUserID: "Bintang",
-                memberIdentifiers: [
-                    "user-1",
-                    "user-2",
-                    "user-3",
-                    "user-4",
-                    "user-5",
-                    "user-6"
-                ],
-                invitationCode: "1A6B7K"
-            )
+            trip: .samples.first!
         )
     }
 }

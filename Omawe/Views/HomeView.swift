@@ -71,15 +71,6 @@ var body: some View {
                     
                     Spacer()
                     
-//                    ZStack {
-//                        Circle()
-//                            .frame(width: 120)
-//                            .foregroundColor(.white)
-//                            .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
-//                        Image(.frame74)
-//                        Image(.avatar)
-//                    }
-                    
                     Button {
                         isProfilePresented = true
                     } label: {
