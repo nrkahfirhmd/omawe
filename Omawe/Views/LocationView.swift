@@ -9,25 +9,39 @@ import SwiftUI
 import MapKit
 
 struct LocationView: View {
-    @State private var camera: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(
-                latitude: -8.748,
-                longitude: 115.167
-            ),
-            span: MKCoordinateSpan(
-                latitudeDelta: 0.12,
-                longitudeDelta: 0.12
+    @State private var camera: MapCameraPosition = .userLocation(
+        fallback: .region(
+            MKCoordinateRegion(
+                center: CLLocationCoordinate2D(
+                    latitude: -8.748,
+                    longitude: 115.167
+                ),
+                span: MKCoordinateSpan(
+                    latitudeDelta: 0.12,
+                    longitudeDelta: 0.12
+                )
             )
         )
     )
     @State private var isHeaderExpanded = false
+    private let locationService = LocationService()
 
     var body: some View {
         ZStack {
             // MARK: Map
-            Map(position: $camera)
-                .ignoresSafeArea()
+            Map(position: $camera) {
+                UserAnnotation()
+            }
+            .mapControls {
+                MapUserLocationButton()
+            }
+            .ignoresSafeArea()
+            .task {
+                // Map's built-in user-location dot/tracking needs authorization
+                // requested at least once — reuses the same LocationService
+                // wrapper LOC-2/HomeViewModel use, not a bare CLLocationManager call.
+                locationService.requestWhenInUseAuthorization()
+            }
 
             // MARK: Overlay
             VStack {

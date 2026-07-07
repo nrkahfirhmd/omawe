@@ -6,16 +6,32 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct OnTripView: View {
+    let trip: Trip
+    var participantCount: Int = 1
+
+    private var shortOwnerID: String {
+        String(trip.ownerID.recordName.suffix(6))
+    }
+
+    private var subtitle: String {
+        [
+            "by @\(shortOwnerID)",
+            trip.startDate.formatted(.dateTime.day().month(.twoDigits).year()),
+            trip.startDate.formatted(date: .omitted, time: .shortened)
+        ].joined(separator: " • ")
+    }
+
     var body: some View {
         DynamicBox(
             theme: Theme.themeTertiary,
             icon: "",
-            title: "Ex-boyfriends Celebration",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
+            title: trip.title.isEmpty ? "Untitled trip" : trip.title,
+            subtitle: subtitle,
             helperText: "",
-            footerTitle: "You are in Bintang's Trip"
+            footerTitle: "You're on this trip"
         ) {
 //            ZStack {
 //                GIFView(name: "on_trip")
@@ -55,19 +71,19 @@ struct OnTripView: View {
                 }
                 
                 VStack(spacing: 12) {
-                    Label("Toko Kopi Jaya, Kuta", systemImage: "location")
+                    Label(trip.destination.isEmpty ? "Location unavailable" : trip.destination, systemImage: "location")
                         .font(.caption1().bold())
-                    
-                    HeaderStats()
-                    
-                    Button {
-                        
+
+                    HeaderStats(peopleCount: participantCount)
+
+                    NavigationLink {
+                        LocationView()
                     } label: {
                         ZStack {
                             Capsule()
                                 .foregroundStyle(.ultraThinMaterial)
                                 .frame(width: .infinity, height: 50)
-                            
+
                             Label("View on Map", systemImage: "map")
                                 .font(.button())
                         }
@@ -86,21 +102,25 @@ struct OnTripView: View {
 }
 
 private struct HeaderStats: View {
+    var peopleCount: Int = 1
+
     var body: some View {
         HStack(spacing: 0) {
-            stat(title: "People", value: "12", color: .omawePrimary)
+            stat(title: "People", value: "\(peopleCount)", color: .omawePrimary)
 
             Divider()
                 .frame(height: 40)
                 .background(Color.white)
 
-            stat(title: "ETA", value: "11:00", color: .yellow)
+            // ETA/distance need TripStatusViewModel's ETA math (Sprint 2 scope,
+            // not built yet) — placeholder rather than fabricated numbers.
+            stat(title: "ETA", value: "--", color: .yellow)
 
             Divider()
                 .frame(height: 40)
                 .background(Color.white)
-            
-            stat(title: "Distance", value: "15km", color: .yellow)
+
+            stat(title: "Distance", value: "--", color: .yellow)
         }
     }
 
@@ -122,5 +142,21 @@ private struct HeaderStats: View {
 }
 
 #Preview {
-    OnTripView()
+    NavigationStack {
+        OnTripView(
+            trip: Trip(
+                id: CKRecord.ID(recordName: "dummy-trip"),
+                title: "Ex-boyfriends Celebration",
+                destination: "Toko Kopi Jaya, Kuta",
+                startDate: .now,
+                endDate: .now,
+                ownerID: CKRecord.ID(recordName: "Bintang"),
+                invitationCode: "1A6B7K",
+                status: .active,
+                createdAt: .now,
+                updatedAt: .now
+            ),
+            participantCount: 12
+        )
+    }
 }

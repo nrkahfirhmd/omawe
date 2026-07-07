@@ -60,44 +60,62 @@ struct TripsListView: View {
 //        }
 //    }
 
-    var body: some View {
-        ZStack {
-            Image(.homeBackground)
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+    /// A trip in progress takes over this screen entirely — no point browsing
+    /// the full trip list while one is already active.
+    private var activeTrip: Trip? {
+        homeViewModel.trips.first { $0.status == .active }
+    }
 
-            VStack(spacing: 24) {
-                Picker("", selection: $selectedSegment) {
-                    ForEach(TripListSegment.allCases) { segment in
-                        Text(segment.title)
-                            .tag(segment)
+    var body: some View {
+        Group {
+            if let activeTrip {
+                OnTripView(
+                    trip: activeTrip,
+                    participantCount: max(
+                        homeViewModel.participants.filter { $0.tripID == activeTrip.id }.count,
+                        1
+                    )
+                )
+            } else {
+                ZStack {
+                    Image(.homeBackground)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 24) {
+                        Picker("", selection: $selectedSegment) {
+                            ForEach(TripListSegment.allCases) { segment in
+                                Text(segment.title)
+                                    .tag(segment)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 120)
+
+                        tripsMenu
+
+                        Spacer()
+                    }
+                    .navigationTitle("Your trips")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .presentationBackground(.clear)
+                    .task {
+                        do {
+                            trips = try await tripService.fetchOwnedTrips()
+                        } catch {
+                            print("Failed to fetch trips: \(error)")
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 24)
-                .padding(.top, 120)
-
-                tripsMenu
-
-                Spacer()
-            }
-            .navigationTitle("Your trips")
-            .navigationBarTitleDisplayMode(.inline)
-            .presentationBackground(.clear)
-            .task {
-                do {
-                    trips = try await tripService.fetchOwnedTrips()
-                } catch {
-                    print("Failed to fetch trips: \(error)")
-                }
+                .searchable(
+                    text: $searchText,
+                    placement: .toolbar,
+                    prompt: "Search trips..."
+                )
             }
         }
-        .searchable(
-            text: $searchText,
-            placement: .toolbar,
-            prompt: "Search trips..."
-        )
         .task {
             await homeViewModel.loadTrips()
         }
