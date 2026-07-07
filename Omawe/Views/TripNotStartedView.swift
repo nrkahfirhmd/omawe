@@ -144,7 +144,7 @@ struct StartTripButton: View {
                 .overlay(
                     Capsule()
                         .strokeBorder(
-                            Color(red: 0.4, green: 0.85, blue: 0.9),
+                            Theme.primarySoft,
                             lineWidth: 2
                         )
                         .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)

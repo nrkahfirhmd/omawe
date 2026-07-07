@@ -54,7 +54,14 @@ struct TripStatusDetailView: View {
                                 TripStatusPageContentView(
                                     trip: trip,
                                     members: memberDisplays(for: trip),
-                                    totalTripCount: trips.count
+                                    totalTripCount: trips.count,
+                                    subtitle: [
+                                        ownerDisplayName(for: trip),
+                                        trip.startDate.formatted(.dateTime.day().month(.abbreviated).year()),
+                                        trip.meetTime.formatted(date: .omitted, time: .shortened)
+                                    ]
+                                    .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                                    .joined(separator: " • ")
                                 )
                                 .tag(index)
                             }
@@ -153,7 +160,8 @@ private struct TripStatusPageContentView: View {
     let trip: Trip
     let members: [TripStatusMemberDisplay]
     let totalTripCount: Int
-
+    let subtitle: String
+    
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
             PeopleOrbitPerson(
@@ -187,7 +195,19 @@ private struct TripStatusPageContentView: View {
             HStack(spacing: 12) {
                 StartTripButton()
 
-                Button {
+                NavigationLink {
+                    TripDetailView(
+                        trip: trip,
+                        subtitle: subtitle,
+                        members: members.map {
+                            TripDetailMember(
+                                id: $0.userID,
+                                name: displayName(for: $0),
+                                isOwner: $0.userID == trip.ownerUserID
+                            )
+                        }
+                    )
+                    .navigationBarBackButtonHidden(true)
                 } label: {
                     Image(systemName: "list.bullet.indent")
                         .font(.largeTitle)
@@ -275,4 +295,43 @@ private struct TripStatusPageContentView: View {
 
         return initials.isEmpty ? "?" : initials.uppercased()
     }
+}
+
+// MARK: - Preview
+#Preview {
+    let container: ModelContainer = {
+        let schema = Schema([TripModel.self, TripMember.self, UserProfile.self])
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try! ModelContainer(for: schema, configurations: config)
+    }()
+    
+    let mockTrip = TripModel(
+        name: "Weekend Bali Trip",
+        startDate: Date(),
+        meetTime: Date(),
+        locationName: "Canggu Beach",
+        ownerUserID: "user_owner_id",
+        memberIdentifiers: ["user_owner_id", "user_member_1", "user_member_2"]
+    )
+    
+    let mockMembers = [
+        TripMember(tripID: mockTrip.id, userID: "user_owner_id", role: "owner"),
+        TripMember(tripID: mockTrip.id, userID: "user_member_1", role: "member"),
+        TripMember(tripID: mockTrip.id, userID: "user_member_2", role: "member")
+    ]
+    
+    let mockUserProfiles = [
+        UserProfile(userID: "user_owner_id"),
+        UserProfile(userID: "user_member_1"),
+        UserProfile(userID: "user_member_2")
+    ]
+    
+    return TripStatusDetailView(
+        trips: [mockTrip],
+        members: mockMembers,
+        userProfiles: mockUserProfiles,
+        selectedTripIndex: .constant(0),
+        onClose: {}
+    )
+    .modelContainer(container)
 }

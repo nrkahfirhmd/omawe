@@ -6,22 +6,33 @@
 //
 
 import SwiftUI
+import SwiftData
+
+struct TripDetailMember: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let isOwner: Bool
+}
 
 // MARK: - Trip Detail View
 struct TripDetailView: View {
-    var trip: TripData
-    var members: [String]
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    var trip: TripModel
+    var subtitle: String
+    var members: [TripDetailMember]
     @State private var currentMemberPage = 0
     @State private var isEditing = false
-    @State private var editableMembers: [String] = []
+    @State private var editableMembers: [TripDetailMember] = []
+    @State private var showDeleteConfirmation = false
     
-    private let membersPerPage = 6
+    private let membersPerPage = 5
     
-    private var displayMembers: [String] {
+    private var displayMembers: [TripDetailMember] {
         isEditing ? editableMembers : members
     }
     
-    private var memberPages: [[String]] {
+    private var memberPages: [[TripDetailMember]] {
         let source = displayMembers
         guard !source.isEmpty else { return [[]] }
         return stride(from: 0, to: source.count, by: membersPerPage).map {
@@ -31,63 +42,99 @@ struct TripDetailView: View {
     
     var body: some View {
         ZStack(alignment: .top) {
-            Color.white
-                .ignoresSafeArea()
+            // Background
+            detailStageBackground
             
-            VStack(spacing: 0) {
-                DynamicBox(
-                    theme: trip.theme,
-                    title: trip.title,
-                    subtitle: isEditing
-                        ? trip.subtitle.replacingOccurrences(of: "by @Bintang • ", with: "by @Bintang • ")
-                        : "by @Bintang",
-                    helperText: "Swipe to see other friends",
-                    footerTitle: isEditing ? "Edit your trip" : "Trip detail"
-                ) {
-                    VStack(spacing: 0) {
-                        // People count
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("\(displayMembers.count)")
-                                .font(.largeTitle)
-                                .fontWeight(.semibold)
-                                .fontWidth(.expanded)
-                                .foregroundStyle(trip.theme.gradientSoft)
-                                .contentTransition(.numericText())
-                            Text("People")
-                                .font(.caption)
-                                .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-                        }
-                        .padding(.bottom, 12)
+            VStack() {
+                
+                // Top Custom Dynamic Island (Glowing Pill)
+                CustomDynamicIsland(
+                    color: .black,
+                    borderColor: Theme.secondarySoft,
+                    fillColor: .black
+                )
+                .padding(.top, 8)
+                .padding(.bottom, 39)
+                .fixedSize(horizontal: false, vertical: true)
+                
+                VStack(spacing:29){
+                    
+                    // Location Card
+                    locationCard
+                    //                    .padding(.top, 44)
+//                        .padding(.horizontal, 16)
+//                        .padding(.top, 39)
+                    
+                    
+                    // Title, Subtitle and (optional) Trash Button
+                HStack(alignment: .top) {
+                    VStack(alignment: isEditing ? .leading : .center, spacing: 4) {
+                        Text(trip.name.isEmpty ? "Untitled trip" : trip.name.replacingOccurrences(of: "\n", with: " "))
+                            .font(.title2.weight(.bold))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(Theme.themeSecondary.gradientSoft)
+                            .multilineTextAlignment(isEditing ? .leading : .center)
+                            .lineLimit(2)
                         
-                        // Location + Date
-                        HStack(spacing: 16) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "location.circle.fill")
-                                Text(trip.location)
-                            }
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                Text(trip.subtitle
-                                    .replacingOccurrences(of: "by @Bintang • ", with: "")
-                                    .replacingOccurrences(of: "by @Kahfi • ", with: "")
-                                    .replacingOccurrences(of: "by @Ryan • ", with: "")
-                                )
-                            }
+                        Text("You are the group creator")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    
+                    if isEditing {
+                        Spacer()
+                        Button {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.08))
+                                .clipShape(Circle())
                         }
-                        .font(.caption.bold())
-                        .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-                        .padding(.bottom, 20)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: isEditing ? .leading : .center)
+                .padding(.horizontal, 24)
+
+                    
+                    VStack(spacing: 0){
+                        
+                        // People Count
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(displayMembers.count)")
+                        .font(.system(size: 64, weight: .semibold))
+                        .fontWidth(.expanded)
+                        .foregroundStyle(Theme.themeSecondary.gradientSoft)
+                        .contentTransition(.numericText())
+                    Text("People")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .padding(.top, 8)
+                
+                // Date & Time
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                    Text(subtitle
+                        .replacingOccurrences(of: "by @Bintang • ", with: "")
+                        .replacingOccurrences(of: "by @Kahfi • ", with: "")
+                        .replacingOccurrences(of: "by @Ryan • ", with: "")
+                    )
+                }                  
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.bottom, 24)
                         
                         // Paginated members list
                         PaginatedMemberList(
                             pages: memberPages,
                             currentPage: $currentMemberPage,
                             isEditing: isEditing,
-                            onRemove: { name in
+                            onRemove: { member in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    editableMembers.removeAll { $0 == name }
-                                    // Fix page index if current page no longer exists
+                                    editableMembers.removeAll { $0.id == member.id }
                                     let maxPage = max(0, memberPages.count - 1)
                                     if currentMemberPage > maxPage {
                                         currentMemberPage = maxPage
@@ -97,31 +144,40 @@ struct TripDetailView: View {
                         )
                         
                         // Page indicator
+                        
                         MemberPageIndicator(
                             totalPages: memberPages.count,
                             currentPage: currentMemberPage
                         )
-                        .padding(.top, 14)
-                        .padding(.bottom, 8)
+                        .padding(.top, 16)
                     }
+                    
+                    
+                    
                 }
-                .animation(.smooth(duration: 0.3), value: isEditing)
+                .padding(.horizontal, 16)
+                
                 
                 Spacer()
                 
                 // Bottom buttons
                 if isEditing {
                     EditBottomBar(
-                        onDelete: {
-                            // Delete trip action
+                        onCancel: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isEditing = false
+                            }
                         },
                         onSave: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                trip.memberIdentifiers = editableMembers.map { $0.id }
+                                try? modelContext.save()
                                 isEditing = false
                             }
                         }
                     )
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     TripDetailBottomBar(
@@ -130,42 +186,126 @@ struct TripDetailView: View {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isEditing = true
                             }
+                        },
+                        onBack: {
+                            dismiss()
                         }
                     )
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea()
+        .navigationBarBackButtonHidden(true)
+        .alert("Delete Trip", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                modelContext.delete(trip)
+                try? modelContext.save()
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete this trip? This action cannot be undone.")
+        }
+    }
+    
+    // MARK: - Subviews
+    private var detailStageBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [.black, Theme.secondaryBox],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
+            PlusPattern()
+                .mask(
+                    LinearGradient(
+                        colors: [.clear, .white],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+//            
+            DetailSpotlightShape()
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.06), .white.opacity(0.01), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .blur(radius: 10)
+                .padding(.horizontal, 76)
+                .offset(y: 64)
+        }
+        .ignoresSafeArea()
+    }
+    
+    private var locationTitleText: String {
+        trip.locationName.isEmpty ? "Location" : trip.locationName
+    }
+    
+    private var locationAddressText: String {
+        trip.locationAddress ?? "No address available"
+    }
+    
+    private var locationCard: some View {
+        HStack(spacing: 14) {
+            // Icon Box
+            
+            Image(systemName: "location.app.fill")
+                .font(.largeTitle)
+                .foregroundStyle(Theme.primary)
+            
+            
+            VStack(alignment: .leading, spacing: 0) {
+                Text(locationTitleText)
+                    .font(.body)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                
+                Text(locationAddressText)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color(red: 242/255, green: 242/255, blue: 247/255).opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
     }
 }
 
 // MARK: - Paginated Member List
 struct PaginatedMemberList: View {
-    var pages: [[String]]
+    var pages: [[TripDetailMember]]
     @Binding var currentPage: Int
     var isEditing: Bool
-    var onRemove: ((String) -> Void)?
+    var onRemove: ((TripDetailMember) -> Void)?
     
     var body: some View {
         TabView(selection: $currentPage) {
             ForEach(pages.indices, id: \.self) { pageIndex in
-                VStack(spacing: 8) {
-                    ForEach(Array(pages[pageIndex].enumerated()), id: \.offset) { _, name in
+                VStack(spacing: 12) {
+                    ForEach(pages[pageIndex]) { member in
                         MemberRow(
-                            name: name,
+                            member: member,
                             isEditing: isEditing,
-                            onRemove: { onRemove?(name) }
+                            onRemove: { onRemove?(member) }
                         )
                     }
                 }
-                .padding(.horizontal, 20)
+
                 .tag(pageIndex)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: 360)
+        .frame(height: 300)
     }
 }
 
@@ -191,29 +331,33 @@ struct MemberPageIndicator: View {
 
 // MARK: - Member Row
 struct MemberRow: View {
-    var name: String
+    var member: TripDetailMember
     var isEditing: Bool = false
     var onRemove: (() -> Void)?
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
+            // Avatar Placeholder
             Circle()
-                .fill(Color.gray.opacity(0.4))
-                .frame(width: 38, height: 38)
+                .fill(Color(hex: "F2F2F7"))
+                .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.8))
+                    Text(String(member.name.prefix(1)))
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color.orange.opacity(0.8))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
             
-            Text(name)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
+            Text(member.name)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.9))
             
             Spacer()
             
-            if isEditing {
+            if isEditing && !member.isOwner {
                 Button {
                     onRemove?()
                 } label: {
@@ -224,134 +368,160 @@ struct MemberRow: View {
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(Color(hex: "F2F2F7").opacity(0.1)) // Dark translucent pill
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 }
 
 // MARK: - Bottom Bar (View Mode)
 struct TripDetailBottomBar: View {
     var onEdit: () -> Void
+    var onBack: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
+            // Back Button
             Button {
-                // Back action
+                onBack()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .fontWeight(.semibold)
-                    Text("Back to Home")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                Image(systemName: "chevron.left")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(.black)
+                    .frame(width: 55, height: 55)
+                    .background(Color.white.opacity(0.7))
+                    .clipShape(Circle())
             }
             
+            // See Invitation Button
+            Button {
+            } label: {
+                HStack(spacing: 10) {
+                    
+                    Image(systemName:  "eyes")
+                        .font(.button())
+                }
+                
+                Text("See Invitation")
+                    .font(.button())
+                    .fontWidth(.expanded)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .foregroundStyle(.white )
+            .overlay {
+                Capsule()
+                    .stroke(Theme.secondary, lineWidth: 1.5)
+            }
+        
+            .glassEffect(.clear)
+            
+            // Edit Button
             Button {
                 onEdit()
             } label: {
-                Image(systemName: "pencil")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                Image(systemName: "pencil.line")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.black)
                     .frame(width: 55, height: 55)
-                    .background(Color(white: 0.08))
+                    .background(Color.white.opacity(0.7))
                     .clipShape(Circle())
             }
         }
-        .padding(.horizontal, 16)
     }
 }
 
 // MARK: - Bottom Bar (Edit Mode)
 struct EditBottomBar: View {
-    var onDelete: () -> Void
+    var onCancel: () -> Void
     var onSave: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
+            // Cancel Button
             Button {
-                onDelete()
+                onCancel()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "trash.fill")
-                    Text("Delete")
-                        .fontWeight(.semibold)
+                HStack(spacing: 8) {
+                    Image(systemName: "xmark")
+                        .font(.headline)
+                    Text("Cancel")
+                        .font(.headline.weight(.bold))
+                        .fontWidth(.expanded)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(16)
+                .foregroundStyle(.white )
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.secondary, lineWidth: 1.5)
+                }
+            
+                .glassEffect(.clear)
             }
             
+            // Save/Done Button
             Button {
                 onSave()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "checkmark")
-                        .fontWeight(.semibold)
-                    Text("Save")
-                        .fontWeight(.semibold)
+                        .font(.headline)
+                    Text("Done")
+                        .font(.headline.weight(.bold))
+                        .fontWidth(.expanded)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.05, green: 0.25, blue: 0.24),
-                            Color(red: 0.11, green: 0.35, blue: 0.32)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(
-                            Color(red: 0.4, green: 0.85, blue: 0.9),
-                            lineWidth: 1.5
-                        )
-                        .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.4), radius: 6)
-                )
+                .padding(16)
+                .foregroundStyle(.white )
+                .background(Color(hex: "007A94"))
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.secondary, lineWidth: 1.5)
+                }
+            
+                .glassEffect(.clear)
+                
+                
             }
         }
-        .padding(.horizontal, 16)
     }
 }
 
+// MARK: - Spotlight Shape
+fileprivate struct DetailSpotlightShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX - 65, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX + 65, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX + 700, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX - 700, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Preview
 #Preview {
     TripDetailView(
-        trip: TripData(
-            theme: Theme.themeSecondary,
-            icon: "balloon.2",
-            title: "Ex-Boyfriends\nCelebration!",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
-            people: 12,
-            location: "Toko Kopi Jaya, Kuta",
-            footerTitle: "Trip is not starting yet"
+        trip: TripModel(
+            name: "Ex-Boyfriends\nCelebration!",
+            startDate: Date(),
+            meetTime: Date(),
+            locationName: "Fore Kopi",
+            locationAddress: "Jl. Dewi Sri No.69, Legian, Kec...",
+            ownerUserID: "user_owner_id"
         ),
+        subtitle: "by @Bintang • 27/06/2026 • 11:30",
         members: [
-            "Gleen Ryan",
-            "Bintang",
-            "Kahfi",
-            "Sunny",
-            "Syed",
-            "Nguyen Minh Luat",
-            "Damar",
-            "Rizky",
-            "Aldo",
-            "Fajar",
-            "Dimas",
-            "Putra"
+            TripDetailMember(id: "1", name: "Gleen Ryan", isOwner: true),
+            TripDetailMember(id: "2", name: "Bintang", isOwner: false),
+            TripDetailMember(id: "3", name: "Kahfi", isOwner: false),
+            TripDetailMember(id: "4", name: "Syed", isOwner: false),
+            TripDetailMember(id: "5", name: "Nguyen Minh Luat", isOwner: false),
+            TripDetailMember(id: "6", name: "Damar", isOwner: false)
         ]
     )
 }
