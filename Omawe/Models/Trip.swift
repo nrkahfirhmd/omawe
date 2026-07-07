@@ -15,6 +15,7 @@ struct Trip : Identifiable, Hashable {
     var startDate: Date
     var endDate: Date
     let ownerID: CKRecord.ID
+    var ownerDisplayName: String?
     var invitationCode: String
     var createdAt: Date
     var updatedAt: Date

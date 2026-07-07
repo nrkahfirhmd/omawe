@@ -128,6 +128,7 @@ fileprivate struct CachedTrip: Codable {
     let startDate: Date
     let endDate: Date
     let ownerID: CachedCKRecordID
+    let ownerDisplayName: String?
     let invitationCode: String
     let createdAt: Date
     let updatedAt: Date
@@ -139,6 +140,7 @@ fileprivate struct CachedTrip: Codable {
         self.startDate = trip.startDate
         self.endDate = trip.endDate
         self.ownerID = CachedCKRecordID(id: trip.ownerID)
+        self.ownerDisplayName = trip.ownerDisplayName
         self.invitationCode = trip.invitationCode
         self.createdAt = trip.createdAt
         self.updatedAt = trip.updatedAt
@@ -152,6 +154,7 @@ fileprivate struct CachedTrip: Codable {
             startDate: startDate,
             endDate: endDate,
             ownerID: ownerID.toID(),
+            ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
             createdAt: createdAt,
             updatedAt: updatedAt

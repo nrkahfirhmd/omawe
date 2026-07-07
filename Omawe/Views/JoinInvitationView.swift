@@ -138,7 +138,7 @@ struct JoinInvitationView: View {
                         .lineLimit(2)
                         .padding(.bottom, 4)
                     
-                    Text("by @Bintang")
+                    Text("by @\(trip.ownerDisplayName ?? "Anonymous")")
                         .font(.caption1())
                         .foregroundStyle(Theme.primaryBox.opacity(0.72))
                         .padding(.bottom, 12)

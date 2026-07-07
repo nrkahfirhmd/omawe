@@ -220,20 +220,14 @@ struct TripInvitationView: View {
                         .padding(.bottom, 4)
                         .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
                     
-                    Text("by @Bintang")
+                    Text("by @\(UserSession.shared.displayName ?? "Anonymous")")
                         .font(.caption1())
                         .foregroundStyle(Theme.primaryBox.opacity(0.72))
                         .padding(.bottom, 12)
                     
                     HStack(spacing: -7) {
-                        invitationAvatar(initials: "B", tint: .orange)
-                        invitationAvatar(initials: "K", tint: .brown)
-                        invitationAvatar(initials: "A", tint: .yellow)
-                        
-                        Text("+3")
-                            .font(.headline())
-                            .foregroundStyle(.black.opacity(0.48))
-                            .padding(.leading, 18)
+                        let initials = UserSession.shared.displayName?.trimmingCharacters(in: .whitespacesAndNewlines).first.map { String($0).uppercased() } ?? "A"
+                        invitationAvatar(initials: initials, tint: .orange)
                     }
                 }
                 .padding(.bottom, 48)

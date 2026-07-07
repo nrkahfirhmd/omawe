@@ -13,7 +13,7 @@ struct OnTripView: View {
             theme: Theme.themeTertiary,
             icon: "",
             title: "Ex-boyfriends Celebration",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
+            subtitle: "by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30",
             helperText: "",
             footerTitle: "You are in Bintang's Trip"
         ) {

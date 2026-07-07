@@ -18,6 +18,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let startDate = "startDate"
         static let endDate = "endDate"
         static let ownerID = "ownerID"
+        static let ownerDisplayName = "ownerDisplayName"
         static let invitationCode = "invitationCode"
         static let createdAt = "createdAt"
         static let updatedAt = "updatedAt"
@@ -36,6 +37,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
         record[Field.startDate] = model.startDate as CKRecordValue
         record[Field.endDate] = model.endDate as CKRecordValue
         record[Field.ownerID] = model.ownerID.recordName as CKRecordValue
+        if let displayName = model.ownerDisplayName {
+            record[Field.ownerDisplayName] = displayName as CKRecordValue
+        }
         record[Field.invitationCode] = model.invitationCode as CKRecordValue
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
@@ -57,6 +61,8 @@ struct TripRecordMapper: CloudKitRecordMappable {
             throw CloudKitError.invalidRecord
         }
 
+        let ownerDisplayName = record[Field.ownerDisplayName] as? String
+
         return Trip(
             id: record.recordID,
             title: title,
@@ -64,6 +70,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
             startDate: startDate,
             endDate: endDate,
             ownerID: CKRecord.ID(recordName: ownerRecordName),
+            ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
             createdAt: createdAt,
             updatedAt: updatedAt

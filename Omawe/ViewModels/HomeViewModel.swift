@@ -110,6 +110,7 @@ class HomeViewModel {
                 startDate: createTripDraft.arrivalDate,
                 endDate: createTripDraft.arrivalDate,
                 ownerID: ownerID,
+                ownerDisplayName: UserSession.shared.displayName,
                 invitationCode: invitationCode,
                 createdAt: Date(),
                 updatedAt: Date()
@@ -125,7 +126,7 @@ class HomeViewModel {
                 id: nil,
                 tripID: tripID!,
                 userID: ownerID,
-                displayName: nil,
+                displayName: UserSession.shared.displayName,
                 role: .owner,
                 joinedAt: Date()
             )
@@ -226,7 +227,7 @@ class HomeViewModel {
             id: CKRecord.ID(recordName: UUID().uuidString, zoneID: tripID.zoneID),
             tripID: tripID,
             userID: currentUserID,
-            displayName: nil,
+            displayName: UserSession.shared.displayName,
             role: .member,
             joinedAt: Date()
         )
