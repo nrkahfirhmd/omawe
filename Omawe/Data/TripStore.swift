@@ -21,28 +21,31 @@ final class TripStore {
     
     var trips: [Trip] = []
     var participants: [Participant] = []
-    
+    var lastLoadErrorMessage: String?
+
     private let cacheFileName = "OmaweTripCache.json"
-    
+
     private init() {
         loadFromCache()
     }
-    
+
     func loadTrips() async {
         do {
             async let owned = tripService.fetchOwnedTrips()
             async let shared = sharingService.fetchSharedTrips()
-            
+
             let (ownedTrips, sharedTrips) = try await (owned, shared)
-            
+
             self.trips = (ownedTrips + sharedTrips).sorted {
                 $0.updatedAt > $1.updatedAt
             }
-            
+            lastLoadErrorMessage = nil
+
             await loadParticipants()
             saveToCache()
         } catch {
             print("[TripStore] Failed to load trips: \(error.localizedDescription)")
+            lastLoadErrorMessage = error.localizedDescription
         }
     }
     

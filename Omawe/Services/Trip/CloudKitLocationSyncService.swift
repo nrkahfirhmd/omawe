@@ -60,11 +60,17 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
                 inZoneWith: tripID.zoneID
             )
 
-            let samples = try result.matchResults.compactMap { _, matchResult -> LocationSample? in
+            let samples = result.matchResults.compactMap { _, matchResult -> LocationSample? in
                 switch matchResult {
                 case .success(let record):
-                    return try LocationRecordMapper.makeModel(from: record)
-                case .failure:
+                    do {
+                        return try LocationRecordMapper.makeModel(from: record)
+                    } catch {
+                        print("[CloudKitLocationSyncService] Skipping unreadable LocationSample record \(record.recordID.recordName): \(error)")
+                        return nil
+                    }
+                case .failure(let error):
+                    print("[CloudKitLocationSyncService] Match failure: \(error)")
                     return nil
                 }
             }

@@ -86,11 +86,20 @@ final class CloudKitTripService: TripServiceProtocol {
                     inZoneWith: zone.zoneID
                 )
 
-                let zoneTrips = try result.matchResults.compactMap { _, matchResult -> Trip? in
+                // A single unreadable record must not blank out every other
+                // trip in every other zone — decode failures are skipped,
+                // not propagated, so one bad/legacy record can't hide the rest.
+                let zoneTrips = result.matchResults.compactMap { _, matchResult -> Trip? in
                     switch matchResult {
                     case .success(let record):
-                        return try TripRecordMapper.makeModel(from: record)
-                    case .failure:
+                        do {
+                            return try TripRecordMapper.makeModel(from: record)
+                        } catch {
+                            print("[CloudKitTripService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                            return nil
+                        }
+                    case .failure(let error):
+                        print("[CloudKitTripService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
                         return nil
                     }
                 }

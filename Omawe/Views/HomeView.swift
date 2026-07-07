@@ -179,7 +179,10 @@ struct HomeView: View {
     }
     
     private var tripStatusSubtitle: String {
-        viewModel.trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more"
+        if let loadErrorMessage = viewModel.loadErrorMessage {
+            return "Couldn't load trips: \(loadErrorMessage)"
+        }
+        return viewModel.trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more"
     }
     
     // MARK: - Greeting / hint

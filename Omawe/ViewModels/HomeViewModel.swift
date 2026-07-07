@@ -39,6 +39,7 @@ class HomeViewModel {
 
     var trips: [Trip] { TripStore.shared.trips }
     var participants: [Participant] { TripStore.shared.participants }
+    var loadErrorMessage: String? { TripStore.shared.lastLoadErrorMessage }
 
     // MARK: - Create Trip Flow
 
