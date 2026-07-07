@@ -26,6 +26,7 @@ struct HomeView: View {
     @State var dynamicBoxSize: CGSize = .zero
     @State var isDynamicBoxExpanded = false
     @State var isTransitioningTopPanel = false
+    @State private var isKeyboardVisible = false
     
     var body: some View {
         NavigationStack {
@@ -43,6 +44,16 @@ struct HomeView: View {
             .onChange(of: viewModel.isInvitationPresented, handleInvitationPresentedChange)
             .onReceive(NotificationCenter.default.publisher(for: CloudKitShareAcceptanceBridge.notificationName)) { notification in
                 Task { await viewModel.acceptShare(from: notification) }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isKeyboardVisible = true
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isKeyboardVisible = false
+                }
             }
             .onOpenURL { url in
                 Task { await viewModel.acceptShare(from: url) }
@@ -313,8 +324,8 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.bottom, flowBottomInset)
-        .ignoresSafeArea()
+        .padding(.bottom, isKeyboardVisible ? 16 : flowBottomInset)
+        .ignoresSafeArea(.container)
     }
     
     private var nextStepButton: some View {
