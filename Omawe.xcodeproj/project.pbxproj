@@ -12,7 +12,9 @@
 		5FD9DE9C2FFCE76C0047FCF3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD369A12FF265E500B103BD /* SwiftUI.framework */; };
 		5FD9DEAD2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		622DC11819D4F9AAECA18B4E /* LocationCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E667E531EC1E31F658050D /* LocationCoreTests.swift */; };
+		C3ED5FF2E403302B0B7C7E45 /* LocationRecordMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */; };
 		C55095FF2FFB9056003A047B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C55095FE2FFB9056003A047B /* Lottie */; };
+		FBD44B255C0176440994FE05 /* CloudKitLocationSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,9 +53,11 @@
 		8CD3699F2FF265E400B103BD /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8CD369A12FF265E500B103BD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CloudKitLocationSyncServiceTests.swift; sourceTree = "<group>"; };
 		93EC5F4E1F6844858B882715 /* OmaweTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OmaweTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B6E667E531EC1E31F658050D /* LocationCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocationCoreTests.swift; path = LocationCoreTests.swift; sourceTree = "<group>"; };
+		B6E667E531EC1E31F658050D /* LocationCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationCoreTests.swift; sourceTree = "<group>"; };
 		E2178A4116A9D305DD17AC0F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationRecordMapperTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -164,8 +168,9 @@
 			children = (
 				93EC5F4E1F6844858B882715 /* OmaweTests.xctest */,
 				B6E667E531EC1E31F658050D /* LocationCoreTests.swift */,
+				ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */,
+				93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */,
 			);
-			name = OmaweTests;
 			path = OmaweTests;
 			sourceTree = "<group>";
 		};
@@ -310,6 +315,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				622DC11819D4F9AAECA18B4E /* LocationCoreTests.swift in Sources */,
+				C3ED5FF2E403302B0B7C7E45 /* LocationRecordMapperTests.swift in Sources */,
+				FBD44B255C0176440994FE05 /* CloudKitLocationSyncServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

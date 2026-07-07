@@ -8,6 +8,14 @@
 import Foundation
 import SwiftData
 
+// LOC-1 finding, handed to LOC-4: this model's SwiftData+CloudKit auto-mirror
+// (see the `cloudKitDatabase` config in OmaweApp.swift) writes into the
+// record owner's default private zone, not the trip's shared custom zone —
+// it has no path to other participants and cannot be the cross-device sync
+// transport (see CloudKitLocationSyncService). LOC-1 bypasses it with a
+// manual CKRecord save. LOC-4 should decide: disable CloudKit mirroring for
+// this model (move it to a local-only ModelConfiguration) or keep mirroring
+// and repurpose this type as a local offline cache only.
 @Model
 final class LocationUpdate {
     var id: UUID = UUID()
