@@ -28,10 +28,10 @@ struct JoinTripView: View {
                 VStack {
                     DynamicBox(
                         theme: Theme.themePrimary,
-                        icon: "number.square",
+                        icon: "rectangle.and.pencil.and.ellipsis",
                         title: "Invitation Code",
                         subtitle: "Enter the code from your invite",
-                        helperText: "6 characters, or paste a shared link",
+                        helperText: "6 characters to submit",
                         footerTitle: "Joining a trip"
                     ) {
                         VStack(spacing: 22) {
@@ -81,34 +81,6 @@ struct JoinTripView: View {
                     .buttonStyle(.plain)
                     .disabled(!canJoinTrip)
                     .animation(.spring(response: 0.34, dampingFraction: 0.88), value: canJoinTrip)
-
-                    Button {
-                        pasteShareLink()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "link")
-                                .font(.button())
-
-                            Text("Paste Link")
-                                .font(.button())
-                                .fontWidth(.expanded)
-                        }
-                        .foregroundStyle(isJoining ? Color.gray.opacity(0.55) : Color.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 37, style: .continuous)
-                                .stroke(
-                                    Color.omawePrimary.opacity(isJoining ? 0.35 : 0.95),
-                                    lineWidth: 1.5
-                                )
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .glassEffect(.clear)
-                    .padding(.horizontal, 12)
-                    .buttonStyle(.plain)
-                    .disabled(isJoining)
                 }
             }
         }

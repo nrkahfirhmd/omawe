@@ -14,11 +14,11 @@ import Lottie
 struct ThirdView: View {
     
     let onFinish: () -> Void
-
+    
     /// The authentication view model that handles the Sign in with Apple flow.
     /// Passed in from `OnboardingFlow` to keep business logic out of the view.
     @Bindable var viewModel: AuthenticationViewModel
-
+    
     var body: some View {
         ZStack {
             
@@ -38,7 +38,7 @@ struct ThirdView: View {
                     .foregroundStyle(Color.white.opacity(0.7))
             }
             .offset(y: -300)
-
+            
             
             LottieView {
                 try await DotLottieFile.named("ThirdView")
@@ -51,17 +51,17 @@ struct ThirdView: View {
             
             VStack {
                 VStack{
-                   
+                    
                     
                     Spacer ()
                     
                     VStack{
                         HStack {
-
+                            
                             Circle ()
                                 .fill(Color.gray.opacity(0.4))
                                 .frame(width: 8, height: 8)
-
+                            
                             Circle ()
                                 .fill(Color.gray.opacity(0.4))
                                 .frame(width: 8, height: 8)
@@ -106,38 +106,41 @@ struct ThirdView: View {
                     }
                 } label: {
                     ZStack {
-                        Text("   Continue with Apple")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .fontWidth(.expanded)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 22.5)
-                            .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
-                            .background(
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(stops: [
-                                            .init(color: Color(hex: "03B9D6"), location: 0.0),
-                                            .init(color: Color(hex: "7AE8FF"), location: 1),
-                                        ], startPoint: UnitPoint.top, endPoint: .bottom)
-                                    )
-                            )
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(
-                                        LinearGradient(stops: [
-                                            .init(color: Color(hex: "03B9D6"), location: 0.0),
-                                            .init(color: Color(hex: "7AE8FF"), location: 1),
-                                        ], startPoint: UnitPoint.trailing, endPoint: .leading),
-                                        lineWidth: 1
-                                    )
-                                    .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
-                            )
-                            .clipShape(Capsule())
-                            // Dim the button text when loading to indicate the button is busy.
-                            .opacity(viewModel.isLoading ? 0.5 : 1.0)
-
+                        HStack {
+                            Image(systemName: "apple.logo")
+                            Text("Continue with Apple")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .fontWidth(.expanded)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 22.5)
+                        .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
+                        .background(
+                            Capsule()
+                                .fill(
+                                    LinearGradient(stops: [
+                                        .init(color: Color(hex: "03B9D6"), location: 0.0),
+                                        .init(color: Color(hex: "7AE8FF"), location: 1),
+                                    ], startPoint: UnitPoint.top, endPoint: .bottom)
+                                )
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    LinearGradient(stops: [
+                                        .init(color: Color(hex: "03B9D6"), location: 0.0),
+                                        .init(color: Color(hex: "7AE8FF"), location: 1),
+                                    ], startPoint: UnitPoint.trailing, endPoint: .leading),
+                                    lineWidth: 1
+                                )
+                                .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
+                        )
+                        .clipShape(Capsule())
+                        // Dim the button text when loading to indicate the button is busy.
+                        .opacity(viewModel.isLoading ? 0.5 : 1.0)
+                        
                         // MARK: - Loading Indicator
                         // Shown on top of the button while the Apple Sign In sheet
                         // is being presented or the auth request is in progress.
@@ -156,7 +159,7 @@ struct ThirdView: View {
             .containerRelativeFrame(.horizontal) { width, _ in
                 width * 1
             }
-
+            
         }
         .background {
             Image("DarkBlueBackground")

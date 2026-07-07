@@ -79,6 +79,17 @@ struct HomeView: View {
             .navigationDestination(isPresented: $viewModel.isInvitationPresented) {
                 tripInvitationDestination
             }
+            .navigationDestination(item: $viewModel.joinPreviewTrip) { trip in
+                InvitationEnvelopeView(
+                    trip: trip,
+                    onJoinNow: {
+                        try await viewModel.confirmJoinTrip(trip: trip)
+                    },
+                    onDismiss: {
+                        viewModel.joinPreviewTrip = nil
+                    }
+                )
+            }
             .sheet(isPresented: $isProfilePresented) {
                 ProfileView()
                     .presentationDetents([.large])
@@ -138,17 +149,13 @@ struct HomeView: View {
             isLocationSheetPresented: $viewModel.isLocationPresented,
             onCreateTrip: {
                 let code = try await viewModel.confirmTripCreation(using: modelContext)
-                await MainActor.run {
-                    viewModel.isInvitationPresented = false
-
-                    // Reset create flow UI
-                    selectedTripAction = nil
-                    isDynamicBoxExpanded = false
-
-                    // Reset the create flow state in the view model
-                    viewModel.resetCreateTripFlow()
-                }
                 return code
+            },
+            onDismissAndReset: {
+                viewModel.isInvitationPresented = false
+                selectedTripAction = nil
+                isDynamicBoxExpanded = false
+                viewModel.resetCreateTripFlow()
             }
         )
     }
@@ -439,10 +446,10 @@ struct HomeView: View {
             JoinTripView(
                 selectedTripAction: $selectedTripAction,
                 onJoinInvitationCode: { code in
-                    try await viewModel.joinTrip(invitationCode: code)
+                    try await viewModel.previewTrip(invitationCode: code)
                 },
                 onAcceptShareLink: { url in
-                    try await viewModel.joinSharedTrip(from: url)
+                    try await viewModel.acceptShare(from: url)
                 }
             )
         } else {

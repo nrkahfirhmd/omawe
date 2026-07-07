@@ -110,6 +110,7 @@ class HomeViewModel {
                 startDate: createTripDraft.arrivalDate,
                 endDate: createTripDraft.arrivalDate,
                 ownerID: ownerID,
+                ownerDisplayName: UserSession.shared.displayName,
                 invitationCode: invitationCode,
                 createdAt: Date(),
                 updatedAt: Date()
@@ -125,19 +126,21 @@ class HomeViewModel {
                 id: nil,
                 tripID: tripID!,
                 userID: ownerID,
-                displayName: nil,
+                displayName: UserSession.shared.displayName,
                 role: .owner,
                 joinedAt: Date()
             )
 
             _ = try await participantService.createParticipant(ownerParticipant)
 
-            let (_, shareURL) = try await sharingService.createShare(for: tripID!)
+            let (_, generatedShareURL) = try await sharingService.createShare(for: tripID!)
 
             try await inviteService.publishInvite(
                 code: invitationCode,
-                shareURL: shareURL
+                shareURL: generatedShareURL
             )
+            
+            self.shareURL = generatedShareURL.absoluteString
 
             // MARK: - Refresh Home Data
             await TripStore.shared.loadTrips()
@@ -151,6 +154,10 @@ class HomeViewModel {
         }
     }
 
+    // MARK: - Join Trip State
+    
+    var joinPreviewTrip: Trip?
+
     func acceptShare(from notification: Notification) async {
         guard let metadata = CloudKitShareAcceptanceBridge.metadata(from: notification) else {
             return
@@ -161,7 +168,9 @@ class HomeViewModel {
 
     func acceptShare(from url: URL) async {
         do {
-            try await joinSharedTrip(from: url)
+            let tripID = try await joinSharedTrip(from: url)
+            let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
+            await MainActor.run { self.joinPreviewTrip = fetchedTrip }
         } catch {
             print("[CloudKitSharing] Share URL acceptance failed: \(error.localizedDescription)")
         }
@@ -169,21 +178,22 @@ class HomeViewModel {
 
     func acceptShare(_ metadata: CKShare.Metadata) async {
         do {
-            try await joinSharedTrip(metadata)
+            let tripID = try await joinSharedTrip(metadata)
+            let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
+            await MainActor.run { self.joinPreviewTrip = fetchedTrip }
         } catch {
             print("[CloudKitSharing] Share metadata acceptance failed: \(error.localizedDescription)")
         }
     }
 
-    // TODO: Replace invitation lookup with CloudKitInviteService and native sharing flow.
-    func joinTrip(invitationCode: String) async throws {
+    func previewTrip(invitationCode: String) async throws {
         shareAcceptanceErrorMessage = nil
 
         let normalizedCode = invitationCode
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
 
-        print("🔍 Looking up invite:", normalizedCode)
+        print("🔍 Looking up invite for preview:", normalizedCode)
 
         guard let invite = try await inviteService.findInvite(by: normalizedCode) else {
             print("❌ Invite not found")
@@ -194,28 +204,38 @@ class HomeViewModel {
         print("Share URL:", invite.shareURL.absoluteString)
 
         do {
-            let tripID = try await joinSharedTrip(from: invite.shareURL)   // ← call own method, not sharingService.joinSharedTrip
-            print("✅ Share accepted")
+            let tripID = try await joinSharedTrip(from: invite.shareURL)
+            print("✅ Share accepted for preview")
 
-            let currentUserID = try await identityService.currentUserRecordID()
-            let participant = Participant(
-                id: CKRecord.ID(recordName: UUID().uuidString, zoneID: tripID.zoneID),
-                tripID: tripID,
-                userID: currentUserID,
-                displayName: nil,
-                role: .member,
-                joinedAt: Date()
-            )
-
-            _ = try await participantService.createParticipant(participant)
-            print("✅ Participant record created for joiner")
-
-            await TripStore.shared.loadTrips()
+            let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
+            
+            await MainActor.run {
+                self.joinPreviewTrip = fetchedTrip
+            }
 
         } catch {
             print("❌ Share acceptance failed:", error)
             throw error
         }
+    }
+    
+    func confirmJoinTrip(trip: Trip) async throws {
+        guard let tripID = trip.id else { return }
+        
+        let currentUserID = try await identityService.currentUserRecordID()
+        let participant = Participant(
+            id: CKRecord.ID(recordName: UUID().uuidString, zoneID: tripID.zoneID),
+            tripID: tripID,
+            userID: currentUserID,
+            displayName: UserSession.shared.displayName,
+            role: .member,
+            joinedAt: Date()
+        )
+
+        _ = try await participantService.createParticipant(participant)
+        print("✅ Participant record created for confirm joiner")
+
+        await TripStore.shared.loadTrips()
     }
 
     func joinSharedTrip(from url: URL) async throws -> CKRecord.ID {

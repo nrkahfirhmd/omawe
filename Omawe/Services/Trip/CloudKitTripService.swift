@@ -10,6 +10,7 @@ import CloudKit
 protocol TripServiceProtocol {
     func createTrip(_ trip: Trip) async throws -> Trip
     func fetchTrip(id: CKRecord.ID) async throws -> Trip
+    func fetchSharedTrip(id: CKRecord.ID) async throws -> Trip
     func fetchOwnedTrips() async throws -> [Trip]
     func updateTrip(_ trip: Trip) async throws -> Trip
     func deleteTrip(id: CKRecord.ID) async throws
@@ -63,6 +64,16 @@ final class CloudKitTripService: TripServiceProtocol {
     func fetchTrip(id: CKRecord.ID) async throws -> Trip {
         do {
             let record = try await database.record(for: id)
+            return try TripRecordMapper.makeModel(from: record)
+        } catch {
+            throw CloudKitError.unknown(error)
+        }
+    }
+    
+    func fetchSharedTrip(id: CKRecord.ID) async throws -> Trip {
+        do {
+            let sharedDB = CloudKitContainer.shared.sharedDatabase
+            let record = try await sharedDB.record(for: id)
             return try TripRecordMapper.makeModel(from: record)
         } catch {
             throw CloudKitError.unknown(error)
