@@ -7,15 +7,27 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @Observable
 class HomeViewModel {
     // MARK: - Services
-    private let tripCreationService = TripCreationService()
+    private let tripService = CloudKitTripService()
+    private let participantService = CloudKitParticipantService()
+    private let inviteService = CloudKitInviteService()
+    private let sharingService = CloudKitSharingService()
+    private let identityService = CloudKitIdentityService()
+    private let privateDatabase = CloudKitContainer.shared.privateDatabase
+    private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
 
     // MARK: - Trip Draft
 
     var createTripDraft = TripDraft()
+
+    // MARK: - Trip and Participant List
+
+    var trips: [Trip] = []
+    var participants: [Participant] = []
 
     // MARK: - Create Trip Flow
 
@@ -34,6 +46,11 @@ class HomeViewModel {
     var isSavingTrip = false
     var hasCreatedTrip = false
     var creationErrorMessage: String?
+    var lastCreatedTripID: CKRecord.ID?
+    var shareURL: String?
+    var isCreatingShare = false
+    var shareErrorMessage: String?
+    var shareAcceptanceErrorMessage: String?
 
     // MARK: - Computed Properties
     var canConfirmTripCreation: Bool {
@@ -57,32 +74,259 @@ class HomeViewModel {
         isSavingTrip = false
         hasCreatedTrip = false
         creationErrorMessage = nil
+        lastCreatedTripID = nil
+        shareURL = nil
+        isCreatingShare = false
+        shareErrorMessage = nil
     }
 
-    func confirmTripCreation(using modelContext: ModelContext) async {
+    func confirmTripCreation(using modelContext: ModelContext) async throws -> String {
         guard canConfirmTripCreation else {
-            creationErrorMessage = "Please add a trip name and location before creating the trip."
-            return
+            throw CloudKitError.operationFailed
         }
 
         isSavingTrip = true
         creationErrorMessage = nil
+        shareErrorMessage = nil
+        shareURL = nil
+
+        defer {
+            isSavingTrip = false
+        }
 
         do {
-            let trip = try await tripCreationService.createTrip(
-                from: createTripDraft.creationInput,
-                in: modelContext
+            // MARK: - Current User
+            let ownerID = try await identityService.currentUserRecordID()
+
+            // MARK: - Invitation Code
+            let invitationCode = inviteService.generateInvitationCode()
+            createTripDraft.invitationCode = invitationCode
+
+            // MARK: - Create Trip
+            let trip = Trip(
+                id: nil,
+                title: createTripDraft.name,
+                destination: createTripDraft.locationName,
+                startDate: createTripDraft.arrivalDate,
+                endDate: createTripDraft.arrivalDate,
+                ownerID: ownerID,
+                invitationCode: invitationCode,
+                createdAt: Date(),
+                updatedAt: Date()
             )
 
-            print("[TripCreation] HomeViewModel received successful trip creation: id=\(trip.id.uuidString)")
+            let savedTrip = try await tripService.createTrip(trip)
 
-            createTripDraft.invitationCode = trip.tripCode
-            isSavingTrip = false
+            let tripID = savedTrip.id
+            lastCreatedTripID = tripID
+
+            // MARK: - Create Owner Participant
+            let ownerParticipant = Participant(
+                id: nil,
+                tripID: tripID!,
+                userID: ownerID,
+                displayName: nil,
+                role: .owner,
+                joinedAt: Date()
+            )
+
+            _ = try await participantService.createParticipant(ownerParticipant)
+
+            let (_, shareURL) = try await sharingService.createShare(for: tripID!)
+
+            try await inviteService.publishInvite(
+                code: invitationCode,
+                shareURL: shareURL
+            )
+
+            // MARK: - Refresh Home Data
+            await loadTrips()
+
             hasCreatedTrip = true
+
+            return invitationCode
         } catch {
-            isSavingTrip = false
             creationErrorMessage = error.localizedDescription
-            print("[TripCreation] HomeViewModel trip creation failed: \(error.localizedDescription)")
+            throw error
         }
     }
+
+    func acceptShare(from notification: Notification) async {
+        guard let metadata = CloudKitShareAcceptanceBridge.metadata(from: notification) else {
+            return
+        }
+
+        await acceptShare(metadata)
+    }
+
+    func acceptShare(from url: URL) async {
+        do {
+            try await joinSharedTrip(from: url)
+        } catch {
+            print("[CloudKitSharing] Share URL acceptance failed: \(error.localizedDescription)")
+        }
+    }
+
+    func acceptShare(_ metadata: CKShare.Metadata) async {
+        do {
+            try await joinSharedTrip(metadata)
+        } catch {
+            print("[CloudKitSharing] Share metadata acceptance failed: \(error.localizedDescription)")
+        }
+    }
+
+    // TODO: Replace invitation lookup with CloudKitInviteService and native sharing flow.
+    func joinTrip(invitationCode: String) async throws {
+        shareAcceptanceErrorMessage = nil
+
+        let normalizedCode = invitationCode
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        print("🔍 Looking up invite:", normalizedCode)
+
+        guard let invite = try await inviteService.findInvite(by: normalizedCode) else {
+            print("❌ Invite not found")
+            throw CloudKitError.invalidInvitation
+        }
+
+        print("✅ Invite found")
+        print("Share URL:", invite.shareURL.absoluteString)
+
+        do {
+            let tripID = try await joinSharedTrip(from: invite.shareURL)   // ← call own method, not sharingService.joinSharedTrip
+            print("✅ Share accepted")
+
+            let currentUserID = try await identityService.currentUserRecordID()
+            let participant = Participant(
+                id: CKRecord.ID(recordName: UUID().uuidString, zoneID: tripID.zoneID),
+                tripID: tripID,
+                userID: currentUserID,
+                displayName: nil,
+                role: .member,
+                joinedAt: Date()
+            )
+
+            _ = try await participantService.createParticipant(participant)
+            print("✅ Participant record created for joiner")
+
+        } catch {
+            print("❌ Share acceptance failed:", error)
+            throw error
+        }
+    }
+
+    func joinSharedTrip(from url: URL) async throws -> CKRecord.ID {
+        shareAcceptanceErrorMessage = nil
+
+        do {
+            return try await sharingService.acceptShare(from: url)
+        } catch {
+            shareAcceptanceErrorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    func joinSharedTrip(_ metadata: CKShare.Metadata) async throws -> CKRecord.ID {
+        shareAcceptanceErrorMessage = nil
+
+        do {
+            return try await sharingService.acceptShare(metadata)
+        } catch {
+            shareAcceptanceErrorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    func loadTrips() async {
+        do {
+            async let owned = tripService.fetchOwnedTrips()
+            async let shared = sharingService.fetchSharedTrips()
+
+            let (ownedTrips, sharedTrips) = try await (owned, shared)
+
+            trips = (ownedTrips + sharedTrips).sorted {
+                $0.updatedAt > $1.updatedAt
+            }
+
+            await loadParticipants()
+        } catch {
+            print(error)
+        }
+    }
+
+    func loadParticipants() async {
+        do {
+            var loadedParticipants: [Participant] = []
+
+            for trip in trips {
+                let members = try await participantService.fetchParticipants(for: trip.id!)
+                loadedParticipants.append(contentsOf: members)
+            }
+
+            participants = loadedParticipants
+        } catch {
+            print("[CloudKit] Failed to load participants: \(error.localizedDescription)")
+        }
+    }
+    
+    func debugFetchAllParticipants(for tripID: CKRecord.ID) async {
+        print("🔬 DEBUG: Checking participants for trip:", tripID.recordName)
+        print("🔬 Trip zone:", tripID.zoneID.zoneName, "| owner:", tripID.zoneID.ownerName)
+
+        let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
+        let query = CKQuery(recordType: ParticipantRecordMapper.recordType, predicate: predicate)
+
+        // Try private database
+        do {
+            print("🔬 --- Checking PRIVATE database ---")
+            let result = try await privateDatabase.records(matching: query, inZoneWith: tripID.zoneID)
+            for (_, matchResult) in result.matchResults {
+                switch matchResult {
+                case .success(let record):
+                    print("✅ [private] Participant record:", record.recordID.recordName)
+                    print("   tripID field:", record["tripID"] ?? "nil")
+                    print("   userID field:", record["userID"] ?? "nil")
+                    print("   role field:", record["role"] ?? "nil")
+                    print("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
+                case .failure(let error):
+                    print("❌ [private] match failure:", error)
+                }
+            }
+        } catch {
+            print("❌ [private] query failed:", error)
+        }
+
+        // Try shared database
+        do {
+            print("🔬 --- Checking SHARED database ---")
+            let result = try await sharedDatabase.records(matching: query, inZoneWith: tripID.zoneID)
+            for (_, matchResult) in result.matchResults {
+                switch matchResult {
+                case .success(let record):
+                    print("✅ [shared] Participant record:", record.recordID.recordName)
+                    print("   tripID field:", record["tripID"] ?? "nil")
+                    print("   userID field:", record["userID"] ?? "nil")
+                    print("   role field:", record["role"] ?? "nil")
+                    print("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
+                case .failure(let error):
+                    print("❌ [shared] match failure:", error)
+                }
+            }
+        } catch {
+            print("❌ [shared] query failed:", error)
+        }
+
+        // Also list all zones visible in shared database, to compare zoneID.ownerName
+        do {
+            print("🔬 --- All zones in SHARED database ---")
+            let zones = try await sharedDatabase.allRecordZones()
+            for zone in zones {
+                print("   zone:", zone.zoneID.zoneName, "| owner:", zone.zoneID.ownerName)
+            }
+        } catch {
+            print("❌ Failed to list shared zones:", error)
+        }
+    }
+    
 }

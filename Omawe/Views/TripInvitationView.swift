@@ -12,16 +12,18 @@ struct TripInvitationView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var draft: TripDraft
     let creationErrorMessage: String?
+    let shareErrorMessage: String?
     let canConfirmTripCreation: Bool
     let isSavingTrip: Bool
+    let isCreatingShare: Bool
     let hasCreatedTrip: Bool
-    let onShareLink: () -> Void
-    let onTryAgain: () -> Void
+    let shareURL: String?
+    let onCreateTrip: () async throws -> String
     
     @Binding var isCalendarPresented: Bool
     @Binding var isEditingInvitationDetails: Bool
     @Binding var isLocationSheetPresented: Bool
-    @State private var didCopyRoomCode = false
+    @State private var didCopyShareLink = false
     @State private var locationSearchQuery = ""
     @State private var isResolvingLocation = false
     @State private var isEditTitle = false
@@ -32,25 +34,29 @@ struct TripInvitationView: View {
     init(
         draft: Binding<TripDraft>,
         creationErrorMessage: String?,
+        shareErrorMessage: String?,
         canConfirmTripCreation: Bool,
         isSavingTrip: Bool,
+        isCreatingShare: Bool,
         hasCreatedTrip: Bool,
+        shareURL: String?,
         isCalendarPresented: Binding<Bool>,
         isEditingInvitationDetails: Binding<Bool>,
         isLocationSheetPresented: Binding<Bool>,
-        onShareLink: @escaping () -> Void,
-        onTryAgain: @escaping () -> Void
+        onCreateTrip: @escaping () async throws -> String,
     ) {
         self._draft = draft
         self.creationErrorMessage = creationErrorMessage
+        self.shareErrorMessage = shareErrorMessage
         self.canConfirmTripCreation = canConfirmTripCreation
         self.isSavingTrip = isSavingTrip
+        self.isCreatingShare = isCreatingShare
         self.hasCreatedTrip = hasCreatedTrip
+        self.shareURL = shareURL
         self._isCalendarPresented = isCalendarPresented
         self._isEditingInvitationDetails = isEditingInvitationDetails
         self._isLocationSheetPresented = isLocationSheetPresented
-        self.onShareLink = onShareLink
-        self.onTryAgain = onTryAgain
+        self.onCreateTrip = onCreateTrip
     }
     
     private var displayTripName: String {
@@ -62,10 +68,15 @@ struct TripInvitationView: View {
     }
     
     private var buttonTitle: String {
-        if isSavingTrip { return "Saving..." }
-        if didCopyRoomCode { return "Code copied" }
-        if !hasCreatedTrip { return "Create Trip" }
-        return "Share link"
+        if isSavingTrip {
+            return "Creating Trip..."
+        }
+
+        if didCopyShareLink {
+            return "Code Copied"
+        }
+
+        return "Create Trip"
     }
     
     var body: some View {
@@ -121,6 +132,10 @@ struct TripInvitationView: View {
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(32)
             .presentationBackground(.ultraThinMaterial)
+        }
+        .onChange(of: shareURL) { _, newURL in
+            guard let newURL else { return }
+            copyShareLink(newURL)
         }
         .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
@@ -314,7 +329,7 @@ struct TripInvitationView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .opacity(isEditTitle ? 0 : 1)
-
+                    
                     TextField("", text: $draft.name)
                         .font(.title1().weight(.semibold))
                         .fontWidth(.expanded)
@@ -399,38 +414,21 @@ struct TripInvitationView: View {
     
     private var bottomControls: some View {
         VStack(spacing: 12) {
-            if let creationErrorMessage {
-                errorMessage(creationErrorMessage)
-            }
-            
             if !isEditingInvitationDetails {
                 HStack(spacing: 12) {
                     Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.headline())
-                            .padding(8)
-                    }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .accessibilityLabel("Back")
-                    
-                    Button {
-                        if hasCreatedTrip {
-                            copyRoomCode()
-                        } else {
-                            onShareLink()
+                        Task {
+                            let code = try await onCreateTrip()
+                            copyShareLink(code)
                         }
-                        
                     } label: {
                         HStack(spacing: 14) {
-                            if isSavingTrip {
+                            if isSavingTrip || isCreatingShare {
                                 ProgressView()
                                     .tint(.white)
                                     .frame(height: 15)
                             } else {
-                                Image(systemName: didCopyRoomCode ? "checkmark.circle.fill" : "link")
+                                Image(systemName: primaryButtonIconName)
                                     .font(.button())
                             }
                             
@@ -440,14 +438,14 @@ struct TripInvitationView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(16)
-                        .foregroundStyle(canConfirmTripCreation || isSavingTrip || hasCreatedTrip ? .white : .white.opacity(0.52))
+                        .foregroundStyle(canConfirmTripCreation || isSavingTrip || hasCreatedTrip || isCreatingShare ? .white : .white.opacity(0.52))
                         .overlay {
                             Capsule()
                                 .stroke(Theme.primary, lineWidth: 1.5)
                         }
                     }
                     .glassEffect(.clear)
-                    .disabled((!canConfirmTripCreation && !hasCreatedTrip) || isSavingTrip)
+                    .disabled(!canConfirmTripCreation || isSavingTrip)
                     .accessibilityLabel(buttonTitle)
                     
                     Button {
@@ -514,30 +512,17 @@ struct TripInvitationView: View {
         }
     }
     
-    private func errorMessage(_ message: String) -> some View {
-        VStack(spacing: 8) {
-            Text(message)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.red.opacity(0.95))
-            
-            Button("Try again") {
-                onTryAgain()
-            }
-            .font(.system(size: 15, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .disabled(!canConfirmTripCreation || isSavingTrip)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    private var primaryButtonIconName: String {
+        didCopyShareLink
+            ? "checkmark.circle.fill"
+            : "plus.circle.fill"
     }
     
-    private func copyRoomCode() {
-        UIPasteboard.general.string = draft.invitationCode
+    private func copyShareLink(_ url: String) {
+        UIPasteboard.general.string = url
         
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-            didCopyRoomCode = true
+            didCopyShareLink = true
         }
         
         Task {
@@ -545,7 +530,7 @@ struct TripInvitationView: View {
             
             await MainActor.run {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-                    didCopyRoomCode = false
+                    didCopyShareLink = false
                 }
             }
         }
@@ -668,13 +653,17 @@ private struct BottomWave: Shape {
     TripInvitationView(
         draft: $draft,
         creationErrorMessage: nil,
+        shareErrorMessage: nil,
         canConfirmTripCreation: true,
         isSavingTrip: false,
+        isCreatingShare: false,
         hasCreatedTrip: false,
+        shareURL: nil,
         isCalendarPresented: $isCalendarPresented,
         isEditingInvitationDetails: $isEditingInvitationDetails,
         isLocationSheetPresented: $isLocationSheetPresented,
-        onShareLink: {},
-        onTryAgain: {}
+        onCreateTrip: {
+            "AAAAAAA"
+        }
     )
 }

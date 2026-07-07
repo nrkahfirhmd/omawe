@@ -44,6 +44,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5F0B59642FFC0ABC00B6B4B1 /* Exceptions for "Omawe" folder in "Omawe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8CF43A342FF2497200061915 /* Omawe */;
+		};
 		8CD369B72FF265E600B103BD /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -64,6 +71,9 @@
 		};
 		8CF43A372FF2497200061915 /* Omawe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5F0B59642FFC0ABC00B6B4B1 /* Exceptions for "Omawe" folder in "Omawe" target */,
+			);
 			path = Omawe;
 			sourceTree = "<group>";
 		};
@@ -173,6 +183,9 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				KnownAssetTags = (
+					New,
+				);
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
@@ -254,7 +267,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = KP7V5MRL6Q;
+				DEVELOPMENT_TEAM = C338C32CCY;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OmaweWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OmaweWidget;
@@ -284,7 +297,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = KP7V5MRL6Q;
+				DEVELOPMENT_TEAM = C338C32CCY;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OmaweWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OmaweWidget;
@@ -440,6 +453,7 @@
 				DEVELOPMENT_TEAM = KP7V5MRL6Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Omawe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -477,6 +491,7 @@
 				DEVELOPMENT_TEAM = KP7V5MRL6Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Omawe/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Omawe;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
