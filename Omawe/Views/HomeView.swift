@@ -189,29 +189,56 @@ struct HomeView: View {
         .offset(y: selectedTripAction == nil ? 0 : -20)
     }
     
+    /// The user's avatar.
+    /// Apple Sign In does NOT provide a profile photo, so we generate
+    /// an initials-based avatar using the first character of the display name.
+    /// Falls back to a person icon if no name is available.
     private var avatarView: some View {
-        Button {
-            isProfilePresented = true
-        } label: {
-            ZStack {
-                Circle()
-                    .frame(width: 120)
-                    .foregroundColor(.white)
-                    .shadow(
-                        color: .init(hex: "#00C3FF").opacity(0.5),
-                        radius: 21
-                    )
+        let session = UserSession.shared
+        let initials = session.displayName?.first.map(String.init) ?? nil
 
-                Image(.frame74)
+        return ZStack {
+            Circle()
+                .frame(width: 120)
+                .foregroundColor(.white)
+                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+            Image(.frame74)
+
+            // Show the user's initial if a name was shared during Apple Sign In,
+            // otherwise fall back to the existing avatar asset.
+            if let initials {
+                Text(initials.uppercased())
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+                    .glassEffect(.clear, in: .circle)
+            } else {
                 Image(.avatar)
             }
         }
         .buttonStyle(.plain)
     }
     
+    /// Greeting text that displays the user's first name from Apple Sign In.
+    /// Falls back to "there" if no name was shared (e.g. user chose to hide it).
     private var greetingTextView: some View {
-        VStack(spacing: 12) {
-            Text("Hi Beani!")
+        let session = UserSession.shared
+        // Extract just the first name for a friendly greeting.
+        // Apple provides the full name as components; we use the first word
+        // of the display name for brevity (e.g. "Muhammad" from "Muhammad Bintang").
+        let firstName = session.displayName?
+            .split(separator: " ")
+            .first
+            .map(String.init) ?? "there"
+
+        return VStack(spacing: 12) {
+            Text("Hi \(firstName)!")
                 .font(.largeTitle)
                 .fontWidth(.expanded)
                 .fontWeight(.semibold)
@@ -224,25 +251,25 @@ struct HomeView: View {
     }
     
     private var swipeHintView: some View {
-        VStack(spacing: 12) {
+        let hasTrips = !viewModel.trips.isEmpty
+
+        return VStack(spacing: 12) {
             Image(systemName: "hand.draw")
-                .foregroundStyle(.gray.secondary)
-                .font(.title3())
-            
+
             Text(swipeHintText)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.gray.secondary)
-            
-            HStack {
-                Image(systemName: viewModel.trips.isEmpty ? "chevron.left.2" : "chevron.down.2")
-                    .foregroundStyle(.gray.secondary)
-                    .font(.title3())
-                
-                Image(systemName: viewModel.trips.isEmpty ? "chevron.right.2" : "")
-                    .foregroundStyle(.gray.secondary)
-                    .font(.title3())
+
+            HStack(spacing: 4) {
+                if hasTrips {
+                    Image(systemName: "chevron.down.2")
+                } else {
+                    Image(systemName: "chevron.left.2")
+                    Image(systemName: "chevron.right.2")
+                }
             }
+            .font(.title3())
         }
+        .foregroundStyle(.gray.secondary)
     }
     
     private var swipeHintText: String {

@@ -13,6 +13,10 @@ struct OnboardingFlow: View {
 
     @State private var currentPage = 0
 
+    /// The authentication view model shared with `ThirdView`.
+    /// Created here so it survives page transitions and can access `finishOnboarding()`.
+    @State private var authViewModel = AuthenticationViewModel()
+
     var body: some View {
         ZStack {
             switch currentPage {
@@ -25,9 +29,13 @@ struct OnboardingFlow: View {
                     .transition(.identity)
 
             default:
-                ThirdView {
-                    finishOnboarding()
-                }
+                // Pass the authentication view model to ThirdView.
+                // The onFinish closure is kept for backward compatibility,
+                // but the actual trigger now comes from the VM's onSignInCompleted.
+                ThirdView(
+                    onFinish: { finishOnboarding() },
+                    viewModel: authViewModel
+                )
                 .transition(.opacity)
             }
         }
@@ -39,6 +47,15 @@ struct OnboardingFlow: View {
                     .ignoresSafeArea()
             }
         }
+        .onAppear {
+            // Wire the VM's success callback to finishOnboarding().
+            // When Apple Sign In succeeds, the VM saves the session and then
+            // calls this closure, which sets hasCompletedOnboarding = true.
+            // ContentView reacts to that @AppStorage change and navigates to HomeView.
+            authViewModel.onSignInCompleted = {
+                finishOnboarding()
+            }
+        }
     }
 
     private func goTo(_ page: Int) {
@@ -47,6 +64,9 @@ struct OnboardingFlow: View {
         }
     }
 
+    /// Marks onboarding as completed.
+    /// Called by the AuthenticationViewModel after a successful Apple Sign In.
+    /// This triggers ContentView to swap from OnboardingFlow to HomeView.
     private func finishOnboarding() {
         hasCompletedOnboarding = true
     }
