@@ -10,10 +10,10 @@ import SwiftData
 
 @main
 struct OmaweApp: App {
+    @UIApplicationDelegateAdaptor(OmaweAppDelegate.self) private var appDelegate
+
     private let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            TripModel.self,
-            TripMember.self,
             LocationUpdate.self,
             UserProfile.self
         ])
@@ -33,6 +33,7 @@ struct OmaweApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.light)
         }
         .modelContainer(sharedModelContainer)
     }

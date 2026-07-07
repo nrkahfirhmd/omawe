@@ -15,11 +15,9 @@ enum TripAction {
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \TripModel.createdAt, order: .reverse) var trips: [TripModel]
-    @Query(sort: \TripMember.joinedAt, order: .forward) private var tripMembers: [TripMember]
     @Query(sort: \UserProfile.createdAt, order: .forward) private var userProfiles: [UserProfile]
     @State var selectedTripAction: TripAction?
-    @State private var viewModel = HomeViewModel()
+    @State var viewModel = HomeViewModel()
     @State var isTripStatusExpanded = false
     @State var isTripStatusPresented = false
     @State var selectedTripIndex = 0
@@ -28,320 +26,374 @@ struct HomeView: View {
     @State var dynamicBoxSize: CGSize = .zero
     @State var isDynamicBoxExpanded = false
     @State var isTransitioningTopPanel = false
-    // let screenSize = UIScreen.main.bounds.size
+    @State private var isKeyboardVisible = false
     
-var body: some View {
-    NavigationStack {
-        ZStack(alignment: .top) {
-            CustomDynamicIsland(
-                color: .black,
-                borderColor: LinearGradient(stops: [
-                    .init(color: Color(hex: "03B9D6"), location: 0.0),
-                    .init(color: Color(hex: "7AE8FF"), location: 0.51),
-                    .init(color: Color(hex: "03B9D6"), location: 1.0),
-                ], startPoint: UnitPoint.leading, endPoint: .trailing)
-            )
-            .padding(.top, 8)
-            .opacity(selectedTripAction != .none || isTripStatusExpanded ? 0 : 1)
-            .ignoresSafeArea(edges: .top)
-            
-            VStack {
-                Spacer()
-                ZStack {
-                    Image(trips.isEmpty ? .tripStatusBar : .tripStatusBarCreated)
-                    
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(trips.isEmpty ? "You have no trip yet" : "\(trips.count) upcoming \(trips.count == 1 ? "trip" : "trips")")
-                                .font(.headline)
-                            
-                            Text(trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    
-                    Spacer()
-                    
-                    ZStack {
-                        Circle()
-                            .frame(width: 120)
-                            .foregroundColor(.white)
-                            .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
-                        Image(.frame74)
-                        Image(.avatar)
-                    }
-                    
-                    VStack(spacing: 12) {
-                        Text("Hi Beani!")
-                            .font(.largeTitle)
-                            .fontWidth(.expanded)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.cyan)
-                        
-                        
-                        Text("Let's make your\nfirst Omawe")
-                            .font(.bodyText())
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    Spacer()
-                    
-                    
-                    VStack(spacing: 12) {
-                        Image(systemName: "hand.draw")
-                            .foregroundStyle(.gray.secondary)
-                            .font(.title3())
-                        
-                        Text(trips.isEmpty ? "Swipe the slide\nto create or join trip" : "Drag down to\nsee your room")
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.gray.secondary)
-                        
-                        HStack {
-                            Image(systemName: trips.isEmpty ? "chevron.left.2" : "chevron.down.2")
-                                .foregroundStyle(.gray.secondary)
-                                .font(.title3())
-                            
-                            Image(systemName: trips.isEmpty ? "chevron.right.2" : "")
-                                .foregroundStyle(.gray.secondary)
-                                .font(.title3())
-                        }
-                    }
-                    
-                    
-                }
-                
-                Spacer()
-                
-                CreateJoinButton(
-                    createAction: {
-                        guard !isTransitioningTopPanel else { return }
-                        if isTripStatusPresented {
-                            closeTripStatusPanel()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
-                                selectedTripAction = .create
-                                isDynamicBoxExpanded = false
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
-                                    withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
-                                        isDynamicBoxExpanded = true
-                                    }
-                                }
-                            }
-                        } else {
-                            selectedTripAction = .create
-                            isDynamicBoxExpanded = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
-                                withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
-                                    isDynamicBoxExpanded = true
-                                }
-                            }
-                        }
-                    },
-                    joinAction: {
-                        guard !isTransitioningTopPanel else { return }
-                        if isTripStatusPresented {
-                            closeTripStatusPanel()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
-                                selectedTripAction = .join
-                                isDynamicBoxExpanded = false
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
-                                    withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
-                                        isDynamicBoxExpanded = true
-                                    }
-                                }
-                            }
-                        } else {
-                            selectedTripAction = .join
-                            isDynamicBoxExpanded = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
-                                withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
-                                    isDynamicBoxExpanded = true
-                                }
-                            }
-                        }
-                    },
-                    resetAction: {
-                        if isTripStatusPresented {
-                            closeTripStatusPanel()
-                            return
-                        }
-                        withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
-                            isDynamicBoxExpanded = false
-                            selectedTripAction = nil
-                        }
-                    },
-                    createProgressChanged: { _ in
-                        // The slider now only selects the Create action.
-                        // The DynamicBox owns the expansion animation from the collapsed island.
-                    }
-                )
-                .padding(.bottom, 30)
-                .ignoresSafeArea()
-                .frame(height: HomeLayout.bottomSliderHeight)
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .top) {
+                dynamicIslandOverlay
+                mainContentStack
+                createFlowOverlay
             }
-            .padding(.horizontal, 10)
-            .ignoresSafeArea(.keyboard, edges: .bottom)
-            
-            
-            Group {
-                let flowBottomInset = HomeLayout.bottomSliderReservedHeight + HomeLayout.createFlowBottomGap
-                let nextStepHeight: CGFloat = 55
-                let nextStepTopGap: CGFloat = 12
-                let screenHeight = UIScreen.main.bounds.height
-                let createTripViewportHeight = max(
-                    0,
-                    screenHeight - flowBottomInset - nextStepHeight - nextStepTopGap
-                )
-                VStack(spacing: nextStepTopGap) {
-                    topPanelView
-                        .scaleEffect(
-                            topPanelScale,
-                            anchor: .top
-                        )
-                        .opacity(topPanelOpacity)
-                        .offset(y: topPanelVerticalOffset)
-                        .allowsHitTesting(isDynamicBoxExpanded || isTripStatusExpanded)
-                        .animation(.spring(response: 0.46, dampingFraction: 0.9), value: isDynamicBoxExpanded)
-                        .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
-
-                    
-                    if selectedTripAction == .create && viewModel.nextStepRequest < 3 {
-                        Button {
-                            viewModel.nextStepRequest += 1
-                        } label: {
-                            HStack(spacing: 14) {
-                                Text("Next step")
-                                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                                    .fontWidth(.expanded)
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 15, weight: .bold))
-                            }
-                            .foregroundStyle(
-                                viewModel.isNextStepEnabled
-                                ? Color.black
-                                : Color.gray.opacity(0.55)
-                            )
-                            .frame(maxWidth: .infinity)
-                            .frame(height: nextStepHeight)
-                            .shadow(
-                                color: Color.omawePrimary.opacity(viewModel.isNextStepEnabled ? 0.16 : 0),
-                                radius: 16,
-                                x: 0,
-                                y: 7
-                            )
-                        }
-                        .glassEffect(.clear)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 37, style: .continuous)
-                                .stroke(
-                                    Color.omawePrimary.opacity(viewModel.isNextStepEnabled ? 0.95 : 0.35),
-                                    lineWidth: 1.5
-                                )
-                                .allowsHitTesting(false)
-                        }
-                        .disabled(!viewModel.isNextStepEnabled)
-                        .opacity(selectedTripAction == .create && isDynamicBoxExpanded ? 1 : 0)
-                        .allowsHitTesting(selectedTripAction == .create && isDynamicBoxExpanded)
-                        .padding(.horizontal, 10)
-                        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: viewModel.isNextStepEnabled)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.88), value: isDynamicBoxExpanded)
-                    }
-                }
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity,
-                    alignment: .top
-                )
-                .padding(.bottom, flowBottomInset)
+            .contentShape(Rectangle())
+            .simultaneousGesture(tripStatusOpenGesture)
+            .animation(.spring(response: 0.5, dampingFraction: 0.9), value: selectedTripAction)
+            .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
+            .onChange(of: viewModel.trips.count, handleTripsCountChange)
+            .onChange(of: selectedTripAction, handleSelectedTripActionChange)
+            .onChange(of: viewModel.isInvitationPresented, handleInvitationPresentedChange)
+            .onReceive(NotificationCenter.default.publisher(for: CloudKitShareAcceptanceBridge.notificationName)) { notification in
+                Task { await viewModel.acceptShare(from: notification) }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isKeyboardVisible = true
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isKeyboardVisible = false
+                }
+            }
+            .onOpenURL { url in
+                Task { await viewModel.acceptShare(from: url) }
+            }
+            .task {
+                await viewModel.loadTrips()
+                
+                for metadata in CloudKitShareAcceptanceBridge.drainPendingMetadata() {
+                    await viewModel.acceptShare(metadata)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(homeBackground)
+            .navigationDestination(isPresented: $viewModel.isInvitationPresented) {
+                tripInvitationDestination
+            }
+        }
+    }
+    
+    // MARK: - Top-level pieces
+    
+    private var dynamicIslandOverlay: some View {
+        CustomDynamicIsland(
+            color: .black,
+            borderColor: LinearGradient(stops: [
+                .init(color: Color(hex: "03B9D6"), location: 0.0),
+                .init(color: Color(hex: "7AE8FF"), location: 0.51),
+                .init(color: Color(hex: "03B9D6"), location: 1.0),
+            ], startPoint: UnitPoint.leading, endPoint: .trailing)
+        )
+        .padding(.top, 8)
+        .opacity(selectedTripAction != .none || isTripStatusExpanded ? 0 : 1)
+        .ignoresSafeArea(edges: .top)
+    }
+    
+    private var mainContentStack: some View {
+        VStack {
+            Spacer()
+            tripStatusBarView
+            Spacer()
+            greetingAndHintView
+            Spacer()
+            createJoinButtonView
+        }
+        .padding(.horizontal, 10)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+    }
+    
+    private var homeBackground: some View {
+        Image(.homeBackground)
+            .resizable()
+            .scaledToFill()
             .ignoresSafeArea()
-        }
-        .contentShape(Rectangle())
-        .simultaneousGesture(tripStatusOpenGesture)
-        .animation(.spring(response: 0.5, dampingFraction: 0.9), value: selectedTripAction)
-        .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
-        .onChange(of: trips.count) { _, count in
-            if count == 0 {
-                isTripStatusExpanded = false
-                selectedTripIndex = 0
-            } else if selectedTripIndex >= count {
-                selectedTripIndex = max(0, count - 1)
-            }
-        }
-        .onChange(of: selectedTripAction) { _, action in
-            guard let action else {
-                viewModel.resetCreateTripFlow()
-                return
-            }
-            isTripStatusExpanded = false
-            if action != .create {
-                viewModel.isInvitationPresented = false
-                viewModel.resetCreateTripFlow()
-            }
-        }
-        .onChange(of: viewModel.isInvitationPresented) { _, isPresented in
-            guard !isPresented else { return }
+    }
+    
+    private var tripInvitationDestination: some View {
+        TripInvitationView(
+            draft: $viewModel.createTripDraft,
+            creationErrorMessage: viewModel.creationErrorMessage,
+            shareErrorMessage: viewModel.shareErrorMessage,
+            canConfirmTripCreation: viewModel.canConfirmTripCreation,
+            isSavingTrip: viewModel.isSavingTrip,
+            isCreatingShare: viewModel.isCreatingShare,
+            hasCreatedTrip: viewModel.hasCreatedTrip,
+            shareURL: viewModel.shareURL,
+            isCalendarPresented: $viewModel.isCalendarPresented,
+            isEditingInvitationDetails: $viewModel.isEditingInvitationDetails,
+            isLocationSheetPresented: $viewModel.isLocationPresented,
+            onCreateTrip: {
+                let code = try await viewModel.confirmTripCreation(using: modelContext)
+                await MainActor.run {
+                    viewModel.isInvitationPresented = false
 
-            // When returning from TripInvitationView, restore the final CreateTrip step
-            if selectedTripAction == .create {
-                isDynamicBoxExpanded = true
-                viewModel.isNextStepEnabled = true
-                viewModel.nextStepRequest = 2
+                    // Reset create flow UI
+                    selectedTripAction = nil
+                    isDynamicBoxExpanded = false
+
+                    // Reset the create flow state in the view model
+                    viewModel.resetCreateTripFlow()
+                }
+                return code
+            }
+        )
+    }
+    
+    // MARK: - Trip status bar
+    
+    private var tripStatusBarView: some View {
+        ZStack {
+            Image(viewModel.trips.isEmpty ? .tripStatusBar : .tripStatusBarCreated)
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tripStatusTitle)
+                        .font(.headline)
+                    
+                    Text(tripStatusSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private var tripStatusTitle: String {
+        viewModel.trips.isEmpty ? "You have no trip yet" : "\(viewModel.trips.count) upcoming \(viewModel.trips.count == 1 ? "trip" : "trips")"
+    }
+    
+    private var tripStatusSubtitle: String {
+        viewModel.trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more"
+    }
+    
+    // MARK: - Greeting / hint
+    
+    private var greetingAndHintView: some View {
+        VStack {
+            Spacer()
+            avatarView
+            greetingTextView
+            Spacer()
+            swipeHintView
+        }
+        .opacity(selectedTripAction == nil ? 1 : 0)
+        .scaleEffect(selectedTripAction == nil ? 1 : 0.92)
+        .offset(y: selectedTripAction == nil ? 0 : -20)
+    }
+    
+    private var avatarView: some View {
+        ZStack {
+            Circle()
+                .frame(width: 120)
+                .foregroundColor(.white)
+                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+            Image(.frame74)
+            Image(.avatar)
+        }
+    }
+    
+    private var greetingTextView: some View {
+        VStack(spacing: 12) {
+            Text("Hi Beani!")
+                .font(.largeTitle)
+                .fontWidth(.expanded)
+                .fontWeight(.semibold)
+                .foregroundColor(.cyan)
+            
+            Text("Let's make your\nfirst Omawe")
+                .font(.bodyText())
+                .multilineTextAlignment(.center)
+        }
+    }
+    
+    private var swipeHintView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "hand.draw")
+                .foregroundStyle(.gray.secondary)
+                .font(.title3())
+            
+            Text(swipeHintText)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.gray.secondary)
+            
+            HStack {
+                Image(systemName: viewModel.trips.isEmpty ? "chevron.left.2" : "chevron.down.2")
+                    .foregroundStyle(.gray.secondary)
+                    .font(.title3())
+                
+                Image(systemName: viewModel.trips.isEmpty ? "chevron.right.2" : "")
+                    .foregroundStyle(.gray.secondary)
+                    .font(.title3())
+            }
+        }
+    }
+    
+    private var swipeHintText: String {
+        viewModel.trips.isEmpty ? "Swipe the slide\nto create or join trip" : "Drag down to\nsee your room"
+    }
+    
+    // MARK: - Create / Join button
+    
+    private var createJoinButtonView: some View {
+        CreateJoinButton(
+            createAction: handleCreateAction,
+            joinAction: handleJoinAction,
+            resetAction: handleResetAction,
+            createProgressChanged: { _ in }
+        )
+        .padding(.bottom, 30)
+        .ignoresSafeArea()
+        .frame(height: HomeLayout.bottomSliderHeight)
+    }
+    
+    private func handleCreateAction() {
+        guard !isTransitioningTopPanel else { return }
+        if isTripStatusPresented {
+            closeTripStatusPanel()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                selectedTripAction = .create
+                isDynamicBoxExpanded = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                    withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                        isDynamicBoxExpanded = true
+                    }
+                }
+            }
+        } else {
+            selectedTripAction = .create
+            isDynamicBoxExpanded = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                    isDynamicBoxExpanded = true
+                }
+            }
+        }
+    }
+    
+    private func handleJoinAction() {
+        guard !isTransitioningTopPanel else { return }
+        if isTripStatusPresented {
+            closeTripStatusPanel()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+                selectedTripAction = .join
+                isDynamicBoxExpanded = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                    withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                        isDynamicBoxExpanded = true
+                    }
+                }
+            }
+        } else {
+            selectedTripAction = .join
+            isDynamicBoxExpanded = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                withAnimation(.spring(response: 0.46, dampingFraction: 0.9)) {
+                    isDynamicBoxExpanded = true
+                }
+            }
+        }
+    }
+    
+    private func handleResetAction() {
+        if isTripStatusPresented {
+            closeTripStatusPanel()
+            return
+        }
+        withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
+            isDynamicBoxExpanded = false
+            selectedTripAction = nil
+        }
+    }
+    
+    // MARK: - Create flow overlay (top panel + Next step button)
+    
+    private var createFlowOverlay: some View {
+        let flowBottomInset = HomeLayout.bottomSliderReservedHeight + HomeLayout.createFlowBottomGap
+        let nextStepTopGap: CGFloat = 12
+        
+        return VStack(spacing: nextStepTopGap) {
+            topPanelView
+                .scaleEffect(topPanelScale, anchor: .top)
+                .opacity(topPanelOpacity)
+                .offset(y: topPanelVerticalOffset)
+                .allowsHitTesting(isDynamicBoxExpanded || isTripStatusExpanded)
+                .animation(.spring(response: 0.46, dampingFraction: 0.9), value: isDynamicBoxExpanded)
+                .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isTripStatusExpanded)
+            
+            if selectedTripAction == .create && viewModel.nextStepRequest < 3 {
+                nextStepButton
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background {
-            Image(.homeBackground)
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-        }
-        .navigationDestination(isPresented: $viewModel.isInvitationPresented) {
-            TripInvitationView(
-                draft: $viewModel.createTripDraft,
-                creationErrorMessage: viewModel.creationErrorMessage,
-                canConfirmTripCreation: viewModel.canConfirmTripCreation,
-                isSavingTrip: viewModel.isSavingTrip,
-                hasCreatedTrip: viewModel.hasCreatedTrip,
-                isCalendarPresented: $viewModel.isCalendarPresented,
-                isEditingInvitationDetails: $viewModel.isEditingInvitationDetails,
-                isLocationSheetPresented: $viewModel.isLocationPresented,
-                onShareLink: {
-                    Task {
-                        await viewModel.confirmTripCreation(using: modelContext)
-                    }
-                },
-                onTryAgain: {
-                    Task {
-                        await viewModel.confirmTripCreation(using: modelContext)
-                    }
-                }
+        .padding(.bottom, isKeyboardVisible ? 50 : flowBottomInset)
+        .ignoresSafeArea(.container)
+    }
+    
+    private var nextStepButton: some View {
+        let nextStepHeight: CGFloat = 55
+        let isEnabled = viewModel.isNextStepEnabled
+        
+        return Button {
+            viewModel.nextStepRequest += 1
+        } label: {
+            HStack(spacing: 14) {
+                Text("Next step")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .fontWidth(.expanded)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundStyle(isEnabled ? Color.black : Color.gray.opacity(0.55))
+            .frame(maxWidth: .infinity)
+            .frame(height: nextStepHeight)
+            .shadow(
+                color: Color.omawePrimary.opacity(isEnabled ? 0.16 : 0),
+                radius: 16,
+                x: 0,
+                y: 7
             )
         }
+        .glassEffect(.clear)
+        .overlay {
+            RoundedRectangle(cornerRadius: 37, style: .continuous)
+                .stroke(
+                    Color.omawePrimary.opacity(isEnabled ? 0.95 : 0.35),
+                    lineWidth: 1.5
+                )
+                .allowsHitTesting(false)
+        }
+        .disabled(!isEnabled)
+        .opacity(selectedTripAction == .create && isDynamicBoxExpanded ? 1 : 0)
+        .allowsHitTesting(selectedTripAction == .create && isDynamicBoxExpanded)
+        .padding(.horizontal, 10)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: isEnabled)
+        .animation(.spring(response: 0.5, dampingFraction: 0.88), value: isDynamicBoxExpanded)
     }
-}
+    
+    // MARK: - Top panel
     
     @ViewBuilder
     private var topPanelView: some View {
-        if isTripStatusPresented && !trips.isEmpty && selectedTripAction == nil {
+        if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
             TripStatusDetailView(
-                trips: trips,
-                members: tripMembers,
+                trips: viewModel.trips,
+                members: viewModel.participants,
                 userProfiles: userProfiles,
                 selectedTripIndex: $selectedTripIndex,
                 onClose: closeTripStatusPanel
             )
         } else if selectedTripAction == .join {
             JoinTripView(
-                selectedTripAction: $selectedTripAction
+                selectedTripAction: $selectedTripAction,
+                onJoinInvitationCode: { code in
+                    try await viewModel.joinTrip(invitationCode: code)
+                },
+                onAcceptShareLink: { url in
+                    try await viewModel.joinSharedTrip(from: url)
+                }
             )
         } else {
             CreateTripView(
@@ -355,7 +407,39 @@ var body: some View {
             )
         }
     }
-
+    
+    // MARK: - onChange handlers (extracted so `.onChange` closures stay tiny)
+    
+    private func handleTripsCountChange(_ old: Int, _ count: Int) {
+        if count == 0 {
+            isTripStatusExpanded = false
+            selectedTripIndex = 0
+        } else if selectedTripIndex >= count {
+            selectedTripIndex = max(0, count - 1)
+        }
+    }
+    
+    private func handleSelectedTripActionChange(_ old: TripAction?, _ action: TripAction?) {
+        guard let action else {
+            viewModel.resetCreateTripFlow()
+            return
+        }
+        isTripStatusExpanded = false
+        if action != .create {
+            viewModel.isInvitationPresented = false
+            viewModel.resetCreateTripFlow()
+        }
+    }
+    
+    private func handleInvitationPresentedChange(_ old: Bool, _ isPresented: Bool) {
+        guard !isPresented else { return }
+        if selectedTripAction == .create {
+            isDynamicBoxExpanded = true
+            viewModel.isNextStepEnabled = true
+            viewModel.nextStepRequest = 2
+        }
+    }
+    
     private func closeTripStatusPanel() {
         if isTransitioningTopPanel { return }
         isTransitioningTopPanel = true
