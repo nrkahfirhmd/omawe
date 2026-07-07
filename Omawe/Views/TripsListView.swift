@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 struct TripsListView: View {
     @State private var selectedSegment: TripListSegment = .totalTrips 
@@ -23,13 +24,13 @@ struct TripsListView: View {
 //        .init(title: "Jimbaran Bay Seafood Feast", date: .now.addingTimeInterval(86400 * 30))
 //    ]
     
-    @Query(sort: \TripModel.startDate, order: .forward)
-    private var trips: [TripModel]
+    @State private var trips: [Trip] = []
+    private let tripService = CloudKitTripService()
 
-    private var displayedTrips: [TripModel] {
+    private var displayedTrips: [Trip] {
         let today = Calendar.current.startOfDay(for: .now)
 
-        let segmentTrips: [TripModel] = switch selectedSegment {
+        let segmentTrips: [Trip] = switch selectedSegment {
         case .totalTrips:
             trips
         case .nextTrips:
@@ -39,7 +40,7 @@ struct TripsListView: View {
         guard !searchText.isEmpty else { return segmentTrips }
 
         return segmentTrips.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
+            $0.title.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -82,9 +83,17 @@ struct TripsListView: View {
 
                 Spacer()
             }
+            .navigationTitle("Your trips")
+            .navigationBarTitleDisplayMode(.inline)
+            .presentationBackground(.clear)
+            .task {
+                do {
+                    trips = try await tripService.fetchOwnedTrips()
+                } catch {
+                    print("Failed to fetch trips: \(error)")
+                }
+            }
         }
-        .navigationTitle("Your trips")
-        .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: $searchText,
             placement: .toolbar,
@@ -133,7 +142,7 @@ enum TripListSegment: String, CaseIterable, Identifiable {
 }
 
 struct TripMenuRow: View {
-    let trip: TripModel
+    let trip: Trip
 
     private var hasPassed: Bool {
         trip.startDate < Calendar.current.startOfDay(for: .now)
@@ -151,7 +160,7 @@ struct TripMenuRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 6) {
-                Text(trip.name)
+                Text(trip.title)
                     .font(.bodyText())
                     .lineLimit(1)
 
