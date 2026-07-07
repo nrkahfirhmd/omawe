@@ -1,5 +1,5 @@
 //
-//  SecondView.swift
+//  ThirdView.swift
 //  Omawe
 //
 //  Created by Nguyen Minh Luat on 6/7/26.
@@ -10,14 +10,14 @@ import Lottie
 
 
 struct SecondView: View {
+    var onNext: () -> Void = {}
+
     @State private var appeared = false
-    @State private var shimmerX: CGFloat = -1
-
-
+    @State private var revealBlack = false
 
     var body: some View {
         ZStack {
-
+ 
             Image("LiveActivity")
                            .resizable()
                            .scaledToFit()
@@ -33,6 +33,8 @@ struct SecondView: View {
                                }
                            }
                            .offset(y: -420)
+            
+            
             LottieView {
                 try await DotLottieFile.named("SecondView")
             }
@@ -40,36 +42,36 @@ struct SecondView: View {
             .looping()
             .resizable()
             .frame(width: 560, height: 560)
-            .offset(y: -110)
+            .offset(y: -100)
             
             
-            VStack {
-                VStack{
 
-                    Spacer ()
-                    
-                    VStack{
+            VStack {
+                VStack {
+                    Spacer()
+
+                    VStack {
                         HStack {
-                            Circle ()
+                            Circle()
                                 .fill(Color.gray.opacity(0.4))
                                 .frame(width: 8, height: 8)
-                            Rectangle ()
+                            Circle()
+                                .fill(Color.gray.opacity(0.4))
+                                .frame(width: 8, height: 8)
+                            Rectangle()
                                 .fill(Color.cyan.opacity(1))
                                 .frame(width: 30, height: 8)
                                 .cornerRadius(12)
-                            Circle ()
-                                .fill(Color.gray.opacity(0.4))
-                                .frame(width: 8, height: 8)
                         }
                         Text("The journey, at a glance.")
                             .font(.title)
                             .fontWidth(.expanded)
                             .fontWeight(.semibold)
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(Color(hex:"343434"))
+                            .foregroundStyle(Color(hex: "343434"))
                             .frame(maxWidth: .infinity)
                             .padding(10)
-                        Text ("Live updates keep everyone's remaining distance just a glance away - right from the Lock Screen and Dynamic Island.")
+                        Text("Live updates keep everyone's remaining distance just a glance away - right from the Lock Screen and Dynamic Island.")
                             .font(.footnote)
                             .fontWeight(.regular)
                             .foregroundColor(.black)
@@ -80,22 +82,30 @@ struct SecondView: View {
                     }
                 }
                 Spacer()
-                Button(action: {}) {
-                    Text("How can I do that?")
+                Button(action: {
+                    HapticManager.shared.tickTickTick()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0){
+                        onNext()
+                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                        revealBlack = true
+                    }
+                }) {
+                    Text("Let's start")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .fontWidth(.expanded)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 22.5)
-                        .shadow(color: .blue.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
                         .background(
                             Capsule()
                                 .fill(
                                     LinearGradient(stops: [
                                         .init(color: Color(hex: "03B9D6"), location: 0.0),
                                         .init(color: Color(hex: "7AE8FF"), location: 1),
-                                    ], startPoint: UnitPoint.top, endPoint: .bottom)
+                                    ], startPoint: .top, endPoint: .bottom)
                                 )
                         )
                         .overlay(
@@ -104,7 +114,7 @@ struct SecondView: View {
                                     LinearGradient(stops: [
                                         .init(color: Color(hex: "03B9D6"), location: 0.0),
                                         .init(color: Color(hex: "7AE8FF"), location: 1),
-                                    ], startPoint: UnitPoint.trailing, endPoint: .leading),
+                                    ], startPoint: .trailing, endPoint: .leading),
                                     lineWidth: 1
                                 )
                                 .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
@@ -118,7 +128,22 @@ struct SecondView: View {
             .containerRelativeFrame(.horizontal) { width, _ in
                 width * 1
             }
+            
+            
 
+            GeometryReader { geo in
+                Image("DarkBlueBackground")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: revealBlack ? 0 : 22, style: .continuous))
+                    .scaleEffect(revealBlack ? 1 : 0.05, anchor: .top)
+                    .offset(y: revealBlack ? 0 : 40)
+                    .opacity(revealBlack ? 1 : 0)
+
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
         }
         .background {
             Image(.homeBackground)
@@ -126,9 +151,7 @@ struct SecondView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
         }
-        .padding(1)
         .ignoresSafeArea()
-        
     }
 }
 

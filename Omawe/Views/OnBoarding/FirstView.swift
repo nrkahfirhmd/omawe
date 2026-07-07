@@ -19,6 +19,8 @@ struct PressScaleStyle: ButtonStyle {
 }
 
 struct FirstView: View {
+    var onNext: () -> Void = {}
+
 
     var body: some View {
         ZStack {
@@ -84,7 +86,11 @@ struct FirstView: View {
                     }
                 }
                 Spacer()
-                Button(action: {HapticManager.shared.tickTickTick()}) {
+                Button(action: {
+                    HapticManager.shared.tickTickTick()
+                    onNext()
+                    
+                }) {
                     Text("Let's get started")
                         .font(.subheadline)
                         .fontWeight(.semibold)
@@ -92,7 +98,7 @@ struct FirstView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 22.5)
-                        .shadow(color: .blue.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
                         .background(
                             Capsule()
                                 .fill(
