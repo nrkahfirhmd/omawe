@@ -19,6 +19,7 @@ struct TripInvitationView: View {
     let hasCreatedTrip: Bool
     let shareURL: String?
     let onCreateTrip: () async throws -> String
+    let onDismissAndReset: () -> Void
     
     @Binding var isCalendarPresented: Bool
     @Binding var isEditingInvitationDetails: Bool
@@ -44,6 +45,7 @@ struct TripInvitationView: View {
         isEditingInvitationDetails: Binding<Bool>,
         isLocationSheetPresented: Binding<Bool>,
         onCreateTrip: @escaping () async throws -> String,
+        onDismissAndReset: @escaping () -> Void
     ) {
         self._draft = draft
         self.creationErrorMessage = creationErrorMessage
@@ -57,6 +59,7 @@ struct TripInvitationView: View {
         self._isEditingInvitationDetails = isEditingInvitationDetails
         self._isLocationSheetPresented = isLocationSheetPresented
         self.onCreateTrip = onCreateTrip
+        self.onDismissAndReset = onDismissAndReset
     }
     
     private var displayTripName: String {
@@ -68,12 +71,16 @@ struct TripInvitationView: View {
     }
     
     private var buttonTitle: String {
-        if isSavingTrip {
-            return "Creating Trip..."
-        }
-
         if didCopyShareLink {
             return "Code Copied"
+        }
+        
+        if hasCreatedTrip {
+            return "Share Link"
+        }
+        
+        if isSavingTrip || isCreatingShare {
+            return "Creating Trip..."
         }
 
         return "Create Trip"
@@ -175,11 +182,11 @@ struct TripInvitationView: View {
     
     private var header: some View {
         VStack(spacing: 7) {
-            Image(systemName: "eyes")
+            Image(systemName: hasCreatedTrip ? "figure.walk.suitcase.rolling" : "eyes")
                 .font(.button())
                 .foregroundStyle(.white.opacity(0.3))
             
-            Text("Invitation\nPreview")
+            Text(hasCreatedTrip ? "Ready to\nTrip" : "Invitation\nPreview")
                 .font(.button())
                 .fontWidth(.expanded)
                 .foregroundStyle(.white.opacity(0.52))
@@ -189,9 +196,7 @@ struct TripInvitationView: View {
     }
     
     private var invitationTicket: some View {
-        ZStack {
-            InvitationTicketBackground(isEditing: isEditingInvitationDetails)
-            
+        InvitationTicketContainer(isEditing: isEditingInvitationDetails) {
             if isEditingInvitationDetails {
                 editingTicketContent
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -200,23 +205,6 @@ struct TripInvitationView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: isEditingInvitationDetails ? 0 : 48, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 48, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: "#1C1C1C"), location: 0),
-                            .init(color: Color(hex: "#3F3F3F"), location: 0.51),
-                            .init(color: Color(hex: "#1C1C1C"), location: 1),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1
-                )
-        }
-        .shadow(color: .black.opacity(0.38), radius: 28, x: 0, y: 18)
     }
     
     private var previewTicketContent: some View {
@@ -416,10 +404,37 @@ struct TripInvitationView: View {
         VStack(spacing: 12) {
             if !isEditingInvitationDetails {
                 HStack(spacing: 12) {
+                    if !hasCreatedTrip {
+                        Button {
+                            dismiss()
+                            onDismissAndReset()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.headline())
+                                .padding(8)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Go back")
+                    }
+                    
                     Button {
-                        Task {
-                            let code = try await onCreateTrip()
-                            copyShareLink(code)
+                        if hasCreatedTrip {
+                            if let shareURL {
+                                copyShareLink(shareURL)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    dismiss()
+                                    onDismissAndReset()
+                                }
+                            } else {
+                                dismiss()
+                                onDismissAndReset()
+                            }
+                        } else {
+                            Task {
+                                let code = try await onCreateTrip()
+                                copyShareLink(code)
+                            }
                         }
                     } label: {
                         HStack(spacing: 14) {
@@ -441,25 +456,27 @@ struct TripInvitationView: View {
                         .foregroundStyle(canConfirmTripCreation || isSavingTrip || hasCreatedTrip || isCreatingShare ? .white : .white.opacity(0.52))
                         .overlay {
                             Capsule()
-                                .stroke(Theme.primary, lineWidth: 1.5)
+                                .stroke(hasCreatedTrip ? Theme.secondary : Theme.primary, lineWidth: 1.5)
                         }
                     }
                     .glassEffect(.clear)
-                    .disabled(!canConfirmTripCreation || isSavingTrip)
+                    .disabled(hasCreatedTrip ? false : (!canConfirmTripCreation || isSavingTrip))
                     .accessibilityLabel(buttonTitle)
                     
-                    Button {
-                        withAnimation(.spring(response: 0.54, dampingFraction: 0.88)) {
-                            isEditingInvitationDetails = true
+                    if !hasCreatedTrip {
+                        Button {
+                            withAnimation(.spring(response: 0.54, dampingFraction: 0.88)) {
+                                isEditingInvitationDetails = true
+                            }
+                        } label: {
+                            Image(systemName: "pencil.line")
+                                .font(.headline())
+                                .padding(8)
                         }
-                    } label: {
-                        Image(systemName: "pencil.line")
-                            .font(.headline())
-                            .padding(8)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Edit invitation details")
                     }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .accessibilityLabel("Edit invitation details")
                 }
             } else {
                 HStack {
@@ -513,9 +530,13 @@ struct TripInvitationView: View {
     }
     
     private var primaryButtonIconName: String {
-        didCopyShareLink
-            ? "checkmark.circle.fill"
-            : "plus.circle.fill"
+        if didCopyShareLink {
+            return "checkmark.circle.fill"
+        }
+        if hasCreatedTrip {
+            return "square.and.arrow.up.fill"
+        }
+        return "plus.circle.fill"
     }
     
     private func copyShareLink(_ url: String) {
@@ -556,114 +577,6 @@ struct TripInvitationView: View {
     }
 }
 
-private struct SpotlightShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX - 65, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.midX + 65, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX + 700, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX - 700, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-}
 
-private struct InvitationTicketBackground: View {
-    var isEditing: Bool = false
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .bottom) {
-                Image(.moire)
-                    .resizable()
-                    .scaledToFill()
-                
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            .black,
-                            Theme.primaryBox,
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    
-                    PlusPattern()
-                        .mask(
-                            LinearGradient(
-                                colors: [.clear, .white],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                }
-                .clipShape(BottomWave())
-                .frame(height: isEditing ? geo.size.height * 0.3:  geo.size.height * 0.48)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 48))
-    }
-}
 
-private struct BottomWave: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        
-        let amplitude: CGFloat = 10
-        let wavelength: CGFloat = 42
-        
-        path.move(to: .zero)
-        
-        var x: CGFloat = 0
-        
-        while x <= rect.width {
-            path.addQuadCurve(
-                to: CGPoint(x: x + wavelength / 2, y: amplitude),
-                control: CGPoint(x: x + wavelength / 4, y: 0)
-            )
-            
-            path.addQuadCurve(
-                to: CGPoint(x: x + wavelength, y: 10),
-                control: CGPoint(x: x + wavelength * 0.75, y: amplitude * 2)
-            )
-            
-            x += wavelength
-        }
-        
-        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
-        path.addLine(to: CGPoint(x: 0, y: rect.height))
-        path.closeSubpath()
-        
-        return path
-    }
-}
 
-#Preview {
-    @Previewable @State var draft = TripDraft(
-        name: "Ex-Boyfriends Celebration",
-        arrivalDate: .now,
-        locationName: "Toko Kopi Jaya, Kuta",
-        locationAddress: "Jl. Dewi Sri No. 99X, Legian, Kec. Kuta, Kabupaten Badung, Bali 80361",
-        apartmentUnitFloor: "Room 222",
-        locationNickname: "Luat's House"
-    )
-    @Previewable @State var isCalendarPresented = false
-    @Previewable @State var isEditingInvitationDetails = false
-    @Previewable @State var isLocationSheetPresented = false
-    
-    TripInvitationView(
-        draft: $draft,
-        creationErrorMessage: nil,
-        shareErrorMessage: nil,
-        canConfirmTripCreation: true,
-        isSavingTrip: false,
-        isCreatingShare: false,
-        hasCreatedTrip: false,
-        shareURL: nil,
-        isCalendarPresented: $isCalendarPresented,
-        isEditingInvitationDetails: $isEditingInvitationDetails,
-        isLocationSheetPresented: $isLocationSheetPresented,
-        onCreateTrip: {
-            "AAAAAAA"
-        }
-    )
-}

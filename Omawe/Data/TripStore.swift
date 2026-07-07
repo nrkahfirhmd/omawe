@@ -2,7 +2,7 @@
 //  TripStore.swift
 //  Omawe
 //
-//  Created by Codex on 07/07/26.
+//  Created by Muhammad Bintang Al-Fath on 07/07/26.
 //
 
 import SwiftUI

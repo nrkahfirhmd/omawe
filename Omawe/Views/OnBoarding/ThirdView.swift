@@ -106,7 +106,7 @@ struct ThirdView: View {
                     }
                 } label: {
                     ZStack {
-                        Text("   Continue with Apple")
+                        Text("􀣺 Continue with Apple")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .fontWidth(.expanded)

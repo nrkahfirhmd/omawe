@@ -2,7 +2,7 @@
 //  CloudKitShareAcceptanceBridge.swift
 //  Omawe
 //
-//  Created by Codex on 06/07/26.
+//  Created by Muhammad Bintang Al-Fath on 06/07/26.
 //
 
 import CloudKit
