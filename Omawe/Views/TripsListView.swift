@@ -6,12 +6,12 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct TripsListView: View {
-    @State private var selectedSegment: TripListSegment = .totalTrips 
+    @State private var selectedSegment: TripListSegment = .totalTrips
     @State private var searchText = ""
-    
+    @State private var homeViewModel = HomeViewModel()
+
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
         }
@@ -22,14 +22,15 @@ struct TripsListView: View {
 //        .init(title: "Mount Batur Sunrise Trek and Breakfast", date: .now.addingTimeInterval(-86400 * 5)),
 //        .init(title: "Jimbaran Bay Seafood Feast", date: .now.addingTimeInterval(86400 * 30))
 //    ]
-    
-    @Query(sort: \TripModel.startDate, order: .forward)
-    private var trips: [TripModel]
 
-    private var displayedTrips: [TripModel] {
+    private var trips: [Trip] {
+        homeViewModel.trips.sorted { $0.startDate < $1.startDate }
+    }
+
+    private var displayedTrips: [Trip] {
         let today = Calendar.current.startOfDay(for: .now)
 
-        let segmentTrips: [TripModel] = switch selectedSegment {
+        let segmentTrips: [Trip] = switch selectedSegment {
         case .totalTrips:
             trips
         case .nextTrips:
@@ -39,7 +40,7 @@ struct TripsListView: View {
         guard !searchText.isEmpty else { return segmentTrips }
 
         return segmentTrips.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
+            $0.title.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -90,6 +91,9 @@ struct TripsListView: View {
             placement: .toolbar,
             prompt: "Search trips..."
         )
+        .task {
+            await homeViewModel.loadTrips()
+        }
     }
 
     private var tripsMenu: some View {
@@ -133,7 +137,7 @@ enum TripListSegment: String, CaseIterable, Identifiable {
 }
 
 struct TripMenuRow: View {
-    let trip: TripModel
+    let trip: Trip
 
     private var hasPassed: Bool {
         trip.startDate < Calendar.current.startOfDay(for: .now)
@@ -151,7 +155,7 @@ struct TripMenuRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 6) {
-                Text(trip.name)
+                Text(trip.title)
                     .font(.bodyText())
                     .lineLimit(1)
 
