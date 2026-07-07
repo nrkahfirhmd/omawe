@@ -16,7 +16,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8CD3699C2FF265E400B103BD"
+               BlueprintIdentifier = "5FD9DE992FFCE76C0047FCF3"
                BuildableName = "OmaweWidgetExtension.appex"
                BlueprintName = "OmaweWidgetExtension"
                ReferencedContainer = "container:Omawe.xcodeproj">
@@ -63,7 +63,7 @@
          BundleIdentifier = "com.apple.springboard">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8CD3699C2FF265E400B103BD"
+            BlueprintIdentifier = "5FD9DE992FFCE76C0047FCF3"
             BuildableName = "OmaweWidgetExtension.appex"
             BlueprintName = "OmaweWidgetExtension"
             ReferencedContainer = "container:Omawe.xcodeproj">

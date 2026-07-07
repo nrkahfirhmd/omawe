@@ -26,8 +26,8 @@ class HomeViewModel {
 
     // MARK: - Trip and Participant List
 
-    var trips: [Trip] = []
-    var participants: [Participant] = []
+    var trips: [Trip] { TripStore.shared.trips }
+    var participants: [Participant] { TripStore.shared.participants }
 
     // MARK: - Create Trip Flow
 
@@ -140,7 +140,7 @@ class HomeViewModel {
             )
 
             // MARK: - Refresh Home Data
-            await loadTrips()
+            await TripStore.shared.loadTrips()
 
             hasCreatedTrip = true
 
@@ -210,6 +210,8 @@ class HomeViewModel {
             _ = try await participantService.createParticipant(participant)
             print("✅ Participant record created for joiner")
 
+            await TripStore.shared.loadTrips()
+
         } catch {
             print("❌ Share acceptance failed:", error)
             throw error
@@ -239,35 +241,7 @@ class HomeViewModel {
     }
 
     func loadTrips() async {
-        do {
-            async let owned = tripService.fetchOwnedTrips()
-            async let shared = sharingService.fetchSharedTrips()
-
-            let (ownedTrips, sharedTrips) = try await (owned, shared)
-
-            trips = (ownedTrips + sharedTrips).sorted {
-                $0.updatedAt > $1.updatedAt
-            }
-
-            await loadParticipants()
-        } catch {
-            print(error)
-        }
-    }
-
-    func loadParticipants() async {
-        do {
-            var loadedParticipants: [Participant] = []
-
-            for trip in trips {
-                let members = try await participantService.fetchParticipants(for: trip.id!)
-                loadedParticipants.append(contentsOf: members)
-            }
-
-            participants = loadedParticipants
-        } catch {
-            print("[CloudKit] Failed to load participants: \(error.localizedDescription)")
-        }
+        await TripStore.shared.loadTrips()
     }
     
     func debugFetchAllParticipants(for tripID: CKRecord.ID) async {
