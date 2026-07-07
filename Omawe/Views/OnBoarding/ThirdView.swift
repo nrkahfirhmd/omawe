@@ -12,6 +12,8 @@ import Lottie
 
 
 struct ThirdView: View {
+    
+    let onFinish: () -> Void
 
     var body: some View {
         ZStack {
@@ -86,7 +88,10 @@ struct ThirdView: View {
                     }
                 }
                 Spacer()
-                Button(action: {HapticManager.shared.tickTickTick()}) {
+                Button {
+                    HapticManager.shared.tickTickTick()
+                    onFinish()
+                } label: {
                     Text("   Continue with Apple")
                         .font(.subheadline)
                         .fontWeight(.semibold)
@@ -163,8 +168,4 @@ struct SpotlightBeam: View {
             .blur(radius: 30)   // làm mềm mép chùm sáng
         }
     }
-}
-
-#Preview {
-    ThirdView()
 }

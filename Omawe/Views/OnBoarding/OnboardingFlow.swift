@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct OnboardingFlow: View {
+    @AppStorage("hasCompletedOnboarding")
+    private var hasCompletedOnboarding = false
+
     @State private var currentPage = 0
 
     var body: some View {
@@ -16,12 +19,16 @@ struct OnboardingFlow: View {
             case 0:
                 FirstView(onNext: { goTo(1) })
                     .transition(.opacity)
+
             case 1:
                 SecondView(onNext: { goTo(2) })
                     .transition(.identity)
+
             default:
-                ThirdView()
-                    .transition(.opacity)
+                ThirdView {
+                    finishOnboarding()
+                }
+                .transition(.opacity)
             }
         }
         .background {
@@ -39,7 +46,12 @@ struct OnboardingFlow: View {
             currentPage = page
         }
     }
+
+    private func finishOnboarding() {
+        hasCompletedOnboarding = true
+    }
 }
+
 #Preview {
     OnboardingFlow()
 }
