@@ -51,15 +51,21 @@ struct LiveActivityLockScreenView: View {
             // ── Route Progress with Mate Markers ──
         VStack() {
             ZStack{
-                PolkaDotBackground(dotSize: 3, spacing: 12, color: LATheme.teal.opacity(0.35))
-                    .mask {
-                        RadialGradient(
-                            colors: [.black, .black.opacity(0)],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: 180
-                        )
-                    }
+                PolkaDotBackground(
+                    dotSize: 3,
+                    spacing: 10,
+                    color: LATheme.teal.opacity(1)
+                )
+                .mask {
+                    Ellipse()
+                        
+                        .padding(.horizontal, 30)
+                        .blur(radius: 40)
+                        .scaleEffect(x: 1, y: 0.4)
+                        
+                }
+                .padding(.top, 45)
+                .frame(width: .infinity, height: 100)
                 
                 VStack{
                     // ── Top Row: ETA & Distance ──
@@ -104,7 +110,7 @@ struct LiveActivityLockScreenView: View {
                 }
             }
 //            .padding(.horizontal,10)
-//            .padding(.vertical, 2)
+//            .padding(.vertical, 10)
             
             // ── Bottom Row: Alert Icon + Report Button ──
             HStack(spacing: 10) {

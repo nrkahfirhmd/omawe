@@ -154,6 +154,8 @@ struct OmaweWidgetLiveActivity: Widget {
     }
 }
 
+
+
 // MARK: - Previews
 extension OmaweWidgetAttributes {
     fileprivate static var preview: OmaweWidgetAttributes {
