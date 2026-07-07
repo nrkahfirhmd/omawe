@@ -107,7 +107,7 @@ struct TripsListView: View {
         VStack(spacing: 0) {
             ForEach(displayedTrips) { trip in
                 NavigationLink {
-                    ProfileTripDetailsView(trip: trip)
+                    ProfileTripDetailsView(trip: trip, viewModel: homeViewModel)
                 } label: {
                     TripMenuRow(trip: trip)
                 }

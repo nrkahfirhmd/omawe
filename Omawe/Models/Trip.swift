@@ -16,6 +16,13 @@ struct Trip : Identifiable, Hashable {
     var endDate: Date
     let ownerID: CKRecord.ID
     var invitationCode: String
+    var status: TripStatus = .notStarted
     var createdAt: Date
     var updatedAt: Date
+}
+
+enum TripStatus: String, Codable {
+    case notStarted
+    case active
+    case ended
 }

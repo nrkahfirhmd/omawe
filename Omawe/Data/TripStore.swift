@@ -129,9 +129,10 @@ fileprivate struct CachedTrip: Codable {
     let endDate: Date
     let ownerID: CachedCKRecordID
     let invitationCode: String
+    let status: String
     let createdAt: Date
     let updatedAt: Date
-    
+
     init(from trip: Trip) {
         self.id = trip.id.map { CachedCKRecordID(id: $0) }
         self.title = trip.title
@@ -140,10 +141,27 @@ fileprivate struct CachedTrip: Codable {
         self.endDate = trip.endDate
         self.ownerID = CachedCKRecordID(id: trip.ownerID)
         self.invitationCode = trip.invitationCode
+        self.status = trip.status.rawValue
         self.createdAt = trip.createdAt
         self.updatedAt = trip.updatedAt
     }
-    
+
+    // Custom decode so cache files written before `status` existed still load,
+    // defaulting to .notStarted instead of failing the whole decode.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(CachedCKRecordID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        destination = try container.decode(String.self, forKey: .destination)
+        startDate = try container.decode(Date.self, forKey: .startDate)
+        endDate = try container.decode(Date.self, forKey: .endDate)
+        ownerID = try container.decode(CachedCKRecordID.self, forKey: .ownerID)
+        invitationCode = try container.decode(String.self, forKey: .invitationCode)
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? TripStatus.notStarted.rawValue
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
     func toTrip() -> Trip {
         Trip(
             id: id?.toID(),
@@ -153,6 +171,7 @@ fileprivate struct CachedTrip: Codable {
             endDate: endDate,
             ownerID: ownerID.toID(),
             invitationCode: invitationCode,
+            status: TripStatus(rawValue: status) ?? .notStarted,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

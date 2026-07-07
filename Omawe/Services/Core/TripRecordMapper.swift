@@ -19,6 +19,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let endDate = "endDate"
         static let ownerID = "ownerID"
         static let invitationCode = "invitationCode"
+        static let status = "status"
         static let createdAt = "createdAt"
         static let updatedAt = "updatedAt"
     }
@@ -37,6 +38,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
         record[Field.endDate] = model.endDate as CKRecordValue
         record[Field.ownerID] = model.ownerID.recordName as CKRecordValue
         record[Field.invitationCode] = model.invitationCode as CKRecordValue
+        record[Field.status] = model.status.rawValue as CKRecordValue
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
         print(record.allKeys())
@@ -57,6 +59,10 @@ struct TripRecordMapper: CloudKitRecordMappable {
             throw CloudKitError.invalidRecord
         }
 
+        // Records saved before the status field existed have no value here —
+        // default to .notStarted rather than failing the whole decode.
+        let status = (record[Field.status] as? String).flatMap(TripStatus.init(rawValue:)) ?? .notStarted
+
         return Trip(
             id: record.recordID,
             title: title,
@@ -65,6 +71,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
             endDate: endDate,
             ownerID: CKRecord.ID(recordName: ownerRecordName),
             invitationCode: invitationCode,
+            status: status,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

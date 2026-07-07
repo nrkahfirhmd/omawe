@@ -433,7 +433,11 @@ struct HomeView: View {
                 members: viewModel.participants,
                 userProfiles: userProfiles,
                 selectedTripIndex: $selectedTripIndex,
-                onClose: closeTripStatusPanel
+                onClose: closeTripStatusPanel,
+                isStartingTrip: viewModel.isUpdatingTripStatus,
+                onStartTrip: { trip in
+                    Task { await viewModel.startTrip(trip) }
+                }
             )
         } else if selectedTripAction == .join {
             JoinTripView(

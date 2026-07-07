@@ -14,6 +14,8 @@ struct TripStatusDetailView: View {
     let userProfiles: [UserProfile]
     @Binding var selectedTripIndex: Int
     var onClose: () -> Void
+    var isStartingTrip: Bool = false
+    var onStartTrip: (Trip) -> Void = { _ in }
 
     private var selectedIndex: Int {
         guard !trips.isEmpty else { return 0 }
@@ -54,7 +56,9 @@ struct TripStatusDetailView: View {
                                 TripStatusPageContentView(
                                     trip: trip,
                                     members: memberDisplays(for: trip),
-                                    totalTripCount: trips.count
+                                    totalTripCount: trips.count,
+                                    isStartingTrip: isStartingTrip,
+                                    onStartTrip: { onStartTrip(trip) }
                                 )
                                 .tag(index)
                             }
@@ -153,6 +157,8 @@ private struct TripStatusPageContentView: View {
     let trip: Trip
     let members: [TripStatusMemberDisplay]
     let totalTripCount: Int
+    var isStartingTrip: Bool = false
+    var onStartTrip: () -> Void = {}
 
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
@@ -185,7 +191,17 @@ private struct TripStatusPageContentView: View {
 //                .padding(.bottom, 18)
 
             HStack(spacing: 12) {
-                StartTripButton()
+                if trip.status == .notStarted {
+                    StartTripButton(isDisabled: isStartingTrip, action: onStartTrip)
+                } else {
+                    Text(trip.status == .active ? "Trip is on the way" : "Trip has ended")
+                        .font(.subheadline.weight(.semibold))
+                        .fontWidth(.expanded)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 22.5)
+                        .background(.white.opacity(0.12), in: Capsule())
+                }
 
                 Button {
                 } label: {
