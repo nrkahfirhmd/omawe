@@ -11,13 +11,14 @@ struct TripHeaderCard: View {
     @Binding var isExpanded: Bool
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 12) {
             TripHeader()
 
             HeaderStats()
 
             if isExpanded {
                 Divider()
+                    .background(Color.white)
 
                 ExpandedContent()
                     .transition(
@@ -27,29 +28,20 @@ struct TripHeaderCard: View {
                         )
                     )
             }
+            
+            VStack {
+                Capsule()
+                    .frame(width: 75, height: 5)
+            }
+            .padding(.bottom, 6)
         }
-        .padding()
+        .padding(.horizontal, 24)
+        .padding(.top, 56)
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial)
+        .background(GridGradientBackground(color: Theme.secondaryBox))
         .clipShape(RoundedRectangle(cornerRadius: 35))
         .animation(.spring(duration: 0.45), value: isExpanded)
-    }
-
-    func tripItem(
-        title: String,
-        value: String,
-        color: Color = .white
-    ) -> some View {
-        VStack {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.title3)
-                .bold()
-                .foregroundStyle(color)
-        }
+        .foregroundStyle(.white)
     }
 }
 
@@ -57,14 +49,15 @@ private struct TripHeader: View {
     var body: some View {
         VStack(spacing: 6) {
             Text("Ex-Boyfriends Celebration!")
-                .font(.largeTitle)
+                .font(.headline())
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
             Text("by @Bintang • 27/06/2026 • 11:30")
-                .font(.title3)
+                .font(.caption1())
                 .foregroundStyle(.secondary)
         }
+        .foregroundStyle(.white)
     }
 }
 
@@ -75,13 +68,13 @@ private struct HeaderStats: View {
 
             Divider()
                 .frame(height: 70)
-                .padding(.horizontal)
+                .background(Color.white)
 
             stat(title: "ETA", value: "11:00", color: .yellow)
 
             Divider()
                 .frame(height: 70)
-                .padding(.horizontal)
+                .background(Color.white)
 
             stat(title: "Distance", value: "15km", color: .yellow)
         }
@@ -91,13 +84,14 @@ private struct HeaderStats: View {
     private func stat(title: String, value: String, color: Color = .white) -> some View {
         VStack(spacing: 4) {
             Text(title)
-                .font(.title3)
+                .font(.caption2())
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
             Text(value)
-                .font(.system(size: 28, weight: .bold))
+                .font(.button())
                 .foregroundStyle(color)
+                .fontWidth(.expanded)
         }
         .frame(maxWidth: .infinity)
     }
@@ -109,7 +103,8 @@ private struct ExpandedContent: View {
             Button {
             } label: {
                 Label("Gonna be late", systemImage: "message.badge")
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal)
+                    .font(.caption1())
             }
             .buttonStyle(.borderedProminent)
             .tint(.brown.opacity(0.8))
@@ -127,7 +122,8 @@ private struct ExpandedContent: View {
                 Spacer()
 
                 Text("Bingtang")
-                    .font(.system(size: 36, weight: .bold))
+                    .font(.title3())
+                    .fontWidth(.expanded)
 
                 Spacer()
 
@@ -146,12 +142,11 @@ private struct ExpandedContent: View {
                 Capsule().fill(.white.opacity(0.35)).frame(height: 6)
                 Image(systemName: "flag.fill")
             }
-            .foregroundStyle(.white)
         }
         .padding(.top, 8)
     }
 }
 
 #Preview {
-    TripHeaderCard(isExpanded: .constant(true))
+    TripHeaderCard(isExpanded: .constant(false))
 }

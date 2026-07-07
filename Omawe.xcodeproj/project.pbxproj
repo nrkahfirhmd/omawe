@@ -10,6 +10,7 @@
 		8CD369A02FF265E500B103BD /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD3699F2FF265E400B103BD /* WidgetKit.framework */; };
 		8CD369A22FF265E500B103BD /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD369A12FF265E500B103BD /* SwiftUI.framework */; };
 		8CD369B32FF265E600B103BD /* OmaweWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8CD3699D2FF265E400B103BD /* OmaweWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CCD7168B2FFC9B4200182164 /* on_trip.gif in Resources */ = {isa = PBXBuildFile; fileRef = CCD7168A2FFC9B4200182164 /* on_trip.gif */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +42,7 @@
 		8CD3699F2FF265E400B103BD /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8CD369A12FF265E500B103BD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCD7168A2FFC9B4200182164 /* on_trip.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = on_trip.gif; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -101,6 +103,7 @@
 		8CF43A2C2FF2497200061915 = {
 			isa = PBXGroup;
 			children = (
+				CCD7168A2FFC9B4200182164 /* on_trip.gif */,
 				8CF43A372FF2497200061915 /* Omawe */,
 				8CD369A32FF265E500B103BD /* OmaweWidget */,
 				8CD3699E2FF265E400B103BD /* Frameworks */,
@@ -216,6 +219,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CCD7168B2FFC9B4200182164 /* on_trip.gif in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

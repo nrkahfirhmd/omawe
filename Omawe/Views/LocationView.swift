@@ -47,8 +47,66 @@ struct LocationView: View {
                     )
 
                 Spacer()
+                
+                VStack(spacing: 18) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                        
+                        Text("Your report has been recorded")
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.white.opacity(0.9))
+                    .clipShape(Capsule())
 
-                BottomActionBar()
+                    HStack(alignment: .bottom) {
+                        Button {
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.title3)
+                                .foregroundStyle(.black)
+                                .frame(width: 62, height: 62)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                        }
+
+                        Spacer()
+
+                        Button {
+                        } label: {
+                            Text("Report")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 58)
+                                .background(.ultraThinMaterial)
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 28)
+                                        .stroke(
+                                            Color.cyan,
+                                            lineWidth: 2
+                                        )
+                                }
+                                .clipShape(
+                                    Capsule()
+                                )
+                        }
+
+                        Spacer()
+                        
+                        Button {
+                        } label: {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.title3)
+                                .foregroundStyle(.black)
+                                .frame(width: 62, height: 62)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                        }
+                    }
+                }
             }
             .padding(.horizontal, 18)
             .padding(.vertical)
