@@ -178,6 +178,9 @@ struct HomeView: View {
             Spacer()
             swipeHintView
         }
+        .opacity(selectedTripAction == nil ? 1 : 0)
+        .scaleEffect(selectedTripAction == nil ? 1 : 0.92)
+        .offset(y: selectedTripAction == nil ? 0 : -20)
     }
     
     private var avatarView: some View {
@@ -324,7 +327,7 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.bottom, isKeyboardVisible ? 16 : flowBottomInset)
+        .padding(.bottom, isKeyboardVisible ? 50 : flowBottomInset)
         .ignoresSafeArea(.container)
     }
     
