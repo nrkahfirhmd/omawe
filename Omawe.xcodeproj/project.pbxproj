@@ -7,10 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C140F49F8E2B066FD640715 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2178A4116A9D305DD17AC0F /* Foundation.framework */; };
+		476AE09606649729F6EEBD63 /* LocationUpdateQueueServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */; };
 		5FD9DE9B2FFCE76C0047FCF3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD3699F2FF265E400B103BD /* WidgetKit.framework */; };
 		5FD9DE9C2FFCE76C0047FCF3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD369A12FF265E500B103BD /* SwiftUI.framework */; };
 		5FD9DEAD2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		622DC11819D4F9AAECA18B4E /* LocationCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E667E531EC1E31F658050D /* LocationCoreTests.swift */; };
+		7533CBFA18DC75163521E9B3 /* LocationSharingCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A394696DD98EBA3A2E72B /* LocationSharingCoordinatorTests.swift */; };
+		92D7D52C547B48FF70F7DD50 /* LocationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BB9C377257037BC9C0EF93 /* LocationServiceTests.swift */; };
+		BD53BF10D60A6EAD1ECB4532 /* LocationUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4538B9C8CCBF8A5537659448 /* LocationUpdateTests.swift */; };
+		C3ED5FF2E403302B0B7C7E45 /* LocationRecordMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */; };
 		C55095FF2FFB9056003A047B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C55095FE2FFB9056003A047B /* Lottie */; };
+		FBD44B255C0176440994FE05 /* CloudKitLocationSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,6 +28,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 5FD9DE992FFCE76C0047FCF3;
 			remoteInfo = OmaweWidgetExtension;
+		};
+		F3594D51328387896C6EA787 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8CF43A2D2FF2497200061915 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8CF43A342FF2497200061915;
+			remoteInfo = Omawe;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -38,10 +53,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		378A394696DD98EBA3A2E72B /* LocationSharingCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationSharingCoordinatorTests.swift; sourceTree = "<group>"; };
+		4538B9C8CCBF8A5537659448 /* LocationUpdateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationUpdateTests.swift; sourceTree = "<group>"; };
+		58BB9C377257037BC9C0EF93 /* LocationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationServiceTests.swift; sourceTree = "<group>"; };
 		5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OmaweWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CD3699F2FF265E400B103BD /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8CD369A12FF265E500B103BD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8CF43A352FF2497200061915 /* Omawe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Omawe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CloudKitLocationSyncServiceTests.swift; sourceTree = "<group>"; };
+		93EC5F4E1F6844858B882715 /* OmaweTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OmaweTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationUpdateQueueServiceTests.swift; sourceTree = "<group>"; };
+		B6E667E531EC1E31F658050D /* LocationCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationCoreTests.swift; sourceTree = "<group>"; };
+		E2178A4116A9D305DD17AC0F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationRecordMapperTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -81,6 +105,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		57B5027A7E6D97C2FEEA6D1B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C140F49F8E2B066FD640715 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FD9DE972FFCE76C0047FCF3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -101,11 +133,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		61740C2F26D4DBA8972E15CD /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				E2178A4116A9D305DD17AC0F /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
 		8CD3699E2FF265E400B103BD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				8CD3699F2FF265E400B103BD /* WidgetKit.framework */,
 				8CD369A12FF265E500B103BD /* SwiftUI.framework */,
+				61740C2F26D4DBA8972E15CD /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -117,6 +158,7 @@
 				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
 				8CD3699E2FF265E400B103BD /* Frameworks */,
 				8CF43A362FF2497200061915 /* Products */,
+				F67E7ABA05D4AF51F7DB588E /* OmaweTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -127,6 +169,21 @@
 				5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F67E7ABA05D4AF51F7DB588E /* OmaweTests */ = {
+			isa = PBXGroup;
+			children = (
+				93EC5F4E1F6844858B882715 /* OmaweTests.xctest */,
+				B6E667E531EC1E31F658050D /* LocationCoreTests.swift */,
+				ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */,
+				93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */,
+				58BB9C377257037BC9C0EF93 /* LocationServiceTests.swift */,
+				378A394696DD98EBA3A2E72B /* LocationSharingCoordinatorTests.swift */,
+				4538B9C8CCBF8A5537659448 /* LocationUpdateTests.swift */,
+				AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */,
+			);
+			path = OmaweTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,8 +205,6 @@
 				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
 			);
 			name = OmaweWidgetExtension;
-			packageProductDependencies = (
-			);
 			productName = OmaweWidgetExtension;
 			productReference = 5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -178,6 +233,24 @@
 			productName = Challenge4;
 			productReference = 8CF43A352FF2497200061915 /* Omawe.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A1BE1D5853AE4D42F28A88CB /* OmaweTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 298BC766EE6468BE0278AA64 /* Build configuration list for PBXNativeTarget "OmaweTests" */;
+			buildPhases = (
+				43D5F3152703D1843B229A80 /* Sources */,
+				57B5027A7E6D97C2FEEA6D1B /* Frameworks */,
+				E649E126175FE9C5E2B90843 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22DE075FDF51F03FDCD3DB93 /* PBXTargetDependency */,
+			);
+			name = OmaweTests;
+			productName = OmaweTests;
+			productReference = 93EC5F4E1F6844858B882715 /* OmaweTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -219,6 +292,7 @@
 			targets = (
 				8CF43A342FF2497200061915 /* Omawe */,
 				5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */,
+				A1BE1D5853AE4D42F28A88CB /* OmaweTests */,
 			);
 		};
 /* End PBXProject section */
@@ -238,9 +312,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E649E126175FE9C5E2B90843 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		43D5F3152703D1843B229A80 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				622DC11819D4F9AAECA18B4E /* LocationCoreTests.swift in Sources */,
+				C3ED5FF2E403302B0B7C7E45 /* LocationRecordMapperTests.swift in Sources */,
+				FBD44B255C0176440994FE05 /* CloudKitLocationSyncServiceTests.swift in Sources */,
+				92D7D52C547B48FF70F7DD50 /* LocationServiceTests.swift in Sources */,
+				7533CBFA18DC75163521E9B3 /* LocationSharingCoordinatorTests.swift in Sources */,
+				BD53BF10D60A6EAD1ECB4532 /* LocationUpdateTests.swift in Sources */,
+				476AE09606649729F6EEBD63 /* LocationUpdateQueueServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FD9DE962FFCE76C0047FCF3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -258,6 +353,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		22DE075FDF51F03FDCD3DB93 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Omawe;
+			target = 8CF43A342FF2497200061915 /* Omawe */;
+			targetProxy = F3594D51328387896C6EA787 /* PBXContainerItemProxy */;
+		};
 		5FD9DEAC2FFCE76C0047FCF3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */;
@@ -266,6 +367,22 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		4E1F66213009BC4860A6C097 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exboyfriends.omaweapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Omawe.app/Omawe";
+			};
+			name = Debug;
+		};
 		5FD9DEAF2FFCE76C0047FCF3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -527,9 +644,35 @@
 			};
 			name = Release;
 		};
+		B1BB6967220E835FB6B8BBA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exboyfriends.omaweapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Omawe.app/Omawe";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		298BC766EE6468BE0278AA64 /* Build configuration list for PBXNativeTarget "OmaweTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1BB6967220E835FB6B8BBA0 /* Release */,
+				4E1F66213009BC4860A6C097 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		5FD9DEAE2FFCE76C0047FCF3 /* Build configuration list for PBXNativeTarget "OmaweWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

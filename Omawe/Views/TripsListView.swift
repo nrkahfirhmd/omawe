@@ -6,13 +6,12 @@
 //
 
 import SwiftUI
-import SwiftData
-import CloudKit
 
 struct TripsListView: View {
-    @State private var selectedSegment: TripListSegment = .totalTrips 
+    @State private var selectedSegment: TripListSegment = .totalTrips
     @State private var searchText = ""
-    
+    @State private var homeViewModel = HomeViewModel()
+
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
         }
@@ -99,6 +98,9 @@ struct TripsListView: View {
             placement: .toolbar,
             prompt: "Search trips..."
         )
+        .task {
+            await homeViewModel.loadTrips()
+        }
     }
 
     private var tripsMenu: some View {

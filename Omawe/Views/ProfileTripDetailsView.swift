@@ -11,7 +11,6 @@ import CloudKit
 
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
-    
     let trip: Trip
     
     var body: some View {
@@ -34,7 +33,6 @@ struct ProfileTripDetailsView: View {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
-                    
                     Text("by @\(trip.ownerID.recordName)")
                         .font(.caption1())
                         .padding(.top, 5)
@@ -63,14 +61,6 @@ struct ProfileTripDetailsView: View {
 
                         //.padding(.top, 5)
 
-                    Text("Meet Time")
-                        .font(.headline())
-                        .padding(.top, 40)
-                        .foregroundStyle(.gray)
-                    Text(formattedMeetTime)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                    
                     Text("Location")
                         .font(.headline())
                         .padding(.top, 110)
@@ -92,13 +82,13 @@ struct ProfileTripDetailsView: View {
                     
                     locationNoteCapsule
                         .padding(.top, 20)
-                    
+
                     HStack {
                         Text("#Code")
                             .font(.button())
                             .fontWidth(.expanded)
                             .foregroundStyle(.white)
-                            
+
                         Spacer()
                         Text(trip.invitationCode)
                             .font(.button())
