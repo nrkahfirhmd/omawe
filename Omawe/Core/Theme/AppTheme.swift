@@ -40,16 +40,7 @@ enum Theme {
         Color(red: 119/255, green: 255/255, blue: 169/255),
         Color(red: 52/255, green: 218/255, blue: 113/255)
     ])
-    
-    static let graybackground = LinearGradient(
-        colors: [
-            Color(red: 28/255, green: 28/255, blue: 28/255),
-            Color(red: 63/255, green: 63/255, blue: 63/255),
-            Color(red: 28/255, green: 28/255, blue: 28/255)
-        ],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
+
     // MARK: - Bundled Themes
     static let themePrimary = AppTheme(
         gradient:     primary,
@@ -66,21 +57,15 @@ enum Theme {
         gradientSoft: tertiarySoft,
         boxColor:     tertiaryBox
     )
-    static let GrayBackground = AppTheme(
-        gradient:     graybackground,
-        gradientSoft: tertiarySoft,
-        boxColor:     tertiaryBox
-    )
 }
 
 #Preview {
     VStack {
         Theme.primary
         Theme.primarySoft
-//        Theme.secondary
-//        Theme.secondarySoft
-//        Theme.tertiary
-//        Theme.tertiarySoft
-        Theme.graybackground
+        Theme.secondary
+        Theme.secondarySoft
+        Theme.tertiary
+        Theme.tertiarySoft
     }
 }
