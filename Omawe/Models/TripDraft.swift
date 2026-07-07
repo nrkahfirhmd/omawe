@@ -16,7 +16,7 @@ struct TripDraft {
     var apartmentUnitFloor: String = ""
     var locationNickname: String = ""
     var coordinate: CLLocationCoordinate2D?
-    var invitationCode: String = TripCreationService.makeInvitationCode()
+    var invitationCode: String = ""
 
     var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -28,21 +28,6 @@ struct TripDraft {
 
     var canCreateTrip: Bool {
         !trimmedName.isEmpty && !trimmedLocationName.isEmpty
-    }
-
-    var creationInput: TripCreationInput {
-        TripCreationInput(
-            name: name,
-            startDate: arrivalDate,
-            meetTime: arrivalDate,
-            locationName: locationName,
-            locationAddress: locationAddress,
-            locationNote: apartmentUnitFloor,
-            locationDisplayName: locationNickname,
-            latitude: coordinate?.latitude,
-            longitude: coordinate?.longitude,
-            invitationCode: invitationCode
-        )
     }
 
     mutating func reset() {

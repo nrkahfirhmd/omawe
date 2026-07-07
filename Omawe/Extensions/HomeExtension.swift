@@ -75,7 +75,7 @@ extension HomeView {
         DragGesture(minimumDistance: 18)
             .onEnded { value in
                 guard !isTransitioningTopPanel else { return }
-                guard trips.isEmpty == false else { return }
+                guard viewModel.trips.isEmpty == false else { return }
                 guard selectedTripAction == nil else { return }
                 guard isTripStatusPresented == false else { return }
                 guard value.translation.height > 48 else { return }
@@ -83,7 +83,7 @@ extension HomeView {
 
                 isTransitioningTopPanel = true
                 // Show panel in collapsed state, then animate to expanded (mirroring CreateTrip)
-                selectedTripIndex = min(selectedTripIndex, trips.count - 1)
+                selectedTripIndex = min(selectedTripIndex, viewModel.trips.count - 1)
                 isTripStatusPresented = true
                 isTripStatusExpanded = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
