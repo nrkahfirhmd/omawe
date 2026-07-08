@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 enum TripAction {
     case create
@@ -29,6 +30,7 @@ struct HomeView: View {
     @State var isTransitioningTopPanel = false
     @State var isProfilePresented = false
     @State private var isKeyboardVisible = false
+    @State private var currentUserID: CKRecord.ID?
 
     var body: some View {
         NavigationStack {
@@ -69,7 +71,8 @@ struct HomeView: View {
             }
             .task {
                 await viewModel.loadTrips()
-                
+                currentUserID = try? await viewModel.currentUserID()
+
                 for metadata in CloudKitShareAcceptanceBridge.drainPendingMetadata() {
                     await viewModel.acceptShare(metadata)
                 }
@@ -186,7 +189,10 @@ struct HomeView: View {
     }
     
     private var tripStatusSubtitle: String {
-        viewModel.trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more"
+        if let loadErrorMessage = viewModel.loadErrorMessage {
+            return "Couldn't load trips: \(loadErrorMessage)"
+        }
+        return viewModel.trips.isEmpty ? "Let's create or join a trip now" : "Drag down to see more"
     }
     
     // MARK: - Greeting / hint
@@ -436,15 +442,80 @@ struct HomeView: View {
     
     // MARK: - Top panel
     
+    /// A trip in progress takes over the panel entirely — no point paging
+    /// through not-started trips while one is already active. Requires the
+    /// current user to still be a participant: after `leaveTrip`, the trip
+    /// can still appear in `trips` (CKShare access isn't revoked on leave),
+    /// so without this check a departed member would stay stuck on
+    /// OnTripView until the owner ends the trip for everyone.
+    private var activeTrip: Trip? {
+        guard let currentUserID else { return nil }
+        let myTripIDs: Set<CKRecord.ID> = Set(
+            viewModel.participants
+                .filter { $0.userID == currentUserID }
+                .map { $0.tripID }
+        )
+        return viewModel.trips.first { trip in
+            guard trip.status == .active, let tripID = trip.id else { return false }
+            return myTripIDs.contains(tripID)
+        }
+    }
+
     @ViewBuilder
     private var topPanelView: some View {
-        if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
+        if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil, let activeTrip {
+            OnTripView(
+                trip: activeTrip,
+                participantCount: max(
+                    viewModel.participants.filter { $0.tripID == activeTrip.id }.count,
+                    1
+                ),
+                participants: viewModel.participants.filter { $0.tripID == activeTrip.id },
+                currentUserID: currentUserID,
+                etaMinutes: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
+                distanceKm: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
+                isOwner: currentUserID.map { viewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
+                isUpdatingTripStatus: viewModel.isUpdatingTripStatus,
+                tripActionErrorMessage: viewModel.tripActionErrorMessage,
+                onEndTrip: {
+                    Task { await viewModel.endTrip(activeTrip) }
+                },
+                onLeaveTrip: {
+                    Task { await viewModel.leaveTrip(activeTrip) }
+                }
+            )
+            .task(id: activeTrip.id) {
+                // Polls at roughly LOC-1's location-propagation budget rather
+                // than a single one-shot refresh — there's no push-triggered
+                // recompute path yet (that's LOC-1/ETA-4's shared push-token
+                // gap), so this is the interim data-driven-ish substitute.
+                while !Task.isCancelled {
+                    await viewModel.refreshTripStatus(for: activeTrip)
+                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                }
+            }
+        } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
             TripStatusDetailView(
                 trips: viewModel.trips,
                 members: viewModel.participants,
                 userProfiles: userProfiles,
                 selectedTripIndex: $selectedTripIndex,
-                onClose: closeTripStatusPanel
+                onClose: closeTripStatusPanel,
+                isStartingTrip: viewModel.isUpdatingTripStatus,
+                onStartTrip: { trip in
+                    Task { await viewModel.startTrip(trip) }
+                },
+                currentUserID: currentUserID,
+                tripActionErrorMessage: viewModel.tripActionErrorMessage,
+                onEndTrip: { trip in
+                    Task { await viewModel.endTrip(trip) }
+                },
+                onLeaveTrip: { trip in
+                    Task { await viewModel.leaveTrip(trip) }
+                },
+                onRemoveParticipant: { participant in
+                    Task { await viewModel.removeParticipant(participant) }
+                }
             )
         } else if selectedTripAction == .join {
             JoinTripView(

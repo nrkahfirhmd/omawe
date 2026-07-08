@@ -119,8 +119,11 @@ struct TripPageIndicator: View {
 
 // MARK: - Start Trip Button
 struct StartTripButton: View {
+    var isDisabled: Bool = false
+    var action: () -> Void = {}
+
     var body: some View {
-        Button(action: {}) {
+        Button(action: action) {
             Text("Start trip now")
                 .font(.subheadline)
                 .fontWeight(.semibold)
@@ -150,6 +153,8 @@ struct StartTripButton: View {
                         .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
                 )
                 .clipShape(Capsule())
+                .opacity(isDisabled ? 0.5 : 1)
         }
+        .disabled(isDisabled)
     }
 }

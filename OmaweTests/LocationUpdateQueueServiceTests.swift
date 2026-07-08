@@ -20,7 +20,7 @@ private actor FakeLocationSyncService: LocationSyncServiceProtocol {
         savedSamples.append(location)
     }
 
-    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: Location] {
+    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample] {
         [:]
     }
 

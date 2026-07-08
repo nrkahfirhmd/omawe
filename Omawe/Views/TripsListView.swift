@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct TripsListView: View {
     @State private var selectedSegment: TripListSegment = .totalTrips
     @State private var searchText = ""
     @State private var homeViewModel = HomeViewModel()
+    @State private var currentUserID: CKRecord.ID?
 
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
@@ -36,46 +38,115 @@ struct TripsListView: View {
         }
     }
 
-    var body: some View {
-        ZStack {
-            Image(.homeBackground)
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+//    private var displayedTrips: [PlaceholderTrip] {
+//        let today = Calendar.current.startOfDay(for: .now)
+//
+//        let segmentTrips: [PlaceholderTrip] = switch selectedSegment {
+//        case .totalTrips:
+//            trips
+//        case .nextTrips:
+//            trips.filter { $0.date >= today }
+//        }
+//
+//        guard !searchText.isEmpty else { return segmentTrips }
+//
+//        return segmentTrips.filter {
+//            $0.title.localizedCaseInsensitiveContains(searchText)
+//        }
+//    }
 
-            VStack(spacing: 24) {
-                Picker("", selection: $selectedSegment) {
-                    ForEach(TripListSegment.allCases) { segment in
-                        Text(segment.title)
-                            .tag(segment)
+    /// A trip in progress takes over this screen entirely — no point browsing
+    /// the full trip list while one is already active. Requires the current
+    /// user to still be a participant — see HomeView's equivalent property
+    /// for why (leaving doesn't revoke the trip's CKShare access).
+    private var activeTrip: Trip? {
+        guard let currentUserID else { return nil }
+        let myTripIDs: Set<CKRecord.ID> = Set(
+            homeViewModel.participants
+                .filter { $0.userID == currentUserID }
+                .map { $0.tripID }
+        )
+        return homeViewModel.trips.first { trip in
+            guard trip.status == .active, let tripID = trip.id else { return false }
+            return myTripIDs.contains(tripID)
+        }
+    }
+
+    var body: some View {
+        Group {
+            if let activeTrip {
+                OnTripView(
+                    trip: activeTrip,
+                    participantCount: max(
+                        homeViewModel.participants.filter { $0.tripID == activeTrip.id }.count,
+                        1
+                    ),
+                    participants: homeViewModel.participants.filter { $0.tripID == activeTrip.id },
+                    currentUserID: currentUserID,
+                    etaMinutes: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
+                    distanceKm: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
+                    isOwner: currentUserID.map { homeViewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
+                    isUpdatingTripStatus: homeViewModel.isUpdatingTripStatus,
+                    tripActionErrorMessage: homeViewModel.tripActionErrorMessage,
+                    onEndTrip: {
+                        Task { await homeViewModel.endTrip(activeTrip) }
+                    },
+                    onLeaveTrip: {
+                        Task { await homeViewModel.leaveTrip(activeTrip) }
+                    }
+                )
+                .task(id: activeTrip.id) {
+                    // See HomeView's equivalent .task — polls at roughly
+                    // LOC-1's propagation budget pending a real push-triggered
+                    // recompute path.
+                    while !Task.isCancelled {
+                        await homeViewModel.refreshTripStatus(for: activeTrip)
+                        try? await Task.sleep(nanoseconds: 20_000_000_000)
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 24)
-                .padding(.top, 120)
+            } else {
+                ZStack {
+                    Image(.homeBackground)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
 
-                tripsMenu
+                    VStack(spacing: 24) {
+                        Picker("", selection: $selectedSegment) {
+                            ForEach(TripListSegment.allCases) { segment in
+                                Text(segment.title)
+                                    .tag(segment)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 120)
 
-                Spacer()
-            }
-            .navigationTitle("Your trips")
-            .navigationBarTitleDisplayMode(.inline)
-            .presentationBackground(.clear)
-            .task {
-                do {
-                    trips = try await tripService.fetchOwnedTrips()
-                } catch {
-                    print("Failed to fetch trips: \(error)")
+                        tripsMenu
+
+                        Spacer()
+                    }
+                    .navigationTitle("Your trips")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .presentationBackground(.clear)
+                    .task {
+                        do {
+                            trips = try await tripService.fetchOwnedTrips()
+                        } catch {
+                            print("Failed to fetch trips: \(error)")
+                        }
+                    }
                 }
+                .searchable(
+                    text: $searchText,
+                    placement: .toolbar,
+                    prompt: "Search trips..."
+                )
             }
         }
-        .searchable(
-            text: $searchText,
-            placement: .toolbar,
-            prompt: "Search trips..."
-        )
         .task {
             await homeViewModel.loadTrips()
+            currentUserID = try? await homeViewModel.currentUserID()
         }
     }
 

@@ -53,11 +53,17 @@ final class CloudKitParticipantService: ParticipantServiceProtocol {
                 inZoneWith: tripID.zoneID
             )
 
-            return try result.matchResults.compactMap { _, result in
+            return result.matchResults.compactMap { _, result -> Participant? in
                 switch result {
                 case .success(let record):
-                    return try ParticipantRecordMapper.makeModel(from: record)
-                case .failure:
+                    do {
+                        return try ParticipantRecordMapper.makeModel(from: record)
+                    } catch {
+                        print("[CloudKitParticipantService] Skipping unreadable Participant record \(record.recordID.recordName): \(error)")
+                        return nil
+                    }
+                case .failure(let error):
+                    print("[CloudKitParticipantService] Match failure: \(error)")
                     return nil
                 }
             }

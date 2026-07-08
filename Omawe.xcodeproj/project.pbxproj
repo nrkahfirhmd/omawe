@@ -19,6 +19,11 @@
 		C3ED5FF2E403302B0B7C7E45 /* LocationRecordMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */; };
 		C55095FF2FFB9056003A047B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C55095FE2FFB9056003A047B /* Lottie */; };
 		FBD44B255C0176440994FE05 /* CloudKitLocationSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93847036D36A8F72652D1A48 /* CloudKitLocationSyncServiceTests.swift */; };
+		D1E85434806943D389C3F392 /* TripRecordMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492F4D5B458C42B48769C769 /* TripRecordMapperTests.swift */; };
+		0FD74DF7A8CF4D65AC687056 /* ParticipantStatusEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */; };
+		16305A52EDB7461C99261225 /* TripStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */; };
+		E327BB19D4DA466797393E0F /* WidgetContentStateAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 320B6F320EC5429EAC23326C /* WidgetContentStateAggregatorTests.swift */; };
+		E308F70359444344AA853DA0 /* LiveActivityLifecycleManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4104D124735458BBEAD9A88 /* LiveActivityLifecycleManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +71,11 @@
 		B6E667E531EC1E31F658050D /* LocationCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationCoreTests.swift; sourceTree = "<group>"; };
 		E2178A4116A9D305DD17AC0F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		ED9F8690997831707909E6DF /* LocationRecordMapperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationRecordMapperTests.swift; sourceTree = "<group>"; };
+		492F4D5B458C42B48769C769 /* TripRecordMapperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TripRecordMapperTests.swift; sourceTree = "<group>"; };
+		5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ParticipantStatusEngineTests.swift; sourceTree = "<group>"; };
+		597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TripStatusViewModelTests.swift; sourceTree = "<group>"; };
+		320B6F320EC5429EAC23326C /* WidgetContentStateAggregatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetContentStateAggregatorTests.swift; sourceTree = "<group>"; };
+		B4104D124735458BBEAD9A88 /* LiveActivityLifecycleManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityLifecycleManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -100,6 +110,13 @@
 				C543B2D22FFCC71E00AC62BA /* Exceptions for "Omawe" folder in "Omawe" target */,
 			);
 			path = Omawe;
+			sourceTree = "<group>";
+		};
+		AB12CD34EF56AB78CD90EF12 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -156,6 +173,7 @@
 			children = (
 				8CF43A372FF2497200061915 /* Omawe */,
 				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
+				AB12CD34EF56AB78CD90EF12 /* Shared */,
 				8CD3699E2FF265E400B103BD /* Frameworks */,
 				8CF43A362FF2497200061915 /* Products */,
 				F67E7ABA05D4AF51F7DB588E /* OmaweTests */,
@@ -182,6 +200,11 @@
 				378A394696DD98EBA3A2E72B /* LocationSharingCoordinatorTests.swift */,
 				4538B9C8CCBF8A5537659448 /* LocationUpdateTests.swift */,
 				AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */,
+				492F4D5B458C42B48769C769 /* TripRecordMapperTests.swift */,
+				5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */,
+				597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */,
+				320B6F320EC5429EAC23326C /* WidgetContentStateAggregatorTests.swift */,
+				B4104D124735458BBEAD9A88 /* LiveActivityLifecycleManagerTests.swift */,
 			);
 			path = OmaweTests;
 			sourceTree = "<group>";
@@ -203,6 +226,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */,
+				AB12CD34EF56AB78CD90EF12 /* Shared */,
 			);
 			name = OmaweWidgetExtension;
 			productName = OmaweWidgetExtension;
@@ -225,6 +249,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				8CF43A372FF2497200061915 /* Omawe */,
+				AB12CD34EF56AB78CD90EF12 /* Shared */,
 			);
 			name = Omawe;
 			packageProductDependencies = (
@@ -333,6 +358,11 @@
 				7533CBFA18DC75163521E9B3 /* LocationSharingCoordinatorTests.swift in Sources */,
 				BD53BF10D60A6EAD1ECB4532 /* LocationUpdateTests.swift in Sources */,
 				476AE09606649729F6EEBD63 /* LocationUpdateQueueServiceTests.swift in Sources */,
+				D1E85434806943D389C3F392 /* TripRecordMapperTests.swift in Sources */,
+				0FD74DF7A8CF4D65AC687056 /* ParticipantStatusEngineTests.swift in Sources */,
+				16305A52EDB7461C99261225 /* TripStatusViewModelTests.swift in Sources */,
+				E327BB19D4DA466797393E0F /* WidgetContentStateAggregatorTests.swift in Sources */,
+				E308F70359444344AA853DA0 /* LiveActivityLifecycleManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

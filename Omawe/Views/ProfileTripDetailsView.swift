@@ -11,6 +11,7 @@ import CloudKit
 
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
+
     let trip: Trip
     
     var body: some View {
@@ -35,6 +36,7 @@ struct ProfileTripDetailsView: View {
                         .frame(height: 68, alignment: .center)
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
+
                     Text("by @\(trip.ownerID.recordName)")
                         .font(.caption1())
                         .padding(.top, 5)
@@ -75,13 +77,7 @@ struct ProfileTripDetailsView: View {
                         .frame(maxWidth: 270)
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 3)
-                    Text("")
-                        .font(.caption2)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: 270)
-                        .multilineTextAlignment(.center)
-                    
+
                     locationNoteCapsule
                         .padding(.top, 20)
 
@@ -130,14 +126,6 @@ struct ProfileTripDetailsView: View {
                 .day()
                 .month(.wide)
                 .year()
-        )
-    }
-    
-    private var formattedMeetTime: String {
-        trip.startDate.formatted(
-            .dateTime
-                .hour(.twoDigits(amPM: .omitted))
-                .minute(.twoDigits)
         )
     }
     
@@ -227,7 +215,7 @@ struct TripParticipant: Identifiable {
     NavigationStack {
         ProfileTripDetailsView(
             trip: Trip(
-                id: CKRecord.ID(recordName: "dummy-trip"),
+                id: nil,
                 title: "Kuta Sunset Surf and Chill",
                 destination: "Toko Kopi Jaya, Kuta",
                 startDate: Calendar.current.date(

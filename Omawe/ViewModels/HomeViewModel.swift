@@ -19,6 +19,24 @@ class HomeViewModel {
     private let identityService = CloudKitIdentityService()
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
+    private let locationService = LocationService()
+    private let locationSyncService = CloudKitLocationSyncService()
+    private let locationSharingCoordinator: LocationSharingCoordinator
+    private let tripStatusViewModel: TripStatusViewModel
+    private let liveActivityManager = LiveActivityLifecycleManager()
+    private var cachedUserID: CKRecord.ID?
+    /// Which trip this device currently has `locationSharingCoordinator`
+    /// running for — guards `ensureLocationSharing` so it only starts once
+    /// per trip instead of restarting every refresh tick.
+    private var sharingTripID: CKRecord.ID?
+
+    init() {
+        locationSharingCoordinator = LocationSharingCoordinator(
+            locationService: locationService,
+            syncService: locationSyncService
+        )
+        tripStatusViewModel = TripStatusViewModel(locationSyncService: locationSyncService)
+    }
 
     // MARK: - Trip Draft
 
@@ -28,6 +46,7 @@ class HomeViewModel {
 
     var trips: [Trip] { TripStore.shared.trips }
     var participants: [Participant] { TripStore.shared.participants }
+    var loadErrorMessage: String? { TripStore.shared.lastLoadErrorMessage }
 
     // MARK: - Create Trip Flow
 
@@ -51,6 +70,11 @@ class HomeViewModel {
     var isCreatingShare = false
     var shareErrorMessage: String?
     var shareAcceptanceErrorMessage: String?
+
+    // MARK: - Trip Lifecycle / Member Management State
+
+    var tripActionErrorMessage: String?
+    var isUpdatingTripStatus = false
 
     // MARK: - Computed Properties
     var canConfirmTripCreation: Bool {
@@ -112,6 +136,8 @@ class HomeViewModel {
                 ownerID: ownerID,
                 ownerDisplayName: UserSession.shared.displayName,
                 invitationCode: invitationCode,
+                destinationLatitude: createTripDraft.coordinate?.latitude,
+                destinationLongitude: createTripDraft.coordinate?.longitude,
                 createdAt: Date(),
                 updatedAt: Date()
             )
@@ -263,7 +289,217 @@ class HomeViewModel {
     func loadTrips() async {
         await TripStore.shared.loadTrips()
     }
-    
+
+    // MARK: - Current User
+
+    func currentUserID() async throws -> CKRecord.ID {
+        if let cachedUserID { return cachedUserID }
+        let userID = try await identityService.currentUserRecordID()
+        cachedUserID = userID
+        return userID
+    }
+
+    func isOwner(of trip: Trip, userID: CKRecord.ID) -> Bool {
+        if trip.ownerID == userID { return true }
+        return participants.contains {
+            $0.tripID == trip.id && $0.userID == userID && $0.role == .owner
+        }
+    }
+
+    // MARK: - ETA / Live Activity (Sprint 2)
+
+    /// This device's own computed ETA/distance/status for `trip`, once
+    /// available — nil until `refreshTripStatus` has run at least once with
+    /// a fresh location for the current user.
+    func currentUserTripState(for trip: Trip, userID: CKRecord.ID) -> ParticipantTripState? {
+        tripStatusViewModel.participantStates[userID]
+    }
+
+    /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) for
+    /// `trip` and pushes the aggregated result into the Live Activity
+    /// (ETA-3/ETA-4). Call this whenever new location data is expected —
+    /// LOC-1's sync tick/subscription fire — not from an independent fixed
+    /// timer.
+    func refreshTripStatus(for trip: Trip, isBackgrounded: Bool = false) async {
+        guard trip.status == .active,
+              let tripID = trip.id,
+              let destination = trip.destinationCoordinate else { return }
+
+        await ensureLocationSharing(for: trip)
+        await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
+
+        let states = Array(tripStatusViewModel.participantStates.values)
+        let displayNames = Dictionary(
+            uniqueKeysWithValues: participants
+                .filter { $0.tripID == tripID }
+                .compactMap { participant -> (CKRecord.ID, String)? in
+                    guard let displayName = participant.displayName else { return nil }
+                    return (participant.userID, displayName)
+                }
+        )
+
+        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: displayNames)
+        await liveActivityManager.update(content)
+    }
+
+    // MARK: - Trip Lifecycle
+
+    /// Any participant's device — not just whoever tapped "Start Trip" — has
+    /// to publish its own location once the trip is active, or that
+    /// participant never has data for ETA-1 to compute an ETA/distance from.
+    /// The "Start Trip" button only transitions `trip.status`; every device
+    /// that subsequently observes the trip is active calls this itself.
+    /// Idempotent per trip via `sharingTripID`.
+    func ensureLocationSharing(for trip: Trip) async {
+        guard trip.status == .active, let tripID = trip.id, sharingTripID != tripID else { return }
+
+        do {
+            let userID = try await currentUserID()
+
+            // Only implies background sharing once the user is actually on
+            // an active trip — never requested upfront.
+            locationService.requestWhenInUseAuthorization()
+            locationService.requestAlwaysAuthorization()
+            locationSharingCoordinator.startSharing(tripID: tripID, userID: userID)
+            try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
+
+            sharingTripID = tripID
+        } catch {
+            // Best-effort — this device's ETA/location just won't populate.
+        }
+    }
+
+    /// Transitions a trip to `.active`. Location sharing for this device is
+    /// started via `ensureLocationSharing`, the same path every other
+    /// participant's device uses once it observes the trip is active.
+    func startTrip(_ trip: Trip) async {
+        tripActionErrorMessage = nil
+        isUpdatingTripStatus = true
+        defer { isUpdatingTripStatus = false }
+
+        do {
+            var updatedTrip = trip
+            updatedTrip.status = .active
+            updatedTrip.updatedAt = Date()
+            _ = try await tripService.updateTrip(updatedTrip)
+
+            await ensureLocationSharing(for: updatedTrip)
+            startLiveActivity(for: updatedTrip)
+
+            await TripStore.shared.loadTrips()
+        } catch {
+            tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// `Activity.request` failure (Live Activities disabled in Settings, or
+    /// the app is at ActivityKit's concurrent-activity limit) is a soft
+    /// failure — trip start must succeed regardless of whether the Live
+    /// Activity does.
+    private func startLiveActivity(for trip: Trip) {
+        guard let tripID = trip.id else { return }
+
+        let totalMates = max(1, participants.filter { $0.tripID == tripID }.count)
+        let attributes = OmaweWidgetAttributes(
+            tripName: trip.title,
+            destinationName: trip.destination,
+            totalMates: totalMates
+        )
+        let initialContent = OmaweWidgetAttributes.ContentState(
+            statusMessage: "Waiting for location updates",
+            etaMinutes: 0,
+            arrivedCount: 0,
+            distanceKm: 0
+        )
+
+        liveActivityManager.start(attributes: attributes, initialContent: initialContent)
+    }
+
+    /// Orchestrates TRIP-3's "End Trip" flow: stop location sharing, then mark
+    /// the trip ended. Zone cleanup is deliberately not performed here — it
+    /// would destroy shared data for every other participant immediately with
+    /// no warning (see docs/Sprint_3/task_2.md), so it's left out of scope.
+    func endTrip(_ trip: Trip) async {
+        tripActionErrorMessage = nil
+        isUpdatingTripStatus = true
+        defer { isUpdatingTripStatus = false }
+
+        do {
+            let userID = try await currentUserID()
+            guard isOwner(of: trip, userID: userID) else {
+                tripActionErrorMessage = "Only the trip owner can end this trip."
+                return
+            }
+
+            locationSharingCoordinator.stopSharing()
+            sharingTripID = nil
+
+            var updatedTrip = trip
+            updatedTrip.status = .ended
+            updatedTrip.updatedAt = Date()
+            _ = try await tripService.updateTrip(updatedTrip)
+
+            let arrivedCount = tripStatusViewModel.participantStates.values.count { $0.status == .arrived }
+            await liveActivityManager.end(OmaweWidgetAttributes.ContentState(
+                statusMessage: "Trip ended",
+                etaMinutes: 0,
+                arrivedCount: arrivedCount,
+                distanceKm: 0
+            ))
+
+            await TripStore.shared.loadTrips()
+        } catch {
+            tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Member Management
+
+    /// Owner-only removal of another participant from a trip.
+    func removeParticipant(_ participant: Participant) async {
+        tripActionErrorMessage = nil
+
+        guard let participantID = participant.id else { return }
+
+        do {
+            let userID = try await currentUserID()
+            guard let trip = trips.first(where: { $0.id == participant.tripID }),
+                  isOwner(of: trip, userID: userID) else {
+                tripActionErrorMessage = "Only the trip owner can remove members."
+                return
+            }
+
+            try await participantService.removeParticipant(id: participantID)
+            await TripStore.shared.loadParticipants()
+        } catch {
+            tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Removes the current user's own participant record from a trip.
+    func leaveTrip(_ trip: Trip) async {
+        tripActionErrorMessage = nil
+
+        do {
+            let userID = try await currentUserID()
+            guard let participant = participants.first(where: { $0.tripID == trip.id && $0.userID == userID }),
+                  let participantID = participant.id else {
+                return
+            }
+
+            try await participantService.removeParticipant(id: participantID)
+
+            if sharingTripID == trip.id {
+                locationSharingCoordinator.stopSharing()
+                sharingTripID = nil
+            }
+
+            await TripStore.shared.loadTrips()
+        } catch {
+            tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
     func debugFetchAllParticipants(for tripID: CKRecord.ID) async {
         print("🔬 DEBUG: Checking participants for trip:", tripID.recordName)
         print("🔬 Trip zone:", tripID.zoneID.zoneName, "| owner:", tripID.zoneID.ownerName)

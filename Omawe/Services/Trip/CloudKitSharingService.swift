@@ -111,11 +111,17 @@ final class CloudKitSharingService: SharingServiceProtocol {
                     inZoneWith: zone.zoneID
                 )
 
-                let zoneTrips = try result.matchResults.compactMap { _, matchResult -> Trip? in
+                let zoneTrips = result.matchResults.compactMap { _, matchResult -> Trip? in
                     switch matchResult {
                     case .success(let record):
-                        return try TripRecordMapper.makeModel(from: record)
-                    case .failure:
+                        do {
+                            return try TripRecordMapper.makeModel(from: record)
+                        } catch {
+                            print("[CloudKitSharingService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                            return nil
+                        }
+                    case .failure(let error):
+                        print("[CloudKitSharingService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
                         return nil
                     }
                 }

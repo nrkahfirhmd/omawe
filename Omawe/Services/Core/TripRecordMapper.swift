@@ -20,18 +20,28 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let ownerID = "ownerID"
         static let ownerDisplayName = "ownerDisplayName"
         static let invitationCode = "invitationCode"
+        static let status = "status"
+        static let destinationLatitude = "destinationLatitude"
+        static let destinationLongitude = "destinationLongitude"
         static let createdAt = "createdAt"
         static let updatedAt = "updatedAt"
     }
 
     static func makeRecord(from model: Trip, recordID: CKRecord.ID? = nil) -> CKRecord {
-        
+
         guard let recordID = recordID ?? model.id else {
                 preconditionFailure("TripRecordMapper requires a CKRecord.ID when creating a CKRecord.")
             }
 
         let record = makeRecord(with: recordID)
+        apply(model, to: record)
+        return record
+    }
 
+    /// Writes `model`'s fields onto an existing `CKRecord` in place, preserving
+    /// that record's system metadata (change tag) so CloudKit treats the save
+    /// as an update rather than a conflicting insert of an already-existing record.
+    static func apply(_ model: Trip, to record: CKRecord) {
         record[Field.title] = model.title as CKRecordValue
         record[Field.destination] = model.destination as CKRecordValue
         record[Field.startDate] = model.startDate as CKRecordValue
@@ -41,10 +51,15 @@ struct TripRecordMapper: CloudKitRecordMappable {
             record[Field.ownerDisplayName] = displayName as CKRecordValue
         }
         record[Field.invitationCode] = model.invitationCode as CKRecordValue
+        record[Field.status] = model.status.rawValue as CKRecordValue
+        if let destinationLatitude = model.destinationLatitude {
+            record[Field.destinationLatitude] = destinationLatitude as CKRecordValue
+        }
+        if let destinationLongitude = model.destinationLongitude {
+            record[Field.destinationLongitude] = destinationLongitude as CKRecordValue
+        }
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
-        print(record.allKeys())
-        return record
     }
 
     static func makeModel(from record: CKRecord) throws -> Trip {
@@ -61,6 +76,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
             throw CloudKitError.invalidRecord
         }
 
+        // Records saved before the status field existed have no value here —
+        // default to .notStarted rather than failing the whole decode.
+        let status = (record[Field.status] as? String).flatMap(TripStatus.init(rawValue:)) ?? .notStarted
         let ownerDisplayName = record[Field.ownerDisplayName] as? String
 
         return Trip(
@@ -72,6 +90,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
             ownerID: CKRecord.ID(recordName: ownerRecordName),
             ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
+            status: status,
+            destinationLatitude: record[Field.destinationLatitude] as? Double,
+            destinationLongitude: record[Field.destinationLongitude] as? Double,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

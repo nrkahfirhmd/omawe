@@ -7,7 +7,7 @@ import CloudKit
 
 protocol LocationSyncServiceProtocol {
     func saveLocation(_ location: LocationSample) async throws
-    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: Location]
+    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample]
     func subscribeToLocationUpdates(for tripID: CKRecord.ID) async throws
 }
 
@@ -48,7 +48,7 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
         }
     }
 
-    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: Location] {
+    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample] {
         let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
         let query = CKQuery(recordType: LocationRecordMapper.recordType, predicate: predicate)
 
@@ -60,17 +60,22 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
                 inZoneWith: tripID.zoneID
             )
 
-            let samples = try result.matchResults.compactMap { _, matchResult -> LocationSample? in
+            let samples = result.matchResults.compactMap { _, matchResult -> LocationSample? in
                 switch matchResult {
                 case .success(let record):
-                    return try LocationRecordMapper.makeModel(from: record)
-                case .failure:
+                    do {
+                        return try LocationRecordMapper.makeModel(from: record)
+                    } catch {
+                        print("[CloudKitLocationSyncService] Skipping unreadable LocationSample record \(record.recordID.recordName): \(error)")
+                        return nil
+                    }
+                case .failure(let error):
+                    print("[CloudKitLocationSyncService] Match failure: \(error)")
                     return nil
                 }
             }
 
             return Self.latestByUser(from: samples)
-                .mapValues { Location(latitude: $0.latitude, longitude: $0.longitude) }
         } catch let error as CKError {
             throw mapCKError(error)
         } catch {

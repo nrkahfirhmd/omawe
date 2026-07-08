@@ -7,27 +7,90 @@
 
 import SwiftUI
 import MapKit
+import CloudKit
 
 struct LocationView: View {
-    @State private var camera: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(
-                latitude: -8.748,
-                longitude: 115.167
-            ),
-            span: MKCoordinateSpan(
-                latitudeDelta: 0.12,
-                longitudeDelta: 0.12
+    let trip: Trip
+    var participants: [Participant] = []
+    var currentUserID: CKRecord.ID? = nil
+
+    @State private var camera: MapCameraPosition = .userLocation(
+        fallback: .region(
+            MKCoordinateRegion(
+                center: CLLocationCoordinate2D(
+                    latitude: -8.748,
+                    longitude: 115.167
+                ),
+                span: MKCoordinateSpan(
+                    latitudeDelta: 0.12,
+                    longitudeDelta: 0.12
+                )
             )
         )
     )
     @State private var isHeaderExpanded = false
+    @State private var participantLocations: [CKRecord.ID: Location] = [:]
+    @State private var currentUserRoute: MKRoute?
+    @State private var lastRouteOrigin: CLLocationCoordinate2D?
+    private let locationService = LocationService()
+    private let locationSyncService = CloudKitLocationSyncService()
+
+    /// Participants other than the current device — the current user is
+    /// already shown via the map's built-in `UserAnnotation`.
+    private var otherParticipantAnnotations: [(id: CKRecord.ID, name: String, coordinate: CLLocationCoordinate2D)] {
+        participantLocations.compactMap { userID, location in
+            guard userID != currentUserID else { return nil }
+            let name = participants.first { $0.userID == userID }?.displayName ?? "Member \(String(userID.recordName.suffix(6)))"
+            return (userID, name, location.coordinate)
+        }
+    }
 
     var body: some View {
         ZStack {
             // MARK: Map
-            Map(position: $camera)
-                .ignoresSafeArea()
+            Map(position: $camera) {
+                UserAnnotation()
+
+                if let destinationCoordinate = trip.destinationCoordinate {
+                    Marker(
+                        trip.destination.isEmpty ? "Destination" : trip.destination,
+                        systemImage: "flag.checkered",
+                        coordinate: destinationCoordinate
+                    )
+                    .tint(.red)
+                }
+
+                ForEach(otherParticipantAnnotations, id: \.id) { entry in
+                    Annotation(entry.name, coordinate: entry.coordinate) {
+                        ParticipantPin(displayName: entry.name)
+                    }
+                }
+
+                if let currentUserRoute {
+                    MapPolyline(currentUserRoute)
+                        .stroke(Color.omawePrimary, lineWidth: 5)
+                }
+            }
+            .mapControls {
+                MapUserLocationButton()
+            }
+            .ignoresSafeArea()
+            .task {
+                // Map's built-in user-location dot/tracking needs authorization
+                // requested at least once — reuses the same LocationService
+                // wrapper LOC-2/HomeViewModel use, not a bare CLLocationManager call.
+                locationService.requestWhenInUseAuthorization()
+            }
+            .task(id: trip.id) {
+                guard let tripID = trip.id else { return }
+                // Polls at roughly LOC-1's propagation budget, same cadence
+                // as HomeView's ETA refresh — there's no push-triggered
+                // recompute path yet.
+                while !Task.isCancelled {
+                    await refreshParticipantLocations(tripID: tripID)
+                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                }
+            }
 
             // MARK: Overlay
             VStack {
@@ -47,12 +110,12 @@ struct LocationView: View {
                     )
 
                 Spacer()
-                
+
                 VStack(spacing: 18) {
                     HStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                        
+
                         Text("Your report has been recorded")
                             .foregroundStyle(.red)
                     }
@@ -95,7 +158,7 @@ struct LocationView: View {
                         }
 
                         Spacer()
-                        
+
                         Button {
                         } label: {
                             Image(systemName: "exclamationmark.triangle.fill")
@@ -112,8 +175,87 @@ struct LocationView: View {
             .padding(.vertical)
         }
     }
+
+    /// Fetches every participant's latest location for annotations, and
+    /// (only for the current user — routing every participant would burn
+    /// through MKDirections' rate limit for no real benefit on a shared map)
+    /// refreshes the route polyline when the current user has moved past a
+    /// meaningful threshold since the last request.
+    private func refreshParticipantLocations(tripID: CKRecord.ID) async {
+        do {
+            let samples = try await locationSyncService.fetchLatestLocations(for: tripID)
+            participantLocations = samples.mapValues { Location(latitude: $0.latitude, longitude: $0.longitude) }
+        } catch {
+            return
+        }
+
+        guard let currentUserID,
+              let destination = trip.destinationCoordinate,
+              let origin = participantLocations[currentUserID]?.coordinate else { return }
+
+        if let lastRouteOrigin {
+            let moved = LocationCore.straightLineDistance(
+                from: Location(coordinate: lastRouteOrigin),
+                to: Location(coordinate: origin)
+            )
+            guard moved >= 200 else { return }
+        }
+
+        await loadRoute(from: origin, to: destination)
+        lastRouteOrigin = origin
+    }
+
+    private func loadRoute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) async {
+        let request = MKDirections.Request()
+        request.source = MKMapItem(location: CLLocation(latitude: origin.latitude, longitude: origin.longitude), address: nil)
+        request.destination = MKMapItem(location: CLLocation(latitude: destination.latitude, longitude: destination.longitude), address: nil)
+        request.transportType = .automobile
+
+        do {
+            let response = try await MKDirections(request: request).calculate()
+            currentUserRoute = response.routes.first
+        } catch {
+            currentUserRoute = nil
+        }
+    }
+}
+
+private struct ParticipantPin: View {
+    let displayName: String
+
+    private var initials: String {
+        let initials = displayName
+            .split(separator: " ")
+            .prefix(2)
+            .compactMap { $0.first }
+            .map(String.init)
+            .joined()
+        return initials.isEmpty ? "?" : initials.uppercased()
+    }
+
+    var body: some View {
+        Text(initials)
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+            .frame(width: 28, height: 28)
+            .background(Color.omawePrimary, in: Circle())
+            .overlay(Circle().stroke(.white, lineWidth: 2))
+    }
 }
 
 #Preview {
-    LocationView()
+    LocationView(
+        trip: Trip(
+            id: CKRecord.ID(recordName: "dummy-trip"),
+            title: "Ex-boyfriends Celebration",
+            destination: "Toko Kopi Jaya, Kuta",
+            startDate: .now,
+            endDate: .now,
+            ownerID: CKRecord.ID(recordName: "Bintang"),
+            invitationCode: "1A6B7K",
+            status: .active,
+            createdAt: .now,
+            updatedAt: .now
+        )
+    )
 }
