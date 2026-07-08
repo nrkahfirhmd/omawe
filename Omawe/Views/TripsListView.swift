@@ -133,7 +133,7 @@ struct TripsListView: View {
                         do {
                             trips = try await tripService.fetchOwnedTrips()
                         } catch {
-                            print("Failed to fetch trips: \(error)")
+                            debugLog("Failed to fetch trips: \(error)")
                         }
                     }
                 }

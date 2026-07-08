@@ -23,7 +23,7 @@ final class CloudKitSharingService: SharingServiceProtocol {
 
     func createShare(for tripID: CKRecord.ID) async throws -> (CKShare, URL) {
         do {
-            print("Share Trip Zone:", tripID.zoneID.zoneName)
+            debugLog("Share Trip Zone:", tripID.zoneID.zoneName)
             let tripRecord = try await privateDatabase.record(for: tripID)
 
             let share = CKShare(rootRecord: tripRecord)
@@ -31,7 +31,7 @@ final class CloudKitSharingService: SharingServiceProtocol {
             share[CKShare.SystemFieldKey.title] =
                 (tripRecord[TripRecordMapper.Field.title] as? NSString) ?? "Trip"
 
-            print("📤 Creating CKShare:", share.recordID.recordName)
+            debugLog("📤 Creating CKShare:", share.recordID.recordName)
             let result = try await privateDatabase.modifyRecords(
                 saving: [tripRecord, share],
                 deleting: []
@@ -47,13 +47,13 @@ final class CloudKitSharingService: SharingServiceProtocol {
                       let url = savedShare.url else {
                     throw CloudKitError.operationFailed
                 }
-                print("✅ Share created")
-                print("Permission:", savedShare.publicPermission.rawValue)
-                print("URL:", url.absoluteString)
+                debugLog("✅ Share created")
+                debugLog("Permission:", savedShare.publicPermission.rawValue)
+                debugLog("URL:", url.absoluteString)
                 return (savedShare, url)
 
             case .failure(let error):
-                print("❌ Share creation failed:", error)
+                debugLog("❌ Share creation failed:", error)
                 throw CloudKitError.unknown(error)
             }
         } catch let error as CloudKitError {
@@ -64,14 +64,14 @@ final class CloudKitSharingService: SharingServiceProtocol {
     }
 
     func acceptShare(from url: URL) async throws -> CKRecord.ID {
-        print("📥 Fetching share metadata:", url.absoluteString)
+        debugLog("📥 Fetching share metadata:", url.absoluteString)
         let metadata: CKShare.Metadata = try await withCheckedThrowingContinuation { continuation in
             CloudKitContainer.shared.container.fetchShareMetadata(with: url) { metadata, error in
                 if let error {
-                    print("❌ Metadata fetch failed:", error)
+                    debugLog("❌ Metadata fetch failed:", error)
                     continuation.resume(throwing: error)
                 } else if let metadata {
-                    print("✅ Share metadata fetched")
+                    debugLog("✅ Share metadata fetched")
                     continuation.resume(returning: metadata)
                 } else {
                     continuation.resume(throwing: CloudKitError.operationFailed)
@@ -83,13 +83,13 @@ final class CloudKitSharingService: SharingServiceProtocol {
 
     func acceptShare(_ metadata: CKShare.Metadata) async throws -> CKRecord.ID {
         do {
-            print("🤝 Accepting CloudKit share...")
+            debugLog("🤝 Accepting CloudKit share...")
             try await CloudKitContainer.shared.container.accept(metadata)
-            print("✅ CloudKit share accepted")
+            debugLog("✅ CloudKit share accepted")
 
             return metadata.rootRecordID
         } catch {
-            print("❌ Accept share failed:", error)
+            debugLog("❌ Accept share failed:", error)
             throw CloudKitError.unknown(error)
         }
     }
@@ -117,11 +117,11 @@ final class CloudKitSharingService: SharingServiceProtocol {
                         do {
                             return try TripRecordMapper.makeModel(from: record)
                         } catch {
-                            print("[CloudKitSharingService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                            debugLog("[CloudKitSharingService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
                             return nil
                         }
                     case .failure(let error):
-                        print("[CloudKitSharingService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
+                        debugLog("[CloudKitSharingService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
                         return nil
                     }
                 }

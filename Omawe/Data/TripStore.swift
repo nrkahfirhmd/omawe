@@ -61,7 +61,7 @@ final class TripStore {
             
             self.participants = loadedParticipants
         } catch {
-            print("[TripStore] Failed to load participants: \(error.localizedDescription)")
+            debugLog("[TripStore] Failed to load participants: \(error.localizedDescription)")
         }
     }
     
@@ -77,7 +77,7 @@ final class TripStore {
             let url = getCacheURL()
             try data.write(to: url)
         } catch {
-            print("[TripStore] Failed to save cache: \(error)")
+            debugLog("[TripStore] Failed to save cache: \(error)")
         }
     }
     
@@ -91,7 +91,7 @@ final class TripStore {
             self.trips = cacheData.trips.compactMap { $0.toTrip() }
             self.participants = cacheData.participants.compactMap { $0.toParticipant() }
         } catch {
-            print("[TripStore] Failed to load cache: \(error)")
+            debugLog("[TripStore] Failed to load cache: \(error)")
         }
     }
     

@@ -81,7 +81,7 @@ final class LiveActivityLifecycleManagerTests: XCTestCase {
         await manager.update(content(eta: 5))
 
         XCTAssertEqual(controller.updateCallCount, 1)
-        XCTAssertEqual(controller.lastUpdatedContent?.etaMinutes, 5)
+        XCTAssertEqual(controller.lastUpdatedContent?.myEtaMinutes, 5)
     }
 
     func testUpdate_identicalContent_isThrottledAwayNotForwarded() async {

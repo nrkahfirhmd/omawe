@@ -35,8 +35,15 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
 
         return record
     }
-    
-    
+
+    /// Applies `model`'s mutable fields onto an already-fetched `record` in
+    /// place, preserving its `recordChangeTag` — used by conflict-safe update
+    /// paths (TRIP-2) instead of `makeRecord`, which always builds a fresh
+    /// record with no change tag and would bypass CloudKit's conflict check.
+    static func apply(_ model: Participant, to record: CKRecord) {
+        record[Field.role] = model.role.rawValue as CKRecordValue
+    }
+
     typealias Model = Participant
 
     static let recordType = "Participant"

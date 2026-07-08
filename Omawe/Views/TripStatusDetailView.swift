@@ -97,9 +97,12 @@ struct TripStatusDetailView: View {
         )
     }
 
+    /// Checks `Participant.role` only, matching `HomeViewModel.isOwner` — see
+    /// its doc comment for why the `trip.ownerID` branch was dropped
+    /// (TRIP-2's audit: `ownerID` is CloudKit-immutable and disagrees with
+    /// `role` once ownership is reassigned).
     private func isOwner(of trip: Trip) -> Bool {
         guard let currentUserID else { return false }
-        if trip.ownerID == currentUserID { return true }
         return members.contains { $0.tripID == trip.id && $0.userID == currentUserID && $0.role == .owner }
     }
 
