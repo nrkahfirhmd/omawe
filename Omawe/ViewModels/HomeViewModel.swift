@@ -126,6 +126,11 @@ class HomeViewModel {
             let invitationCode = inviteService.generateInvitationCode()
             createTripDraft.invitationCode = invitationCode
 
+            // MARK: - Query Local Profile
+            let descriptor = FetchDescriptor<UserProfile>()
+            let localProfile = try? modelContext.fetch(descriptor).first(where: { $0.userID == UserSession.shared.userIdentifier })
+            let ownerName = localProfile?.displayName.isEmpty == false ? localProfile?.displayName : UserSession.shared.displayName
+
             // MARK: - Create Trip
             let trip = Trip(
                 id: nil,
@@ -134,10 +139,13 @@ class HomeViewModel {
                 startDate: createTripDraft.arrivalDate,
                 endDate: createTripDraft.arrivalDate,
                 ownerID: ownerID,
-                ownerDisplayName: UserSession.shared.displayName,
+                ownerDisplayName: ownerName,
                 invitationCode: invitationCode,
                 destinationLatitude: createTripDraft.coordinate?.latitude,
                 destinationLongitude: createTripDraft.coordinate?.longitude,
+                locationAddress: createTripDraft.locationAddress,
+                apartmentUnitFloor: createTripDraft.apartmentUnitFloor,
+                locationNickname: createTripDraft.locationNickname,
                 createdAt: Date(),
                 updatedAt: Date()
             )
@@ -152,9 +160,10 @@ class HomeViewModel {
                 id: nil,
                 tripID: tripID!,
                 userID: ownerID,
-                displayName: UserSession.shared.displayName,
+                displayName: ownerName,
                 role: .owner,
-                joinedAt: Date()
+                joinedAt: Date(),
+                avatarImageData: localProfile?.avatarImageData
             )
 
             _ = try await participantService.createParticipant(ownerParticipant)
@@ -245,17 +254,21 @@ class HomeViewModel {
         }
     }
     
-    func confirmJoinTrip(trip: Trip) async throws {
+    func confirmJoinTrip(trip: Trip, using modelContext: ModelContext) async throws {
         guard let tripID = trip.id else { return }
         
         let currentUserID = try await identityService.currentUserRecordID()
+        let descriptor = FetchDescriptor<UserProfile>()
+        let localProfile = try? modelContext.fetch(descriptor).first(where: { $0.userID == UserSession.shared.userIdentifier })
+        
         let participant = Participant(
             id: CKRecord.ID(recordName: UUID().uuidString, zoneID: tripID.zoneID),
             tripID: tripID,
             userID: currentUserID,
             displayName: UserSession.shared.displayName,
             role: .member,
-            joinedAt: Date()
+            joinedAt: Date(),
+            avatarImageData: localProfile?.avatarImageData
         )
 
         _ = try await participantService.createParticipant(participant)

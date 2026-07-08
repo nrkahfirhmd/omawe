@@ -87,7 +87,7 @@ struct HomeView: View {
                 InvitationEnvelopeView(
                     trip: trip,
                     onJoinNow: {
-                        try await viewModel.confirmJoinTrip(trip: trip)
+                        try await viewModel.confirmJoinTrip(trip: trip, using: modelContext)
                     },
                     onDismiss: {
                         viewModel.joinPreviewTrip = nil

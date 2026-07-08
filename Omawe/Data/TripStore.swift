@@ -134,6 +134,9 @@ fileprivate struct CachedTrip: Codable {
     let ownerDisplayName: String?
     let invitationCode: String
     let status: String
+    let locationAddress: String?
+    let apartmentUnitFloor: String?
+    let locationNickname: String?
     let createdAt: Date
     let updatedAt: Date
 
@@ -147,6 +150,9 @@ fileprivate struct CachedTrip: Codable {
         self.ownerDisplayName = trip.ownerDisplayName
         self.invitationCode = trip.invitationCode
         self.status = trip.status.rawValue
+        self.locationAddress = trip.locationAddress
+        self.apartmentUnitFloor = trip.apartmentUnitFloor
+        self.locationNickname = trip.locationNickname
         self.createdAt = trip.createdAt
         self.updatedAt = trip.updatedAt
     }
@@ -164,6 +170,9 @@ fileprivate struct CachedTrip: Codable {
         ownerDisplayName = try container.decodeIfPresent(String.self, forKey: .ownerDisplayName)
         invitationCode = try container.decode(String.self, forKey: .invitationCode)
         status = try container.decodeIfPresent(String.self, forKey: .status) ?? TripStatus.notStarted.rawValue
+        locationAddress = try container.decodeIfPresent(String.self, forKey: .locationAddress)
+        apartmentUnitFloor = try container.decodeIfPresent(String.self, forKey: .apartmentUnitFloor)
+        locationNickname = try container.decodeIfPresent(String.self, forKey: .locationNickname)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
@@ -179,6 +188,9 @@ fileprivate struct CachedTrip: Codable {
             ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
             status: TripStatus(rawValue: status) ?? .notStarted,
+            locationAddress: locationAddress,
+            apartmentUnitFloor: apartmentUnitFloor,
+            locationNickname: locationNickname,
             createdAt: createdAt,
             updatedAt: updatedAt
         )
