@@ -8,19 +8,21 @@
 import SwiftUI
 
 struct TripsListView: View {
-    @State private var selectedSegment: TripListSegment = .totalTrips 
+    @State private var selectedSegment: TripListSegment = .totalTrips
     @State private var searchText = ""
-    
+    @State private var homeViewModel = HomeViewModel()
+
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
         }
     
-    private let trips = PlaceholderTrip.samples
+    @State private var trips: [Trip] = []
+    private let tripService = CloudKitTripService()
 
-    private var displayedTrips: [PlaceholderTrip] {
+    private var displayedTrips: [Trip] {
         let today = Calendar.current.startOfDay(for: .now)
 
-        let segmentTrips: [PlaceholderTrip] = switch selectedSegment {
+        let segmentTrips: [Trip] = switch selectedSegment {
         case .totalTrips:
             trips
         case .nextTrips:
@@ -30,7 +32,7 @@ struct TripsListView: View {
         guard !searchText.isEmpty else { return segmentTrips }
 
         return segmentTrips.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
+            $0.title.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -56,14 +58,25 @@ struct TripsListView: View {
 
                 Spacer()
             }
+            .navigationTitle("Your trips")
+            .navigationBarTitleDisplayMode(.inline)
+            .presentationBackground(.clear)
+            .task {
+                do {
+                    trips = try await tripService.fetchOwnedTrips()
+                } catch {
+                    print("Failed to fetch trips: \(error)")
+                }
+            }
         }
-        .navigationTitle("Your trips")
-        .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: $searchText,
             placement: .toolbar,
             prompt: "Search trips..."
         )
+        .task {
+            await homeViewModel.loadTrips()
+        }
     }
 
     private var tripsMenu: some View {
@@ -107,7 +120,7 @@ enum TripListSegment: String, CaseIterable, Identifiable {
 }
 
 struct TripMenuRow: View {
-    let trip: PlaceholderTrip
+    let trip: Trip
 
     private var hasPassed: Bool {
         trip.startDate < Calendar.current.startOfDay(for: .now)
@@ -125,7 +138,7 @@ struct TripMenuRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 6) {
-                Text(trip.name)
+                Text(trip.title)
                     .font(.bodyText())
                     .lineLimit(1)
 

@@ -2,7 +2,7 @@
 //  OmaweWidgetControl.swift
 //  OmaweWidget
 //
-//  Created by Gleenryan on 29/06/26.
+//  Created by Muhammad Bintang Al-Fath on 07/07/26.
 //
 
 import AppIntents
@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct OmaweWidgetControl: ControlWidget {
-    static let kind: String = "com.exboyfriends.omawe.OmaweWidget"
+    static let kind: String = "com.exboyfriends.omawe.widget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

@@ -7,11 +7,11 @@
 
 
 import SwiftUI
+import CloudKit
 
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
-    
-    let trip: PlaceholderTrip
+    let trip: Trip
     
     var body: some View {
         NavigationStack{
@@ -26,7 +26,7 @@ struct ProfileTripDetailsView: View {
                     tripDateCapsule
                         .padding(.top, 60)
                     
-                    Text(trip.name)
+                    Text(trip.title)
                         .font(.title1())
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
@@ -35,8 +35,7 @@ struct ProfileTripDetailsView: View {
                         .frame(height: 68, alignment: .center)
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
-                    
-                    Text("by @\(trip.ownerUsername)")
+                    Text("by @\(trip.ownerID.recordName)")
                         .font(.caption1())
                         .padding(.top, 5)
                     
@@ -53,59 +52,45 @@ struct ProfileTripDetailsView: View {
                     
                     //Spacer()
                     
-                    VStack(spacing: 28) {
+                    Text("Event Date")
+                        .font(.headline())
+                        .padding(.top, 40)
+                        .foregroundStyle(.gray)
+                    Text(formattedTripDate)
+                        .font(.title3())
+                        .fontWidth(.expanded)
+                        
 
-                        VStack(spacing: 8) {
-                            Text("Event Date")
-                                .font(.headline())
-                                .foregroundStyle(.gray)
+                        //.padding(.top, 5)
 
-                            Text(formattedTripDate)
-                                .font(.title3())
-                                .fontWidth(.expanded)
-                        }
-
-                        VStack(spacing: 8) {
-                            Text("Meet Time")
-                                .font(.headline())
-                                .foregroundStyle(.gray)
-
-                            Text(formattedMeetTime)
-                                .font(.title3())
-                                .fontWidth(.expanded)
-                        }
-                    }
-                    .padding(.top, 40)
+                    Text("Location")
+                        .font(.headline())
+                        .padding(.top, 110)
+                        .foregroundStyle(.gray)
+                    Text(trip.destination)
+                        .font(.title3())
+                        .fontWidth(.expanded)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .frame(maxWidth: 270)
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 3)
+                    Text("")
+                        .font(.caption2)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .frame(maxWidth: 270)
+                        .multilineTextAlignment(.center)
                     
-                    VStack(spacing: 6) {
+                    locationNoteCapsule
+                        .padding(.top, 20)
 
-                        Text("Location")
-                            .font(.headline())
-                            .foregroundStyle(.gray)
-
-                        Text(trip.locationName)
-                            .font(.title3())
-                            .fontWidth(.expanded)
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-
-                        Text(trip.locationAddress)
-                            .font(.caption2())
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: 270)
-
-                        locationNoteCapsule
-                            .padding(.top, 14)
-                    }
-                    .padding(.top, 80)
-                    
                     HStack {
                         Text("#Code")
                             .font(.button())
                             .fontWidth(.expanded)
                             .foregroundStyle(.white)
-                            
+
                         Spacer()
                         Text(trip.invitationCode)
                             .font(.button())
@@ -149,7 +134,7 @@ struct ProfileTripDetailsView: View {
     }
     
     private var formattedMeetTime: String {
-        trip.meetTime.formatted(
+        trip.startDate.formatted(
             .dateTime
                 .hour(.twoDigits(amPM: .omitted))
                 .minute(.twoDigits)
@@ -157,7 +142,7 @@ struct ProfileTripDetailsView: View {
     }
     
     private var locationNoteCapsule: some View {
-        Text(trip.locationNote)
+        Text("No note provided.")
             .font(.subheadline)
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
@@ -241,7 +226,21 @@ struct TripParticipant: Identifiable {
 #Preview {
     NavigationStack {
         ProfileTripDetailsView(
-            trip: .samples.first!
+            trip: Trip(
+                id: CKRecord.ID(recordName: "dummy-trip"),
+                title: "Kuta Sunset Surf and Chill",
+                destination: "Toko Kopi Jaya, Kuta",
+                startDate: Calendar.current.date(
+                    from: DateComponents(year: 2026, month: 6, day: 30)
+                ) ?? .now,
+                endDate: Calendar.current.date(
+                    from: DateComponents(year: 2026, month: 6, day: 30)
+                ) ?? .now,
+                ownerID: CKRecord.ID(recordName: "Bintang"),
+                invitationCode: "1A6B7K",
+                createdAt: .now,
+                updatedAt: .now
+            )
         )
     }
 }

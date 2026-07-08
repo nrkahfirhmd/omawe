@@ -7,10 +7,13 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct JoinTripView: View {
     @Environment(\.modelContext) private var modelContext
     @Binding var selectedTripAction: TripAction?
+    let onJoinInvitationCode: (String) async throws -> Void
+    let onAcceptShareLink: (URL) async throws -> Void
     @State private var invitationCode = ""
     @State private var isJoining = false
     @State private var joinErrorMessage: String?
@@ -25,10 +28,10 @@ struct JoinTripView: View {
                 VStack {
                     DynamicBox(
                         theme: Theme.themePrimary,
-                        icon: "number.square",
+                        icon: "rectangle.and.pencil.and.ellipsis",
                         title: "Invitation Code",
                         subtitle: "Enter the code from your invite",
-                        helperText: "6 characters. Letters and numbers only",
+                        helperText: "6 characters to submit",
                         footerTitle: "Joining a trip"
                     ) {
                         VStack(spacing: 22) {
@@ -99,7 +102,7 @@ struct JoinTripView: View {
 
         Task {
             do {
-                _ = try await TripJoinService().joinTrip(invitationCode: invitationCode, in: modelContext)
+                try await onJoinInvitationCode(invitationCode)
                 isJoining = false
 
                 withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
@@ -110,6 +113,47 @@ struct JoinTripView: View {
                 joinErrorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func pasteShareLink() {
+        guard !isJoining else { return }
+
+        guard let url = pastedShareURL() else {
+            joinErrorMessage = "Copy a CloudKit share link first, then paste it here."
+            return
+        }
+
+        isJoining = true
+        joinErrorMessage = nil
+
+        Task {
+            do {
+                try await onAcceptShareLink(url)
+                isJoining = false
+
+                withAnimation(.spring(response: 0.72, dampingFraction: 0.88)) {
+                    selectedTripAction = nil
+                }
+            } catch {
+                isJoining = false
+                joinErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func pastedShareURL() -> URL? {
+        if let url = UIPasteboard.general.url {
+            return url
+        }
+
+        guard let string = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: string),
+              url.scheme?.isEmpty == false
+        else {
+            return nil
+        }
+
+        return url
     }
 
     private func resetJoinFlow() {
@@ -141,7 +185,8 @@ private struct InvitationCodeField: View {
                 .frame(width: 1, height: 1)
                 .opacity(0.01)
                 .onChange(of: code) { _, newValue in
-                    let normalized = String(TripJoinService.normalizedCode(newValue).prefix(characterCount))
+                    let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+                    let normalized = String(filtered.prefix(characterCount))
                     guard normalized != newValue else { return }
                     code = normalized
                 }
@@ -213,11 +258,13 @@ private struct CursorView: View {
 #Preview {
     @Previewable @State var selectedTripAction: TripAction? = .join
 
-    JoinTripView(selectedTripAction: $selectedTripAction)
+    JoinTripView(
+        selectedTripAction: $selectedTripAction,
+        onJoinInvitationCode: { _ in },
+        onAcceptShareLink: { _ in }
+    )
         .modelContainer(
             for: [
-                TripModel.self,
-                TripMember.self,
                 LocationUpdate.self,
                 UserProfile.self
             ],

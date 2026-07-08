@@ -39,8 +39,8 @@ struct TripDetailView: View {
                     theme: trip.theme,
                     title: trip.title,
                     subtitle: isEditing
-                        ? trip.subtitle.replacingOccurrences(of: "by @Bintang • ", with: "by @Bintang • ")
-                        : "by @Bintang",
+                        ? trip.subtitle
+                        : "by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30",
                     helperText: "Swipe to see other friends",
                     footerTitle: isEditing ? "Edit your trip" : "Trip detail"
                 ) {
@@ -68,11 +68,7 @@ struct TripDetailView: View {
                             
                             HStack(spacing: 4) {
                                 Image(systemName: "calendar")
-                                Text(trip.subtitle
-                                    .replacingOccurrences(of: "by @Bintang • ", with: "")
-                                    .replacingOccurrences(of: "by @Kahfi • ", with: "")
-                                    .replacingOccurrences(of: "by @Ryan • ", with: "")
-                                )
+                                Text(trip.subtitle.replacingOccurrences(of: "by @\(UserSession.shared.displayName ?? "Anonymous") • ", with: ""))
                             }
                         }
                         .font(.caption.bold())
@@ -326,32 +322,4 @@ struct EditBottomBar: View {
         }
         .padding(.horizontal, 16)
     }
-}
-
-#Preview {
-    TripDetailView(
-        trip: TripData(
-            theme: Theme.themeSecondary,
-            icon: "balloon.2",
-            title: "Ex-Boyfriends\nCelebration!",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
-            people: 12,
-            location: "Toko Kopi Jaya, Kuta",
-            footerTitle: "Trip is not starting yet"
-        ),
-        members: [
-            "Gleen Ryan",
-            "Bintang",
-            "Kahfi",
-            "Sunny",
-            "Syed",
-            "Nguyen Minh Luat",
-            "Damar",
-            "Rizky",
-            "Aldo",
-            "Fajar",
-            "Dimas",
-            "Putra"
-        ]
-    )
 }

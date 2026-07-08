@@ -156,7 +156,7 @@ struct GridGradientBackground: View {
                     )
                 )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 54, style: .continuous))
+//        .clipShape(RoundedRectangle(cornerRadius: 54, style: .continuous))
     }
 }
 

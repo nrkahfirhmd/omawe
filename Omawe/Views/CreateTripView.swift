@@ -7,7 +7,6 @@
 
 
 import SwiftUI
-import SwiftData
 
 enum CreateTripStep: Int, CaseIterable {
     case tripName
@@ -283,15 +282,6 @@ private struct CreateTripStepPreview: View {
                 initiallyPresentLocationSheet: initiallyPresentLocationSheet
             )
             .padding(.top, 10)
-            .modelContainer(
-                for: [
-                    TripModel.self,
-                    TripMember.self,
-                    LocationUpdate.self,
-                    UserProfile.self
-                ],
-                inMemory: true
-            )
         }
     }
 }
