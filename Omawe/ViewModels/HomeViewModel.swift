@@ -368,6 +368,9 @@ class HomeViewModel {
               let destination = trip.destinationCoordinate else { return }
 
         await ensureLocationSharing(for: trip)
+        
+        // Fetch new participants on each polling tick so newly joined members appear
+        await TripStore.shared.loadParticipants()
 
         let previousStates = tripStatusViewModel.participantStates
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
