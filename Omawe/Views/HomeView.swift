@@ -31,6 +31,7 @@ struct HomeView: View {
     @State var isProfilePresented = false
     @State private var isKeyboardVisible = false
     @State private var currentUserID: CKRecord.ID?
+    @AppStorage("selectedAvatarFrame") private var selectedAvatarFrame: AvatarFrameStyle = .dark
 
     var body: some View {
         NavigationStack {
@@ -210,13 +211,19 @@ struct HomeView: View {
         .offset(y: selectedTripAction == nil ? 0 : -20)
     }
     
+    private var currentUserProfile: UserProfile? {
+        userProfiles.first { $0.userID == UserSession.shared.userIdentifier } ?? userProfiles.first
+    }
+
     /// The user's avatar.
     /// Apple Sign In does NOT provide a profile photo, so we generate
     /// an initials-based avatar using the first character of the display name.
     /// Falls back to a person icon if no name is available.
     private var avatarView: some View {
         let session = UserSession.shared
-        let initials = session.displayName?.first.map(String.init)
+        let profile = currentUserProfile
+        let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : session.displayName
+        let initials = displayName?.first.map(String.init)
 
         return Button {
             isProfilePresented = true
@@ -228,9 +235,15 @@ struct HomeView: View {
                     .shadow(color: .init(hex: "#00C3FF").opacity(0.5),
                             radius: 21)
 
-                Image(.frame74)
+                Image(selectedAvatarFrame.image)
 
-                if let initials {
+                if let imageData = profile?.avatarImageData, let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 60, height: 60)
+                        .clipShape(Circle())
+                } else if let initials {
                     Text(initials.uppercased())
                         .font(.system(size: 44, weight: .bold, design: .rounded))
                         .foregroundStyle(
@@ -254,10 +267,10 @@ struct HomeView: View {
     /// Falls back to "there" if no name was shared (e.g. user chose to hide it).
     private var greetingTextView: some View {
         let session = UserSession.shared
-        // Extract just the first name for a friendly greeting.
-        // Apple provides the full name as components; we use the first word
-        // of the display name for brevity (e.g. "Muhammad" from "Muhammad Bintang").
-        let firstName = session.displayName?
+        let profile = currentUserProfile
+        let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : session.displayName
+        
+        let firstName = displayName?
             .split(separator: " ")
             .first
             .map(String.init) ?? "there"

@@ -8,13 +8,20 @@
 
 import SwiftUI
 import PhotosUI
+import SwiftData
 
 struct ProfileView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var userProfiles: [UserProfile]
+    @State private var profile: UserProfile?
+    
     @Environment(\.dismiss) private var dismiss
     
-    @State private var selectedAvatarFrame: AvatarFrameStyle = .dark
+    @AppStorage("selectedAvatarFrame") private var selectedAvatarFrame: AvatarFrameStyle = .dark
     
-    private let trips = PlaceholderTrip.samples
+    private var trips: [Trip] {
+        TripStore.shared.trips
+    }
 
     private var totalTripsCount: Int {
         trips.count
@@ -41,11 +48,10 @@ struct ProfileView: View {
                     
                     profileAvatar
 
-                    Text("Hi Baeni")
+                    Text(profile?.displayName.isEmpty == false ? "Hi \(profile!.displayName)" : "Hi \(UserSession.shared.displayName ?? "New User")")
                         .font(.largeTitle)
                         .fontWidth(.expanded)
                         .fontWeight(.semibold)
-                        .fontWidth(.expanded)
                         .foregroundStyle(.primary)
 
                     statsRow
@@ -59,21 +65,62 @@ struct ProfileView: View {
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackground(.clear)
+            .onAppear {
+                setupProfile()
+            }
+        }
+    }
+
+    private func setupProfile() {
+        if let existing = userProfiles.first(where: { $0.userID == UserSession.shared.userIdentifier }) ?? userProfiles.first {
+            profile = existing
+        } else {
+            let newProfile = UserProfile(
+                userID: UserSession.shared.userIdentifier ?? "",
+                displayName: UserSession.shared.displayName ?? ""
+            )
+            modelContext.insert(newProfile)
+            profile = newProfile
         }
     }
 
     private var profileAvatar: some View {
         ZStack {
-            Circle()
-                .frame(width: 120)
-                .foregroundColor(.white)
-                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
 
             Image(selectedAvatarFrame.image)
-            Image(.avatar)
+            
+            if let imageData = profile?.avatarImageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 60, height: 60)
+                    .clipShape(Circle())
+            } else {
+                let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : UserSession.shared.displayName
+                if let initials = displayName?.first.map(String.init) {
+                    Text(initials.uppercased())
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .glassEffect(.clear, in: .circle)
+                } else {
+                    Image(.avatar)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
+                }
+            }
             
             NavigationLink {
-                EditProfileView(selectedAvatarFrame: $selectedAvatarFrame)
+                if let profile {
+                    EditProfileView(profile: profile, selectedAvatarFrame: $selectedAvatarFrame)
+                }
             } label: {
                 Image(systemName: "paintbrush")
                     .font(.title3)
@@ -289,14 +336,14 @@ struct HapticToggleRow: View {
 }
 
 struct EditProfileView: View {
+    var profile: UserProfile
     @Binding var selectedAvatarFrame: AvatarFrameStyle
     @Environment(\.dismiss) private var dismiss
     
     @State private var nickname = ""
-    @State private var dateOfBirth = Calendar.current.date(
-        from: DateComponents(year: 2005, month: 3, day: 26)
-    ) ?? .now
+    @State private var dateOfBirth = Date.now
     @State private var gender = ""
+    @State private var pendingAvatarData: Data?
     
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedAvatarImage: Image?
@@ -311,34 +358,47 @@ struct EditProfileView: View {
 
             VStack(spacing: 28) {
                 ZStack {
-                    Circle()
-                        .frame(width: 120)
-                        .foregroundColor(.white)
-                        .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
+            
 
                     Image(selectedAvatarFrame.image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 102)
 
-                    // selected photo does NOT persist yet
-                    
                     if let selectedAvatarImage {
                         selectedAvatarImage
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 72, height: 72)
+                            .frame(width: 60, height: 60)
+                            .clipShape(Circle())
+                    } else if let imageData = pendingAvatarData ?? profile.avatarImageData, let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 60, height: 60)
                             .clipShape(Circle())
                     } else {
-                        Image(.avatar)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 72, height: 72)
+                        let displayName = nickname.isEmpty ? UserSession.shared.displayName : nickname
+                        if let initials = displayName?.first.map(String.init) {
+                            Text(initials.uppercased())
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 60, height: 60)
+                                .glassEffect(.clear, in: .circle)
+                        } else {
+                            Image(.avatar)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60, height: 60)
+                        }
                     }
                 }
                 .padding(.top, 80)
 
-                Text("Hi Baeni")
+                Text(profile.displayName.isEmpty ? "Hi User" : "Hi \(profile.displayName)")
                     .font(.largeTitle())
                     .fontWidth(.expanded)
                     .fontWeight(.semibold)
@@ -363,6 +423,7 @@ struct EditProfileView: View {
                         }
 
                         selectedAvatarImage = Image(uiImage: uiImage)
+                        pendingAvatarData = data
                     }
                 }
 
@@ -384,11 +445,23 @@ struct EditProfileView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
+                    profile.displayName = nickname
+                    profile.dateOfBirth = dateOfBirth
+                    profile.gender = gender
+                    if let pendingData = pendingAvatarData {
+                        profile.avatarImageData = pendingData
+                    }
                     dismiss()
                 } label: {
                     Image(systemName: "checkmark")
                 }
+                .buttonStyle(.glassProminent)
             }
+        }
+        .onAppear {
+            nickname = profile.displayName
+            dateOfBirth = profile.dateOfBirth
+            gender = profile.gender
         }
     }
 

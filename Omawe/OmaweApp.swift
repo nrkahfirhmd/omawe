@@ -24,6 +24,7 @@ struct OmaweApp: App {
         ])
 
         let localOnlyConfiguration = ModelConfiguration(
+            "LocationUpdateStore",
             schema: Schema([LocationUpdate.self]),
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .none

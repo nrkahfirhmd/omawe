@@ -207,8 +207,8 @@ private struct TripStatusPageContentView: View {
             tripCodeView
                 .padding(.bottom, 12)
 
-            memberListView
-                .padding(.bottom, 12)
+//            memberListView
+//                .padding(.bottom, 12)
 
             if let tripActionErrorMessage {
                 Text(tripActionErrorMessage)
