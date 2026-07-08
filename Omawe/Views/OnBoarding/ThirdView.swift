@@ -6,24 +6,67 @@
 //  Created by Nguyen Minh Luat on 6/7/26.
 //
 
+import UIKit
 import SwiftUI
 import Lottie
 
 
 
 struct ThirdView: View {
-    
-    let onFinish: () -> Void
-    
-    /// The authentication view model that handles the Sign in with Apple flow.
-    /// Passed in from `OnboardingFlow` to keep business logic out of the view.
-    @Bindable var viewModel: AuthenticationViewModel
+    @State private var phase = 0
+    @State private var isHolding = false
     
     var body: some View {
         ZStack {
+            LottieView {
+                try await DotLottieFile.named("ThirdViewNew")
+            }
+            .animationSpeed(0.75)
+            .playing(phase == 0
+                ? .fromFrame(0, toFrame: 90, loopMode: .playOnce)
+                : .fromFrame(40, toFrame: 90, loopMode: .loop))
+            .animationDidFinish { _ in
+                if phase == 0 { phase = 1 }
+            }
+            .resizable()
+            .frame(width: 550, height: 550)
+            .offset(y: -20)
+            .brightness(-0.15)
+            .saturation(1.2)
+            .scaleEffect(isHolding ? 0.92 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHolding)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .black, location: 0.3),
+                        .init(color: .black, location: 0.6),
+                        .init(color: .clear, location: 0.9),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .contentShape(Rectangle())                                   // để bắt chạm trên cả vùng
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if !isHolding {
+                            isHolding = true
+                            HapticManager.shared.chargeStart()           // bắt đầu giữ -> tích năng lượng
+                        }
+                    }
+                    .onEnded { _ in
+                        isHolding = false
+                        HapticManager.shared.boom()                      // thả -> bùm
+                    }
+            )
+            .zIndex(1)
+            
             
             SpotlightBeam()
                 .offset(y: 50)
+                .allowsHitTesting(false)
             
             VStack(spacing: 4) {
                 Image(systemName: "eyes")
@@ -38,17 +81,10 @@ struct ThirdView: View {
                     .foregroundStyle(Color.white.opacity(0.7))
             }
             .offset(y: -300)
+            .allowsHitTesting(false)
+
             
-            
-            LottieView {
-                try await DotLottieFile.named("ThirdView")
-            }
-            .animationSpeed(0.75)
-            .looping()
-            .resizable()
-            .frame(width: 700, height: 700)
-            .offset(y: -20)
-            
+
             VStack {
                 VStack{
                     
@@ -56,22 +92,7 @@ struct ThirdView: View {
                     Spacer ()
                     
                     VStack{
-                        HStack {
-                            
-                            Circle ()
-                                .fill(Color.gray.opacity(0.4))
-                                .frame(width: 8, height: 8)
-                            
-                            Circle ()
-                                .fill(Color.gray.opacity(0.4))
-                                .frame(width: 8, height: 8)
-                            
-                            Rectangle ()
-                                .fill(Color.cyan.opacity(1))
-                                .frame(width: 30, height: 8)
-                                .cornerRadius(12)
-                            
-                        }
+
                         Text("Welcome aboard.")
                             .font(.title)
                             .fontWidth(.expanded)
@@ -92,27 +113,13 @@ struct ThirdView: View {
                     }
                 }
                 Spacer()
-                // MARK: - Sign in with Apple Button
-                // The button's visual design is preserved exactly as-is.
-                // Only the action is changed to trigger the authentication flow
-                // through the view model instead of directly calling onFinish().
-                Button {
-                    HapticManager.shared.tickTickTick()
-                    // Delegate to the view model to handle the Apple Sign In flow.
-                    // The VM will call onSignInCompleted (which maps to onFinish)
-                    // only after a successful authentication and session save.
-                    Task {
-                        await viewModel.signInWithApple()
-                    }
-                } label: {
-                    ZStack {
-                        HStack {
-                            Image(systemName: "apple.logo")
-                            Text("Continue with Apple")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .fontWidth(.expanded)
-                        }
+                Button(action: {
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)}) {
+                    Text("   Continue with Apple")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .fontWidth(.expanded)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 22.5)
