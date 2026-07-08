@@ -25,7 +25,21 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
     private let identityService = CloudKitIdentityService()
+    private let analytics: AnalyticsLogging
 
+    init(analytics: AnalyticsLogging = AnalyticsService.shared) {
+        self.analytics = analytics
+    }
+
+    /// NFR-3: retries the actual CloudKit write through `RetryExecutor`
+    /// before this method ever throws — a single transient failure (network
+    /// blip, momentary throttling) used to be a dead end here; now it's
+    /// retried with backoff, classified against real `CKError.Code` values,
+    /// while the error is still a `CKError` (retrying has to happen before
+    /// `mapCKError` below converts it to the caller-facing `CloudKitError`,
+    /// which doesn't carry enough information to reclassify). Reports the
+    /// success/failure-with-attempt-count metric NFR-3 requires to actually
+    /// verify the 99% sync-success target, not just assume it.
     func saveLocation(_ location: LocationSample) async throws {
         let recordID = CKRecord.ID(
             recordName: UUID().uuidString,
@@ -33,17 +47,24 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
         )
 
         let record = LocationRecordMapper.makeRecord(from: location, recordID: recordID)
+        var attempts = 0
 
         do {
             let targetDatabase = try await databaseForZone(location.tripID.zoneID)
-            _ = try await targetDatabase.modifyRecords(
-                saving: [record],
-                deleting: [],
-                savePolicy: .changedKeys
-            )
+            try await RetryExecutor.run {
+                attempts += 1
+                _ = try await targetDatabase.modifyRecords(
+                    saving: [record],
+                    deleting: [],
+                    savePolicy: .changedKeys
+                )
+            }
+            analytics.log(.locationSyncResult(succeeded: true, attempts: attempts))
         } catch let error as CKError {
+            analytics.log(.locationSyncResult(succeeded: false, attempts: attempts))
             throw mapCKError(error)
         } catch {
+            analytics.log(.locationSyncResult(succeeded: false, attempts: attempts))
             throw CloudKitError.unknown(error)
         }
     }
@@ -66,11 +87,11 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
                     do {
                         return try LocationRecordMapper.makeModel(from: record)
                     } catch {
-                        print("[CloudKitLocationSyncService] Skipping unreadable LocationSample record \(record.recordID.recordName): \(error)")
+                        debugLog("[CloudKitLocationSyncService] Skipping unreadable LocationSample record \(record.recordID.recordName): \(error)")
                         return nil
                     }
                 case .failure(let error):
-                    print("[CloudKitLocationSyncService] Match failure: \(error)")
+                    debugLog("[CloudKitLocationSyncService] Match failure: \(error)")
                     return nil
                 }
             }

@@ -13,5 +13,16 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.exboyfriends.omaweapp.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>omawe</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

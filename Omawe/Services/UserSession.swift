@@ -187,7 +187,7 @@ final class UserSession {
             // Network or other error — keep the session for now.
             // We don't want a transient network issue to sign the user out.
             // The credential will be re-validated on the next launch.
-            print("[UserSession] Failed to validate credential state: \(error.localizedDescription)")
+            debugLog("[UserSession] Failed to validate credential state: \(error.localizedDescription)")
             return true
         }
     }

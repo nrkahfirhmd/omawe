@@ -9,6 +9,13 @@
 /* Begin PBXBuildFile section */
 		0C140F49F8E2B066FD640715 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2178A4116A9D305DD17AC0F /* Foundation.framework */; };
 		0FD74DF7A8CF4D65AC687056 /* ParticipantStatusEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */; };
+		2AD16F635D2D6A29F0021708 /* OwnershipTransferPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21CC223B6693C0C0AE023BFB /* OwnershipTransferPolicyTests.swift */; };
+		68EE43B30728E37F1EF03B50 /* TripNotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88EA9D29D5FEEBBBA6927A9 /* TripNotificationServiceTests.swift */; };
+		CEFBF78ED3867274CE94481C /* ETAAccuracySamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7249C62EE820C3980A8641DA /* ETAAccuracySamplerTests.swift */; };
+		9A166154E454DD11EEC9B182 /* CKErrorRetryClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617763E59D961C1313022E6F /* CKErrorRetryClassifierTests.swift */; };
+		E43F5C45634E0E926F5EE29E /* RetryExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67C5F07779763A9BAC0BFCD /* RetryExecutorTests.swift */; };
+		8F63AD584C601E4FE5316C51 /* LocationDisplayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0C0AF62AFA885DD663EFF /* LocationDisplayStateTests.swift */; };
+		E2C6FE8A9B912EA20C7B2C2F /* MapRegionFittingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E394C265FF2879CE2D4A6B /* MapRegionFittingTests.swift */; };
 		16305A52EDB7461C99261225 /* TripStatusViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */; };
 		476AE09606649729F6EEBD63 /* LocationUpdateQueueServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */; };
 		5FD9DE9B2FFCE76C0047FCF3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8CD3699F2FF265E400B103BD /* WidgetKit.framework */; };
@@ -65,6 +72,13 @@
 		58BB9C377257037BC9C0EF93 /* LocationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationServiceTests.swift; sourceTree = "<group>"; };
 		597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TripStatusViewModelTests.swift; sourceTree = "<group>"; };
 		5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ParticipantStatusEngineTests.swift; sourceTree = "<group>"; };
+		7249C62EE820C3980A8641DA /* ETAAccuracySamplerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ETAAccuracySamplerTests.swift; sourceTree = "<group>"; };
+		617763E59D961C1313022E6F /* CKErrorRetryClassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CKErrorRetryClassifierTests.swift; sourceTree = "<group>"; };
+		D67C5F07779763A9BAC0BFCD /* RetryExecutorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RetryExecutorTests.swift; sourceTree = "<group>"; };
+		18D0C0AF62AFA885DD663EFF /* LocationDisplayStateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationDisplayStateTests.swift; sourceTree = "<group>"; };
+		23E394C265FF2879CE2D4A6B /* MapRegionFittingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MapRegionFittingTests.swift; sourceTree = "<group>"; };
+		21CC223B6693C0C0AE023BFB /* OwnershipTransferPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OwnershipTransferPolicyTests.swift; sourceTree = "<group>"; };
+		A88EA9D29D5FEEBBBA6927A9 /* TripNotificationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TripNotificationServiceTests.swift; sourceTree = "<group>"; };
 		5FD9DE9A2FFCE76C0047FCF3 /* OmaweWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OmaweWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CD3699F2FF265E400B103BD /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8CD369A12FF265E500B103BD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -200,6 +214,13 @@
 				AF8E1BD27BF9844BEB65136F /* LocationUpdateQueueServiceTests.swift */,
 				492F4D5B458C42B48769C769 /* TripRecordMapperTests.swift */,
 				5ED1FDE34AB4447282C61E78 /* ParticipantStatusEngineTests.swift */,
+				7249C62EE820C3980A8641DA /* ETAAccuracySamplerTests.swift */,
+				617763E59D961C1313022E6F /* CKErrorRetryClassifierTests.swift */,
+				D67C5F07779763A9BAC0BFCD /* RetryExecutorTests.swift */,
+				18D0C0AF62AFA885DD663EFF /* LocationDisplayStateTests.swift */,
+				23E394C265FF2879CE2D4A6B /* MapRegionFittingTests.swift */,
+				21CC223B6693C0C0AE023BFB /* OwnershipTransferPolicyTests.swift */,
+				A88EA9D29D5FEEBBBA6927A9 /* TripNotificationServiceTests.swift */,
 				597E4DDC68DA461784B88EF2 /* TripStatusViewModelTests.swift */,
 				320B6F320EC5429EAC23326C /* WidgetContentStateAggregatorTests.swift */,
 				B4104D124735458BBEAD9A88 /* LiveActivityLifecycleManagerTests.swift */,
@@ -358,6 +379,13 @@
 				476AE09606649729F6EEBD63 /* LocationUpdateQueueServiceTests.swift in Sources */,
 				D1E85434806943D389C3F392 /* TripRecordMapperTests.swift in Sources */,
 				0FD74DF7A8CF4D65AC687056 /* ParticipantStatusEngineTests.swift in Sources */,
+				CEFBF78ED3867274CE94481C /* ETAAccuracySamplerTests.swift in Sources */,
+				9A166154E454DD11EEC9B182 /* CKErrorRetryClassifierTests.swift in Sources */,
+				E43F5C45634E0E926F5EE29E /* RetryExecutorTests.swift in Sources */,
+				8F63AD584C601E4FE5316C51 /* LocationDisplayStateTests.swift in Sources */,
+				E2C6FE8A9B912EA20C7B2C2F /* MapRegionFittingTests.swift in Sources */,
+				2AD16F635D2D6A29F0021708 /* OwnershipTransferPolicyTests.swift in Sources */,
+				68EE43B30728E37F1EF03B50 /* TripNotificationServiceTests.swift in Sources */,
 				16305A52EDB7461C99261225 /* TripStatusViewModelTests.swift in Sources */,
 				E327BB19D4DA466797393E0F /* WidgetContentStateAggregatorTests.swift in Sources */,
 				E308F70359444344AA853DA0 /* LiveActivityLifecycleManagerTests.swift in Sources */,
