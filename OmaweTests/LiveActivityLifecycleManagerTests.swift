@@ -39,7 +39,7 @@ final class LiveActivityLifecycleManagerTests: XCTestCase {
     private let attributes = OmaweWidgetAttributes(tripName: "Trip", destinationName: "Destination", totalMates: 3)
 
     private func content(eta: Int = 10, distance: Double = 5, arrived: Int = 0) -> OmaweWidgetAttributes.ContentState {
-        OmaweWidgetAttributes.ContentState(statusMessage: "on the way", etaMinutes: eta, arrivedCount: arrived, distanceKm: distance)
+        OmaweWidgetAttributes.ContentState(statusMessage: "on the way", myEtaMinutes: eta, myDistanceKm: distance, arrivedCount: arrived, mates: [])
     }
 
     func testStart_success_becomesActive() {
@@ -81,7 +81,7 @@ final class LiveActivityLifecycleManagerTests: XCTestCase {
         await manager.update(content(eta: 5))
 
         XCTAssertEqual(controller.updateCallCount, 1)
-        XCTAssertEqual(controller.lastUpdatedContent?.etaMinutes, 5)
+        XCTAssertEqual(controller.lastUpdatedContent?.myEtaMinutes, 5)
     }
 
     func testUpdate_identicalContent_isThrottledAwayNotForwarded() async {

@@ -34,7 +34,7 @@ final class ActivityKitLiveActivityController: LiveActivityControlling {
 
     func end(content: OmaweWidgetAttributes.ContentState) async {
         guard let activity else { return }
-        await activity.end(.init(state: content, staleDate: nil), dismissalPolicy: .default)
+        await activity.end(.init(state: content, staleDate: nil), dismissalPolicy: .immediate)
         self.activity = nil
     }
 }
