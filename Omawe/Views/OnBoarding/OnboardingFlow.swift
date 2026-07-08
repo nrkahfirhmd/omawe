@@ -22,21 +22,15 @@ struct OnboardingFlow: View {
             switch currentPage {
             case 0:
                 FirstView(onNext: { goTo(1) })
-                    .transition(.opacity)
-
             case 1:
                 SecondView(onNext: { goTo(2) })
-                    .transition(.identity)
-
+            case 2:
+                PermissionView(onNext: { goTo(3) })
             default:
-                // Pass the authentication view model to ThirdView.
-                // The onFinish closure is kept for backward compatibility,
-                // but the actual trigger now comes from the VM's onSignInCompleted.
                 ThirdView(
                     onFinish: { finishOnboarding() },
                     viewModel: authViewModel
                 )
-                .transition(.opacity)
             }
         }
         .background {
