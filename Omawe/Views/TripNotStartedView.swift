@@ -144,7 +144,7 @@ struct StartTripButton: View {
                 .overlay(
                     Capsule()
                         .strokeBorder(
-                            Theme.primarySoft,
+                            Color(red: 0.4, green: 0.85, blue: 0.9),
                             lineWidth: 2
                         )
                         .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
@@ -152,36 +152,4 @@ struct StartTripButton: View {
                 .clipShape(Capsule())
         }
     }
-}
-
-#Preview {
-    TripNotStarted(trips: [
-        TripData(
-            theme: Theme.themeSecondary,
-            icon: "balloon.2",
-            title: "Ex-Boyfriends\nCelebration!",
-            subtitle: "by @Bintang • 27/06/2026 • 11:30",
-            people: 6,
-            location: "Toko Kopi Jaya, Kuta",
-            footerTitle: "Trip is not starting yet"
-        ),
-        TripData(
-            theme: Theme.themePrimary,
-            icon: "fish",
-            title: "Fishing\nWeekend",
-            subtitle: "by @Kahfi • 05/07/2026 • 06:00",
-            people: 5,
-            location: "Pantai Sanur, Denpasar",
-            footerTitle: "Trip is not starting yet"
-        ),
-        TripData(
-            theme: Theme.themeTertiary,
-            icon: "figure.hiking",
-            title: "Mountain\nAdventure",
-            subtitle: "by @Ryan • 12/07/2026 • 05:00",
-            people: 8,
-            location: "Gunung Agung, Karangasem",
-            footerTitle: "Trip is not starting yet"
-        ),
-    ])
 }

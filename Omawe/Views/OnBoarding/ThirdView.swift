@@ -87,7 +87,7 @@ struct ThirdView: View {
 
             VStack {
                 VStack{
-                   
+                    
                     
                     Spacer ()
                     
@@ -145,7 +145,20 @@ struct ThirdView: View {
                                 .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
                         )
                         .clipShape(Capsule())
+                        // Dim the button text when loading to indicate the button is busy.
+                        .opacity(viewModel.isLoading ? 0.5 : 1.0)
+                        
+                        // MARK: - Loading Indicator
+                        // Shown on top of the button while the Apple Sign In sheet
+                        // is being presented or the auth request is in progress.
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                    }
                 }
+                // Disable the button while loading to prevent duplicate sign-in attempts.
+                .disabled(viewModel.isLoading)
                 .shadow(color: .cyan.opacity(0.4), radius: 10, x: 0, y: 0)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 32)
@@ -153,7 +166,7 @@ struct ThirdView: View {
             .containerRelativeFrame(.horizontal) { width, _ in
                 width * 1
             }
-
+            
         }
         .background {
             Image("DarkBlueBackground")
@@ -162,6 +175,19 @@ struct ThirdView: View {
         }
         .padding(1)
         .ignoresSafeArea()
+        // MARK: - Error Alert
+        // Displays a user-friendly error when Apple Sign In fails.
+        // Cancellation is handled silently (no alert shown).
+        .alert(
+            "Sign In Failed",
+            isPresented: $viewModel.showError
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
+        }
         
     }
 }
@@ -192,8 +218,4 @@ struct SpotlightBeam: View {
             .blur(radius: 30)   // làm mềm mép chùm sáng
         }
     }
-}
-
-#Preview {
-    ThirdView()
 }

@@ -3,3 +3,5 @@
 # Xcode local user settings
 xcuserdata/
 *.xcuserstate
+
+docs/

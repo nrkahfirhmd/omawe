@@ -1,8 +1,8 @@
 //
 //  OmaweWidgetLiveActivityView.swift
-//  OmaweWidget
+//  OmaweWidgetExtension
 //
-//  Created by Gleenryan on 03/07/26.
+//  Created by Muhammad Bintang Al-Fath on 07/07/26.
 //
 
 import SwiftUI
@@ -46,49 +46,71 @@ struct LiveActivityLockScreenView: View {
     }
     
     var body: some View {
-        VStack() {
-            // ── Top Row: ETA & Distance ──
-            HStack(alignment: .top) {
-                // ETA (left)
-                VStack(alignment: .leading) {
-                    Text("ETA")
-                        .font(.caption2)
-                        .opacity(0.8)
-                        .bold()
-                        .foregroundStyle(.gray)
-                    Text(etaTimeString)
-                        .font(.subheadline)
-                        .fontWidth(.expanded)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.yellow)
-                }
-                
-                Spacer()
-                
-                // Distance (right)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Distance")
-                        .font(.caption2)
-                        .bold()
-                        .opacity(0.8)
-                        .foregroundStyle(.gray)
-                    Text(distanceString)
-                        .font(.subheadline)
-                        .fontWidth(.expanded)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.yellow)
-                }
-            }
-            .padding(.top,20)
 //            .padding(.horizontal,10)
             
             // ── Route Progress with Mate Markers ──
-            RouteProgressView(
-                totalMates: context.attributes.totalMates,
-                arrivedCount: context.state.arrivedCount
-            )
+        VStack() {
+            ZStack{
+                PolkaDotBackground(
+                    dotSize: 3,
+                    spacing: 10,
+                    color: LATheme.teal.opacity(1)
+                )
+                .mask {
+                    Ellipse()
+                        
+                        .padding(.horizontal, 30)
+                        .blur(radius: 40)
+                        .scaleEffect(x: 1, y: 0.4)
+                        
+                }
+                .padding(.top, 45)
+                .frame(width: .infinity, height: 100)
+                
+                VStack{
+                    // ── Top Row: ETA & Distance ──
+                    HStack(alignment: .top) {
+                        // ETA (left)
+                        VStack(alignment: .leading) {
+                            Text("ETA")
+                                .font(.caption2)
+                                .opacity(0.8)
+                                .bold()
+                                .foregroundStyle(.gray)
+                            Text(etaTimeString)
+                                .font(.subheadline)
+                                .fontWidth(.expanded)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.yellow)
+                        }
+                        
+                        Spacer()
+                        
+                        // Distance (right)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Distance")
+                                .font(.caption2)
+                                .bold()
+                                .opacity(0.8)
+                                .foregroundStyle(.gray)
+                            Text(distanceString)
+                                .font(.subheadline)
+                                .fontWidth(.expanded)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.yellow)
+                        }
+                    }
+                    .padding(.top,20)
+                    
+                    RouteProgressView(
+                        totalMates: context.attributes.totalMates,
+                        arrivedCount: context.state.arrivedCount
+                    )
+                    
+                }
+            }
 //            .padding(.horizontal,10)
-//            .padding(.vertical, 2)
+//            .padding(.vertical, 10)
             
             // ── Bottom Row: Alert Icon + Report Button ──
             HStack(spacing: 10) {
@@ -179,51 +201,65 @@ struct RouteProgressView: View {
         }
     }
     
+    private func curveY(t: CGFloat, midY: CGFloat) -> CGFloat {
+        let controlY = midY - 24
+        let mt = 1 - t
+        return (mt * mt * midY) + (2 * mt * t * controlY) + (t * t * midY)
+    }
+    
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
             let midY = geo.size.height / 2
             
-            // ── Route line (linear gradient: 0 → full white → 0) ──
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .white.opacity(0), location: 0),
-                            .init(color: .white.opacity(0.9), location: 0.5),
-                            .init(color: .white.opacity(0), location: 1.0)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+            // ── Route line (Curved) ──
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: midY))
+                path.addQuadCurve(
+                    to: CGPoint(x: w, y: midY),
+                    control: CGPoint(x: w / 2, y: midY - 24)
                 )
-                .frame(width: w - 12, height: 5)
-                .position(x: w / 2, y: midY)
+            }
+            .stroke(
+                LinearGradient(
+                    stops: [
+                        .init(color: .white.opacity(0), location: 0),
+                        .init(color: .white.opacity(0.9), location: 0.5),
+                        .init(color: .white.opacity(0), location: 1.0)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                style: StrokeStyle(lineWidth: 4, lineCap: .round)
+            )
+            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 3)
             
             // ── Start icon ──
             Image(systemName: "location.fill")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(LinearGradient(
                     stops: [
-                        .init(color: .white.opacity(0), location: 0),
+                        .init(color: .white.opacity(0.3), location: 0),
                         .init(color: .white.opacity(0.9), location: 1)
                     ],
-                    startPoint: .bottom,
-                    endPoint: .top
+                    startPoint: .leading,
+                    endPoint: .trailing
                 ))
-                .position(x: 4, y: midY)
+                .rotationEffect(.degrees(45))
+                .position(x: w * 0.05, y: curveY(t: 0.05, midY: midY))
             
             // ── Finish icon ──
             Image(systemName: "flag.fill")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(LinearGradient(
                     stops: [
-                        .init(color: .white.opacity(0), location: 0),
+                        .init(color: .white.opacity(0.4), location: 0),
                         .init(color: .white.opacity(0.9), location: 1)
                     ],
                     startPoint: .bottom,
                     endPoint: .top
-                ))                .position(x: w - 8, y: midY)
+                ))
+                .position(x: w * 0.95, y: curveY(t: 0.95, midY: midY))
             
             // ── Mate markers ──
             ForEach(Array(markers.enumerated()), id: \.offset) { _, marker in
@@ -231,7 +267,10 @@ struct RouteProgressView: View {
                     label: marker.label,
                     isCluster: marker.isCluster
                 )
-                .position(x: w * marker.position, y: midY)
+                .position(
+                    x: w * marker.position,
+                    y: curveY(t: marker.position, midY: midY)
+                )
             }
         }
         .frame(height: 30)
@@ -274,11 +313,11 @@ struct MateMarkerView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .frame(minWidth: 23, minHeight: 28)
-                    .background(LATheme.green)
+                    .background(bgColor)
                     .clipShape(Capsule())
                     .overlay(
                         Capsule()
-                            .strokeBorder(.white.opacity(0.2), lineWidth: 4)
+                            .strokeBorder(bgColor.opacity(0.35), lineWidth: 4)
                             .padding(-4)
                     )
                 
@@ -300,10 +339,37 @@ struct MateMarkerView: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .strokeBorder(.white.opacity(0.2), lineWidth: 4)
+                        .strokeBorder(bgColor.opacity(0.35), lineWidth: 4)
                         .padding(-4)
                 )
         }
+    }
+}
+
+struct PolkaDotBackground: View {
+    var dotSize: CGFloat = 3
+    var spacing: CGFloat = 12
+    var color: Color = .white.opacity(0.15)
+
+    var body: some View {
+        Canvas { context, size in
+            for x in stride(from: 0, through: size.width, by: spacing) {
+                for y in stride(from: 0, through: size.height, by: spacing) {
+                    let rect = CGRect(
+                        x: x,
+                        y: y,
+                        width: dotSize,
+                        height: dotSize
+                    )
+
+                    context.fill(
+                        Circle().path(in: rect),
+                        with: .color(color)
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 
