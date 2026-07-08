@@ -63,9 +63,20 @@ struct TripsListView: View {
 //    }
 
     /// A trip in progress takes over this screen entirely — no point browsing
-    /// the full trip list while one is already active.
+    /// the full trip list while one is already active. Requires the current
+    /// user to still be a participant — see HomeView's equivalent property
+    /// for why (leaving doesn't revoke the trip's CKShare access).
     private var activeTrip: Trip? {
-        homeViewModel.trips.first { $0.status == .active }
+        guard let currentUserID else { return nil }
+        let myTripIDs: Set<CKRecord.ID> = Set(
+            homeViewModel.participants
+                .filter { $0.userID == currentUserID }
+                .map { $0.tripID }
+        )
+        return homeViewModel.trips.first { trip in
+            guard trip.status == .active, let tripID = trip.id else { return false }
+            return myTripIDs.contains(tripID)
+        }
     }
 
     var body: some View {
@@ -77,6 +88,8 @@ struct TripsListView: View {
                         homeViewModel.participants.filter { $0.tripID == activeTrip.id }.count,
                         1
                     ),
+                    participants: homeViewModel.participants.filter { $0.tripID == activeTrip.id },
+                    currentUserID: currentUserID,
                     etaMinutes: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
                     distanceKm: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
                     isOwner: currentUserID.map { homeViewModel.isOwner(of: activeTrip, userID: $0) } ?? false,

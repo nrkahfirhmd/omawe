@@ -432,9 +432,22 @@ struct HomeView: View {
     // MARK: - Top panel
     
     /// A trip in progress takes over the panel entirely — no point paging
-    /// through not-started trips while one is already active.
+    /// through not-started trips while one is already active. Requires the
+    /// current user to still be a participant: after `leaveTrip`, the trip
+    /// can still appear in `trips` (CKShare access isn't revoked on leave),
+    /// so without this check a departed member would stay stuck on
+    /// OnTripView until the owner ends the trip for everyone.
     private var activeTrip: Trip? {
-        viewModel.trips.first { $0.status == .active }
+        guard let currentUserID else { return nil }
+        let myTripIDs: Set<CKRecord.ID> = Set(
+            viewModel.participants
+                .filter { $0.userID == currentUserID }
+                .map { $0.tripID }
+        )
+        return viewModel.trips.first { trip in
+            guard trip.status == .active, let tripID = trip.id else { return false }
+            return myTripIDs.contains(tripID)
+        }
     }
 
     @ViewBuilder
@@ -446,6 +459,8 @@ struct HomeView: View {
                     viewModel.participants.filter { $0.tripID == activeTrip.id }.count,
                     1
                 ),
+                participants: viewModel.participants.filter { $0.tripID == activeTrip.id },
+                currentUserID: currentUserID,
                 etaMinutes: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
                 distanceKm: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
                 isOwner: currentUserID.map { viewModel.isOwner(of: activeTrip, userID: $0) } ?? false,

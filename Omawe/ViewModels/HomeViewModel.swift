@@ -25,6 +25,10 @@ class HomeViewModel {
     private let tripStatusViewModel: TripStatusViewModel
     private let liveActivityManager = LiveActivityLifecycleManager()
     private var cachedUserID: CKRecord.ID?
+    /// Which trip this device currently has `locationSharingCoordinator`
+    /// running for — guards `ensureLocationSharing` so it only starts once
+    /// per trip instead of restarting every refresh tick.
+    private var sharingTripID: CKRecord.ID?
 
     init() {
         locationSharingCoordinator = LocationSharingCoordinator(
@@ -301,6 +305,7 @@ class HomeViewModel {
               let tripID = trip.id,
               let destination = trip.destinationCoordinate else { return }
 
+        await ensureLocationSharing(for: trip)
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
 
         let states = Array(tripStatusViewModel.participantStates.values)
@@ -319,29 +324,46 @@ class HomeViewModel {
 
     // MARK: - Trip Lifecycle
 
-    /// Transitions a trip to `.active` and starts publishing this device's
-    /// location into LOC-1's sync path for the rest of the trip's participants.
-    func startTrip(_ trip: Trip) async {
-        guard let tripID = trip.id else { return }
-        tripActionErrorMessage = nil
-        isUpdatingTripStatus = true
-        defer { isUpdatingTripStatus = false }
+    /// Any participant's device — not just whoever tapped "Start Trip" — has
+    /// to publish its own location once the trip is active, or that
+    /// participant never has data for ETA-1 to compute an ETA/distance from.
+    /// The "Start Trip" button only transitions `trip.status`; every device
+    /// that subsequently observes the trip is active calls this itself.
+    /// Idempotent per trip via `sharingTripID`.
+    func ensureLocationSharing(for trip: Trip) async {
+        guard trip.status == .active, let tripID = trip.id, sharingTripID != tripID else { return }
 
         do {
             let userID = try await currentUserID()
 
-            var updatedTrip = trip
-            updatedTrip.status = .active
-            updatedTrip.updatedAt = Date()
-            _ = try await tripService.updateTrip(updatedTrip)
-
-            // Only implies background sharing once the user has actually
-            // started a trip — never requested upfront.
+            // Only implies background sharing once the user is actually on
+            // an active trip — never requested upfront.
             locationService.requestWhenInUseAuthorization()
             locationService.requestAlwaysAuthorization()
             locationSharingCoordinator.startSharing(tripID: tripID, userID: userID)
             try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
 
+            sharingTripID = tripID
+        } catch {
+            // Best-effort — this device's ETA/location just won't populate.
+        }
+    }
+
+    /// Transitions a trip to `.active`. Location sharing for this device is
+    /// started via `ensureLocationSharing`, the same path every other
+    /// participant's device uses once it observes the trip is active.
+    func startTrip(_ trip: Trip) async {
+        tripActionErrorMessage = nil
+        isUpdatingTripStatus = true
+        defer { isUpdatingTripStatus = false }
+
+        do {
+            var updatedTrip = trip
+            updatedTrip.status = .active
+            updatedTrip.updatedAt = Date()
+            _ = try await tripService.updateTrip(updatedTrip)
+
+            await ensureLocationSharing(for: updatedTrip)
             startLiveActivity(for: updatedTrip)
 
             await TripStore.shared.loadTrips()
@@ -390,6 +412,7 @@ class HomeViewModel {
             }
 
             locationSharingCoordinator.stopSharing()
+            sharingTripID = nil
 
             var updatedTrip = trip
             updatedTrip.status = .ended
@@ -445,6 +468,12 @@ class HomeViewModel {
             }
 
             try await participantService.removeParticipant(id: participantID)
+
+            if sharingTripID == trip.id {
+                locationSharingCoordinator.stopSharing()
+                sharingTripID = nil
+            }
+
             await TripStore.shared.loadTrips()
         } catch {
             tripActionErrorMessage = error.localizedDescription
