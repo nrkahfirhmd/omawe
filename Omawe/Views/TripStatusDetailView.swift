@@ -144,6 +144,19 @@ struct TripStatusDetailView: View {
     private func ownerDisplayName(for trip: Trip) -> String {
         return trip.ownerDisplayName ?? "Owner unavailable"
     }
+
+    private func displayName(for userID: CKRecord.ID, role: ParticipantRole, trip: Trip) -> String {
+        if role == .owner, let name = trip.ownerDisplayName, !name.isEmpty {
+            return name
+        }
+        
+        if let participant = members.first(where: { $0.tripID == trip.id && $0.userID == userID }),
+           let name = participant.displayName, !name.isEmpty {
+            return name
+        }
+        
+        return "Unknown"
+    }
 }
 
 private struct TripStatusMemberDisplay: Identifiable, Hashable {
@@ -194,8 +207,8 @@ private struct TripStatusPageContentView: View {
             tripCodeView
                 .padding(.bottom, 12)
 
-            memberListView
-                .padding(.bottom, 12)
+//            memberListView
+//                .padding(.bottom, 12)
 
             if let tripActionErrorMessage {
                 Text(tripActionErrorMessage)
