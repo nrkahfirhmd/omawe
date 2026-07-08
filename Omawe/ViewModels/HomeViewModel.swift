@@ -17,6 +17,7 @@ class HomeViewModel {
     private let inviteService = CloudKitInviteService()
     private let sharingService = CloudKitSharingService()
     private let identityService = CloudKitIdentityService()
+    private let zoneService = CloudKitZoneService()
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
     private let locationService = LocationService()
@@ -24,6 +25,8 @@ class HomeViewModel {
     private let locationSharingCoordinator: LocationSharingCoordinator
     private let tripStatusViewModel: TripStatusViewModel
     private let liveActivityManager = LiveActivityLifecycleManager()
+    private let tripNotificationService = TripNotificationService()
+    private let notificationPermissionManager = NotificationPermissionManager()
     private var cachedUserID: CKRecord.ID?
     /// Which trip this device currently has `locationSharingCoordinator`
     /// running for — guards `ensureLocationSharing` so it only starts once
@@ -299,9 +302,17 @@ class HomeViewModel {
         return userID
     }
 
+    /// Checks `Participant.role` only — TRIP-2's audit found this used to
+    /// also check `trip.ownerID == userID`, but `ownerID` is a CloudKit-level
+    /// fact that can never change (see `CloudKitZoneService`/AD-2's
+    /// zone-per-owner constraint) while `role` is the actual, reassignable
+    /// app-level "owner" concept `reassignOwnershipIfNeeded` promotes into.
+    /// Keeping the `ownerID` check would make the original owner permanently
+    /// re-qualify as "owner" here even after leaving and being replaced,
+    /// disagreeing with every other owner-gated path. Resolved by dropping
+    /// the `ownerID` branch entirely; `role` is now the single source of truth.
     func isOwner(of trip: Trip, userID: CKRecord.ID) -> Bool {
-        if trip.ownerID == userID { return true }
-        return participants.contains {
+        participants.contains {
             $0.tripID == trip.id && $0.userID == userID && $0.role == .owner
         }
     }
@@ -326,6 +337,8 @@ class HomeViewModel {
               let destination = trip.destinationCoordinate else { return }
 
         await ensureLocationSharing(for: trip)
+
+        let previousStates = tripStatusViewModel.participantStates
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
 
         let states = Array(tripStatusViewModel.participantStates.values)
@@ -339,6 +352,15 @@ class HomeViewModel {
         )
 
         let userID = try? await currentUserID()
+        if let userID {
+            tripNotificationService.notifyTransitions(
+                previous: previousStates,
+                updated: tripStatusViewModel.participantStates,
+                displayNames: displayNames,
+                currentUserID: userID
+            )
+        }
+
         let content = WidgetContentStateAggregator.aggregate(
             participantStates: states,
             displayNames: displayNames,
@@ -365,6 +387,13 @@ class HomeViewModel {
             // an active trip — never requested upfront.
             locationService.requestWhenInUseAuthorization()
             locationService.requestAlwaysAuthorization()
+
+            // TRIP-4: notification permission requested here, separately from
+            // the location prompts above — its own iOS permission with its
+            // own rationale (arrival/delay/nearby alerts), not bundled into
+            // LOC-2's location-permission flow.
+            notificationPermissionManager.requestPermissions()
+
             locationSharingCoordinator.startSharing(tripID: tripID, userID: userID)
             try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
 
@@ -423,10 +452,20 @@ class HomeViewModel {
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)
     }
 
-    /// Orchestrates TRIP-3's "End Trip" flow: stop location sharing, then mark
-    /// the trip ended. Zone cleanup is deliberately not performed here — it
-    /// would destroy shared data for every other participant immediately with
-    /// no warning (see docs/Sprint_3/task_2.md), so it's left out of scope.
+    /// Orchestrates TRIP-3's "End Trip" flow, in order: stop location sharing
+    /// → end the Live Activity → mark the trip `.ended` — matching the
+    /// ticket's required sequence, since deleting the zone first (or out of
+    /// order) could leave an in-flight location save or Live Activity update
+    /// racing a now-nonexistent zone (`CKError.zoneNotFound`). Zone deletion
+    /// itself runs afterward, delayed and best-effort — see
+    /// `scheduleZoneCleanup`.
+    ///
+    /// Owner-only is enforced only client-side (`isOwner` check below) —
+    /// `CKShare.publicPermission = .readWrite` (`CloudKitSharingService`)
+    /// already grants every participant write access at the CloudKit layer,
+    /// so a malicious/buggy client could call this regardless. No
+    /// server-side-equivalent enforcement exists; this is a known limitation
+    /// of AD-2, tracked rather than silently assumed sufficient (TRIP-3 AC4).
     func endTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
         isUpdatingTripStatus = true
@@ -457,8 +496,37 @@ class HomeViewModel {
             ))
 
             await TripStore.shared.loadTrips()
+            scheduleZoneCleanup(for: trip)
         } catch {
             tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Deletes the trip's CloudKit zone after a grace delay, best-effort in
+    /// the background — deliberately not awaited or blocking on the caller.
+    /// Two decisions this makes explicit, since the ticket flags both as open
+    /// questions rather than resolving them (docs/Sprint_3/task_2.md):
+    /// - **Delay, not immediate**: other participants only see this trip end
+    ///   via their own next poll of the (still-existing) `Trip` record: their
+    ///   access disappears the moment the zone is gone, so deleting it
+    ///   immediately risks yanking access out from under someone who hasn't
+    ///   even seen "ended" yet. A short grace window lets that poll land first.
+    /// - **Best-effort, not retried inline**: a failure here (e.g. network
+    ///   drop mid-delete) leaves a zone undeleted, which only costs unused
+    ///   CloudKit storage — a smaller cost than blocking the owner's own
+    ///   device on a network-dependent cleanup step after they've already
+    ///   been shown "trip ended".
+    private func scheduleZoneCleanup(for trip: Trip) {
+        guard let tripID = trip.id else { return }
+        let zoneID = tripID.zoneID
+
+        Task.detached(priority: .background) { [zoneService] in
+            try? await Task.sleep(for: .seconds(30))
+            do {
+                try await zoneService.deleteZone(with: zoneID)
+            } catch {
+                print("[HomeViewModel] Zone cleanup failed for trip \(tripID.recordName): \(error.localizedDescription)")
+            }
         }
     }
 
@@ -485,7 +553,12 @@ class HomeViewModel {
         }
     }
 
-    /// Removes the current user's own participant record from a trip.
+    /// Removes the current user's own participant record from a trip. If the
+    /// departing participant was the owner, promotes a remaining participant
+    /// (TRIP-2) before reloading — explicit "leave" is the only trigger for
+    /// this per TRIP-2's ticket; inactivity/offline is deliberately not,
+    /// since AD-6's 30s–2min offline threshold makes going briefly offline a
+    /// routine occurrence, not a reliable "gone" signal.
     func leaveTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
 
@@ -496,7 +569,12 @@ class HomeViewModel {
                 return
             }
 
+            let wasOwner = participant.role == .owner
             try await participantService.removeParticipant(id: participantID)
+
+            if wasOwner {
+                await reassignOwnershipIfNeeded(tripID: trip.id, departedUserID: userID)
+            }
 
             if sharingTripID == trip.id {
                 locationSharingCoordinator.stopSharing()
@@ -515,6 +593,39 @@ class HomeViewModel {
             await TripStore.shared.loadTrips()
         } catch {
             tripActionErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// TRIP-2's owner-departure reassignment: re-fetches the participant list
+    /// fresh from CloudKit (not the possibly-stale in-memory `participants`)
+    /// so the selection policy sees the true remaining set, then promotes the
+    /// earliest-joined participant via the conflict-safe `updateParticipant`.
+    /// If a racing device's transfer already landed — either the fresh fetch
+    /// already shows a new owner, or the conflict-safe save loses the race —
+    /// this is a no-op, not an error: exactly one transfer should win.
+    private func reassignOwnershipIfNeeded(tripID: CKRecord.ID?, departedUserID: CKRecord.ID) async {
+        guard let tripID else { return }
+
+        do {
+            let remaining = try await participantService.fetchParticipants(for: tripID)
+                .filter { $0.userID != departedUserID }
+
+            guard var newOwner = OwnershipTransferPolicy.selectNewOwner(remaining: remaining) else {
+                // Either no one is left (TRIP-3's "last participant leaves"
+                // boundary, not this ticket's concern) or someone already
+                // holds `.owner` (a racing device's transfer already landed).
+                return
+            }
+
+            newOwner.role = .owner
+            _ = try await participantService.updateParticipant(newOwner)
+            await TripStore.shared.loadParticipants()
+        } catch CloudKitError.conflict {
+            // Another device's transfer won the race for this trip — fine,
+            // exactly one promotion is supposed to succeed.
+        } catch {
+            // Best-effort: worst case, the trip is briefly ownerless until
+            // the next leave/refresh retries this.
         }
     }
 

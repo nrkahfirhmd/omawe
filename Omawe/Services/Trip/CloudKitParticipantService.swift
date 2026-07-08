@@ -84,15 +84,44 @@ final class CloudKitParticipantService: ParticipantServiceProtocol {
         }
     }
 
+    /// Fetches the current server record before saving rather than
+    /// blind-constructing a fresh `CKRecord`: a freshly-constructed record
+    /// carries no `recordChangeTag`, so CloudKit has nothing to compare
+    /// against and a save silently overwrites whatever's on the server —
+    /// last-write-wins with no guard. Fetching first gives the record a real
+    /// change tag, so the explicit `.ifServerRecordUnchanged` save below
+    /// actually rejects a concurrent write (`CKError.serverRecordChanged`)
+    /// instead of racing it silently. This is TRIP-2's concurrent-leave guard.
     func updateParticipant(_ participant: Participant) async throws -> Participant {
-        let record = ParticipantRecordMapper.makeRecord(from: participant)
+        guard let recordID = participant.id else { throw CloudKitError.invalidRecord }
 
         do {
             let targetDatabase = try await databaseForZone(participant.tripID.zoneID)
-            let savedRecord = try await targetDatabase.save(record)
+            let currentRecord = try await targetDatabase.record(for: recordID)
+            ParticipantRecordMapper.apply(participant, to: currentRecord)
+
+            let savedRecord = try await saveConflictSafe(currentRecord, to: targetDatabase)
             return try ParticipantRecordMapper.makeModel(from: savedRecord)
+        } catch let error as CKError where error.code == .serverRecordChanged {
+            throw CloudKitError.conflict
         } catch {
             throw CloudKitError.unknown(error)
+        }
+    }
+
+    private func saveConflictSafe(_ record: CKRecord, to database: CKDatabase) async throws -> CKRecord {
+        try await withCheckedThrowingContinuation { continuation in
+            let operation = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
+            operation.savePolicy = .ifServerRecordUnchanged
+            operation.modifyRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    continuation.resume(returning: record)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+            database.add(operation)
         }
     }
 
