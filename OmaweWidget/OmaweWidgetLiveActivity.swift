@@ -132,18 +132,25 @@ struct OmaweWidgetLiveActivity: Widget {
                     }
                 }
             }  compactLeading: {
-                // Compact Left: People icon + ETA
+                // Compact Left: People icon + Arrived Count
                 HStack(spacing: 3) {
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(.white)
-                    Text("\(context.state.myEtaMinutes)")
+                        .foregroundStyle(Theme.tertiary)
+                    Text("\(context.state.arrivedCount)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.tertiary)
                 }
             } compactTrailing: {
                 // Compact Right: Distance
-                Text("\(Int(context.state.myDistanceKm))km")
+                Text({
+                    let km = context.state.myDistanceKm
+                    if km >= 1 {
+                        return "\(Int(km))km"
+                    } else {
+                        return "\(Int(km * 1000))m"
+                    }
+                }())
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.tertiary)
             } minimal: {
