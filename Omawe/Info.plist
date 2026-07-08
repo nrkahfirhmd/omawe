@@ -11,5 +11,7 @@
 		<string>remote-notification</string>
 		<string>location</string>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 </dict>
 </plist>

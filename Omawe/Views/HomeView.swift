@@ -446,6 +446,8 @@ struct HomeView: View {
                     viewModel.participants.filter { $0.tripID == activeTrip.id }.count,
                     1
                 ),
+                etaMinutes: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
+                distanceKm: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
                 isOwner: currentUserID.map { viewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
                 isUpdatingTripStatus: viewModel.isUpdatingTripStatus,
                 tripActionErrorMessage: viewModel.tripActionErrorMessage,
@@ -456,6 +458,16 @@ struct HomeView: View {
                     Task { await viewModel.leaveTrip(activeTrip) }
                 }
             )
+            .task(id: activeTrip.id) {
+                // Polls at roughly LOC-1's location-propagation budget rather
+                // than a single one-shot refresh — there's no push-triggered
+                // recompute path yet (that's LOC-1/ETA-4's shared push-token
+                // gap), so this is the interim data-driven-ish substitute.
+                while !Task.isCancelled {
+                    await viewModel.refreshTripStatus(for: activeTrip)
+                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                }
+            }
         } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
             TripStatusDetailView(
                 trips: viewModel.trips,

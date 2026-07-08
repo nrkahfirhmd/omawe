@@ -9,21 +9,6 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Activity Attributes Model
-struct OmaweWidgetAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var statusMessage: String   // e.g. "Bintang is on the way"
-        var etaMinutes: Int         // e.g. 15
-        var arrivedCount: Int       // e.g. 3
-        var distanceKm: Double      // e.g. 15.0
-    }
-
-    // Fixed non-changing properties
-    var tripName: String
-    var destinationName: String
-    var totalMates: Int
-}
-
 // MARK: - Live Activity Config
 struct OmaweWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
