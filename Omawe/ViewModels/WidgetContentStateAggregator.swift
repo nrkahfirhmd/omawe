@@ -23,20 +23,39 @@ enum WidgetContentStateAggregator {
     ///     `statusMessage` copy (e.g. "Bintang is on the way").
     static func aggregate(
         participantStates: [ParticipantTripState],
-        displayNames: [CKRecord.ID: String]
+        displayNames: [CKRecord.ID: String],
+        currentUserID: CKRecord.ID? = nil
     ) -> OmaweWidgetAttributes.ContentState {
         let arrivedCount = participantStates.count { $0.status == .arrived }
+        
+        let mates = participantStates.map { state -> OmaweWidgetAttributes.MateProgress in
+            let name = displayNames[state.userID] ?? "Someone"
+            let initial = String(name.prefix(1)).uppercased()
+            let isMe = state.userID == currentUserID
+            return OmaweWidgetAttributes.MateProgress(
+                label: initial,
+                distanceKm: state.distanceKm,
+                isMe: isMe
+            )
+        }
+        
+        var myEtaMinutes = 0
+        var myDistanceKm = 0.0
+        
+        if let currentUserID = currentUserID, let myState = participantStates.first(where: { $0.userID == currentUserID }) {
+            myEtaMinutes = myState.etaMinutes ?? 0
+            myDistanceKm = myState.distanceKm
+        }
 
         guard let selected = select(from: participantStates) else {
-            // Zero participants reporting yet (trip just started, no LOC-1
-            // data has arrived) or everyone has arrived — define a sensible
-            // default rather than crashing on an empty aggregation.
+            // Zero participants reporting yet or everyone has arrived
             let statusMessage = arrivedCount > 0 ? "Everyone has arrived" : "Waiting for location updates"
             return OmaweWidgetAttributes.ContentState(
                 statusMessage: statusMessage,
-                etaMinutes: 0,
+                myEtaMinutes: myEtaMinutes,
+                myDistanceKm: myDistanceKm,
                 arrivedCount: arrivedCount,
-                distanceKm: 0
+                mates: mates
             )
         }
 
@@ -44,9 +63,10 @@ enum WidgetContentStateAggregator {
 
         return OmaweWidgetAttributes.ContentState(
             statusMessage: message(for: selected, name: name),
-            etaMinutes: selected.etaMinutes ?? 0,
+            myEtaMinutes: myEtaMinutes,
+            myDistanceKm: myDistanceKm,
             arrivedCount: arrivedCount,
-            distanceKm: selected.distanceKm
+            mates: mates
         )
     }
 

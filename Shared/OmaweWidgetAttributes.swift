@@ -12,11 +12,18 @@
 import ActivityKit
 
 struct OmaweWidgetAttributes: ActivityAttributes {
+    public struct MateProgress: Codable, Hashable {
+        var label: String
+        var distanceKm: Double
+        var isMe: Bool
+    }
+
     public struct ContentState: Codable, Hashable {
         var statusMessage: String   // e.g. "Bintang is on the way"
-        var etaMinutes: Int         // e.g. 15
+        var myEtaMinutes: Int       // Current user's ETA
+        var myDistanceKm: Double    // Current user's Distance
         var arrivedCount: Int       // e.g. 3
-        var distanceKm: Double      // e.g. 15.0
+        var mates: [MateProgress]   // List of all participants (including current user)
     }
 
     // Fixed non-changing properties

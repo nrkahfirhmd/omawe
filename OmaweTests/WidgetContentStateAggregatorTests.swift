@@ -29,8 +29,8 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
         let content = WidgetContentStateAggregator.aggregate(participantStates: [], displayNames: [:])
 
         XCTAssertEqual(content.arrivedCount, 0)
-        XCTAssertEqual(content.etaMinutes, 0)
-        XCTAssertEqual(content.distanceKm, 0)
+        XCTAssertEqual(content.myEtaMinutes, 0)
+        XCTAssertEqual(content.myDistanceKm, 0)
         XCTAssertFalse(content.statusMessage.isEmpty)
     }
 
@@ -53,12 +53,13 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
 
         let content = WidgetContentStateAggregator.aggregate(
             participantStates: [near, far, arrived],
-            displayNames: ["far".ckRecordID: "Bintang"]
+            displayNames: ["far".ckRecordID: "Bintang"],
+            currentUserID: "near".ckRecordID
         )
 
         XCTAssertEqual(content.arrivedCount, 1)
-        XCTAssertEqual(content.etaMinutes, 30)
-        XCTAssertEqual(content.distanceKm, 20)
+        XCTAssertEqual(content.myEtaMinutes, 2)
+        XCTAssertEqual(content.myDistanceKm, 0.8)
         XCTAssertTrue(content.statusMessage.contains("Bintang"))
     }
 
@@ -79,7 +80,7 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
         )
 
         XCTAssertTrue(content.statusMessage.contains("unavailable"))
-        XCTAssertEqual(content.etaMinutes, 0)
+        XCTAssertEqual(content.myEtaMinutes, 0)
     }
 }
 

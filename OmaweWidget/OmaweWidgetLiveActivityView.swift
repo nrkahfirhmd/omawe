@@ -27,7 +27,7 @@ struct LiveActivityLockScreenView: View {
     private var etaTimeString: String {
         let eta = Calendar.current.date(
             byAdding: .minute,
-            value: context.state.etaMinutes,
+            value: context.state.myEtaMinutes,
             to: Date()
         ) ?? Date()
         let formatter = DateFormatter()
@@ -37,7 +37,7 @@ struct LiveActivityLockScreenView: View {
     
     /// Format distance nicely
     private var distanceString: String {
-        let km = context.state.distanceKm
+        let km = context.state.myDistanceKm
         if km >= 1 {
             return "\(Int(km))km"
         } else {
@@ -103,8 +103,7 @@ struct LiveActivityLockScreenView: View {
                     .padding(.top,20)
                     
                     RouteProgressView(
-                        totalMates: context.attributes.totalMates,
-                        arrivedCount: context.state.arrivedCount
+                        mates: context.state.mates
                     )
                     
                 }
@@ -169,36 +168,29 @@ struct LiveActivityLockScreenView: View {
 /// Displays a dashed route line with an orange arrow for the user's
 /// current position and green/amber markers for each mate along the route.
 struct RouteProgressView: View {
-    let totalMates: Int
-    let arrivedCount: Int
+    let mates: [OmaweWidgetAttributes.MateProgress]
     
-    /// User's current position along the route (0.0 → 1.0)
-    private let userProgress: CGFloat = 0.10
-    
-    /// Build marker data: positions + labels + cluster flag
-    private var markers: [(position: CGFloat, label: String, isCluster: Bool)] {
-        let startPos: CGFloat = 0.25
-        let endPos: CGFloat = 0.75
+    /// Build dynamic markers based on distances
+    private var markers: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] {
+        let sorted = mates.sorted { $0.distanceKm > $1.distanceKm }
+        let maxDistance = sorted.first?.distanceKm ?? 1.0
+        let scale = maxDistance > 0 ? maxDistance : 1.0
         
-        guard totalMates > 0 else { return [] }
+        var clusters: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] = []
         
-        if totalMates <= 4 {
-            // Show each mate individually
-            let spacing = totalMates == 1
-                ? 0.0
-                : (endPos - startPos) / CGFloat(totalMates - 1)
-            return (0..<totalMates).map { i in
-                (startPos + spacing * CGFloat(i), "L", false)
+        for mate in sorted {
+            let pos = CGFloat(1.0 - (mate.distanceKm / scale))
+            let clampedPos = max(0.05, min(0.95, pos)) // Keep within bounds
+            
+            if let lastIndex = clusters.indices.last, abs(clusters[lastIndex].position - clampedPos) < 0.05 {
+                let existing = clusters[lastIndex]
+                let currentExtra = existing.clusterText == nil ? 0 : (Int(existing.clusterText!.dropFirst()) ?? 0)
+                clusters[lastIndex] = (existing.position, existing.label, existing.isMe || mate.isMe, "+\(currentExtra + 1)", existing.distanceKm)
+            } else {
+                clusters.append((clampedPos, mate.label, mate.isMe, nil, mate.distanceKm))
             }
-        } else {
-            // Show 2 individual markers + 1 cluster
-            let clusterExtra = totalMates - 2  // number of extra mates in cluster
-            return [
-                (0.25, "L", false),
-                (0.50, "L+\(clusterExtra)", true),
-                (0.75, "L", false)
-            ]
         }
+        return clusters
     }
     
     private func curveY(t: CGFloat, midY: CGFloat) -> CGFloat {
@@ -265,7 +257,9 @@ struct RouteProgressView: View {
             ForEach(Array(markers.enumerated()), id: \.offset) { _, marker in
                 MateMarkerView(
                     label: marker.label,
-                    isCluster: marker.isCluster
+                    isMe: marker.isMe,
+                    clusterText: marker.clusterText,
+                    distanceKm: marker.distanceKm
                 )
                 .position(
                     x: w * marker.position,
@@ -282,54 +276,31 @@ struct RouteProgressView: View {
 /// initial letter, or "L+N" for clustered mates.
 struct MateMarkerView: View {
     let label: String
-    let isCluster: Bool
+    let isMe: Bool
+    let clusterText: String?
+    let distanceKm: Double
     
     private var bgColor: Color {
-        isCluster ? LATheme.amber : LATheme.green
+        // Green if arrived or very close (<= 0.5km), otherwise native Orange (on the way)
+        distanceKm <= 0.5 ? LATheme.green : Color.orange
     }
     
-    /// Extract just the letter part (e.g. "B" from "B+3")
-    private var letterPart: String {
-        if let plusIndex = label.firstIndex(of: "+") {
-            return String(label[label.startIndex..<plusIndex])
-        }
-        return label
-    }
-    
-    /// Extract the "+N" part (e.g. "+3" from "B+3")
-    private var clusterPart: String {
-        if let plusIndex = label.firstIndex(of: "+") {
-            return String(label[plusIndex...])
-        }
-        return ""
-    }
-    
-    var body: some View {
-        if isCluster {
-            // Cluster: green capsule with letter + "+N" text beside it
-            HStack(spacing: 2) {
-                Text(letterPart)
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .frame(minWidth: 23, minHeight: 28)
-                    .background(bgColor)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(bgColor.opacity(0.35), lineWidth: 4)
-                            .padding(-4)
-                    )
+    @ViewBuilder
+    private var markerView: some View {
+        if isMe {
+            ZStack {
+                Circle()
+                    .fill(bgColor)
+                    .overlay(Circle().strokeBorder(.white, lineWidth: 2.5))
+                    .frame(width: 32, height: 32)
                 
-                Text(clusterPart)
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .foregroundStyle(.black)
-                    .frame(width: 22, height: 22)
-                    .background(Color.white)
-                    .clipShape(Circle())
+                Image(systemName: "location.north.fill")
+                    .font(.caption)
+                    .bold()
+                    .foregroundStyle(.white)
+                    .rotationEffect(.degrees(90))
             }
         } else {
-            // Individual: single capsule with letter
             Text(label)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
@@ -337,11 +308,24 @@ struct MateMarkerView: View {
                 .frame(minWidth: 23, minHeight: 28)
                 .background(bgColor)
                 .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .strokeBorder(bgColor.opacity(0.35), lineWidth: 4)
-                        .padding(-4)
-                )
+        }
+    }
+    
+    var body: some View {
+        if let clusterText = clusterText {
+            ZStack(alignment: .topTrailing) {
+                markerView
+                
+                Text(clusterText)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(.black)
+                    .frame(width: 18, height: 18)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .offset(x: 8, y: -4) // Overlaps the capsule slightly
+            }
+        } else {
+            markerView
         }
     }
 }
@@ -383,9 +367,13 @@ struct PolkaDotBackground: View {
 } contentStates: {
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Bintang is 5 mins away",
-        etaMinutes: 12,
+        myEtaMinutes: 12,
+        myDistanceKm: 15.0,
         arrivedCount: 2,
-        distanceKm: 15.0
+        mates: [
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true)
+        ]
     )
 }
 
@@ -398,8 +386,41 @@ struct PolkaDotBackground: View {
 } contentStates: {
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Kahfi is arriving now!",
-        etaMinutes: 15,
+        myEtaMinutes: 2,
+        myDistanceKm: 2.5,
         arrivedCount: 4,
-        distanceKm: 2.5
+        mates: [
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 0.5, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 2.5, isMe: true)
+        ]
     )
 }
+
+#Preview("Lock Screen - 6 Mates (Clustered)", as: .content, using: OmaweWidgetAttributes(
+    tripName: "Bali Road Trip",
+    destinationName: "Uluwatu Temple",
+    totalMates: 6
+)) {
+    OmaweWidgetLiveActivity()
+} contentStates: {
+    OmaweWidgetAttributes.ContentState(
+        statusMessage: "Everyone is on the move",
+        myEtaMinutes: 20,
+        myDistanceKm: 10.0,
+        arrivedCount: 0,
+        mates: [
+            // Max distance = 15.0 (0.0 on curve)
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
+            // Close to B, should cluster
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, isMe: false),
+            // Middle
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true),
+            // Close to G, should cluster with G
+            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, isMe: false),
+            // Arrived / Very Close (Green)
+            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, isMe: false)
+        ]
+    )
+}
+

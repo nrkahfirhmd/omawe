@@ -338,7 +338,12 @@ class HomeViewModel {
                 }
         )
 
-        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: displayNames)
+        let userID = try? await currentUserID()
+        let content = WidgetContentStateAggregator.aggregate(
+            participantStates: states,
+            displayNames: displayNames,
+            currentUserID: userID
+        )
         await liveActivityManager.update(content)
     }
 
@@ -364,6 +369,9 @@ class HomeViewModel {
             try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
 
             sharingTripID = tripID
+            
+            // Starts the Live Activity on the device for whoever enters the active trip state
+            startLiveActivity(for: trip)
         } catch {
             // Best-effort — this device's ETA/location just won't populate.
         }
@@ -384,7 +392,6 @@ class HomeViewModel {
             _ = try await tripService.updateTrip(updatedTrip)
 
             await ensureLocationSharing(for: updatedTrip)
-            startLiveActivity(for: updatedTrip)
 
             await TripStore.shared.loadTrips()
         } catch {
@@ -407,9 +414,10 @@ class HomeViewModel {
         )
         let initialContent = OmaweWidgetAttributes.ContentState(
             statusMessage: "Waiting for location updates",
-            etaMinutes: 0,
+            myEtaMinutes: 0,
+            myDistanceKm: 0,
             arrivedCount: 0,
-            distanceKm: 0
+            mates: []
         )
 
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)
@@ -442,9 +450,10 @@ class HomeViewModel {
             let arrivedCount = tripStatusViewModel.participantStates.values.count { $0.status == .arrived }
             await liveActivityManager.end(OmaweWidgetAttributes.ContentState(
                 statusMessage: "Trip ended",
-                etaMinutes: 0,
+                myEtaMinutes: 0,
+                myDistanceKm: 0,
                 arrivedCount: arrivedCount,
-                distanceKm: 0
+                mates: []
             ))
 
             await TripStore.shared.loadTrips()
@@ -493,6 +502,15 @@ class HomeViewModel {
                 locationSharingCoordinator.stopSharing()
                 sharingTripID = nil
             }
+
+            let arrivedCount = tripStatusViewModel.participantStates.values.count { $0.status == .arrived }
+            await liveActivityManager.end(OmaweWidgetAttributes.ContentState(
+                statusMessage: "Left trip",
+                myEtaMinutes: 0,
+                myDistanceKm: 0,
+                arrivedCount: arrivedCount,
+                mates: []
+            ))
 
             await TripStore.shared.loadTrips()
         } catch {
