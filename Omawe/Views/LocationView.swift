@@ -10,6 +10,8 @@ import MapKit
 import CloudKit
 
 struct LocationView: View {
+    @Environment(\.dismiss) private var dismiss
+    
     let trip: Trip
     var participants: [Participant] = []
     var currentUserID: CKRecord.ID? = nil
@@ -34,6 +36,16 @@ struct LocationView: View {
     @State private var lastRouteOrigin: CLLocationCoordinate2D?
     private let locationService = LocationService()
     private let locationSyncService = CloudKitLocationSyncService()
+    // Drives TripHeaderCard's per-participant status (ETA-2) — separate
+    // instance from HomeViewModel's, since this view has no reference to it.
+    @State private var tripStatusViewModel: TripStatusViewModel
+
+    init(trip: Trip, participants: [Participant] = [], currentUserID: CKRecord.ID? = nil) {
+        self.trip = trip
+        self.participants = participants
+        self.currentUserID = currentUserID
+        _tripStatusViewModel = State(initialValue: TripStatusViewModel(locationSyncService: CloudKitLocationSyncService()))
+    }
 
     /// Participants other than the current device — the current user is
     /// already shown via the map's built-in `UserAnnotation`.
@@ -71,9 +83,6 @@ struct LocationView: View {
                         .stroke(Color.omawePrimary, lineWidth: 5)
                 }
             }
-            .mapControls {
-                MapUserLocationButton()
-            }
             .ignoresSafeArea()
             .task {
                 // Map's built-in user-location dot/tracking needs authorization
@@ -88,26 +97,27 @@ struct LocationView: View {
                 // recompute path yet.
                 while !Task.isCancelled {
                     await refreshParticipantLocations(tripID: tripID)
+                    await refreshParticipantStatuses(tripID: tripID)
                     try? await Task.sleep(nanoseconds: 20_000_000_000)
                 }
             }
 
             // MARK: Overlay
             VStack {
-                TripHeaderCard(isExpanded: $isHeaderExpanded)
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: 0)
-                            .onChanged { _ in
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                                    isHeaderExpanded = true
-                                }
-                            }
-                            .onEnded { _ in
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                                    isHeaderExpanded = false
-                                }
-                            }
-                    )
+                TripHeaderCard(
+                    isExpanded: $isHeaderExpanded,
+                    trip: trip,
+                    participants: participants,
+                    participantStates: tripStatusViewModel.participantStates,
+                    currentUserID: currentUserID
+                )
+                    .onTapGesture {
+                        HapticManager.shared.boom()
+
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                            isHeaderExpanded.toggle()
+                        }
+                    }
 
                 Spacer()
 
@@ -126,6 +136,9 @@ struct LocationView: View {
 
                     HStack(alignment: .bottom) {
                         Button {
+                            HapticManager.shared.boom()
+
+                            dismiss()
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.title3)
@@ -174,6 +187,8 @@ struct LocationView: View {
             .padding(.horizontal, 18)
             .padding(.vertical)
         }
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     /// Fetches every participant's latest location for annotations, and
@@ -203,6 +218,14 @@ struct LocationView: View {
 
         await loadRoute(from: origin, to: destination)
         lastRouteOrigin = origin
+    }
+
+    /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) so
+    /// `TripHeaderCard` can show each person's live status, not just pin
+    /// positions on the map.
+    private func refreshParticipantStatuses(tripID: CKRecord.ID) async {
+        guard let destination = trip.destinationCoordinate else { return }
+        await tripStatusViewModel.refresh(tripID: tripID, destination: destination)
     }
 
     private func loadRoute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) async {
