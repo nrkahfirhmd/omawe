@@ -161,6 +161,7 @@ fileprivate struct CachedTrip: Codable {
         startDate = try container.decode(Date.self, forKey: .startDate)
         endDate = try container.decode(Date.self, forKey: .endDate)
         ownerID = try container.decode(CachedCKRecordID.self, forKey: .ownerID)
+        ownerDisplayName = try container.decodeIfPresent(String.self, forKey: .ownerDisplayName)
         invitationCode = try container.decode(String.self, forKey: .invitationCode)
         status = try container.decodeIfPresent(String.self, forKey: .status) ?? TripStatus.notStarted.rawValue
         createdAt = try container.decode(Date.self, forKey: .createdAt)
