@@ -184,7 +184,7 @@ class HomeViewModel {
 
             return invitationCode
         } catch {
-            creationErrorMessage = error.localizedDescription
+            creationErrorMessage = ErrorHelper.simplify(error)
             throw error
         }
     }
@@ -283,7 +283,7 @@ class HomeViewModel {
         do {
             return try await sharingService.acceptShare(from: url)
         } catch {
-            shareAcceptanceErrorMessage = error.localizedDescription
+            shareAcceptanceErrorMessage = ErrorHelper.simplify(error)
             throw error
         }
     }
@@ -294,7 +294,7 @@ class HomeViewModel {
         do {
             return try await sharingService.acceptShare(metadata)
         } catch {
-            shareAcceptanceErrorMessage = error.localizedDescription
+            shareAcceptanceErrorMessage = ErrorHelper.simplify(error)
             throw error
         }
     }
@@ -408,7 +408,7 @@ class HomeViewModel {
 
             await TripStore.shared.loadTrips()
         } catch {
-            tripActionErrorMessage = error.localizedDescription
+            tripActionErrorMessage = ErrorHelper.simplify(error)
         }
     }
 
@@ -471,7 +471,7 @@ class HomeViewModel {
 
             await TripStore.shared.loadTrips()
         } catch {
-            tripActionErrorMessage = error.localizedDescription
+            tripActionErrorMessage = ErrorHelper.simplify(error)
         }
     }
 
@@ -494,7 +494,7 @@ class HomeViewModel {
             try await participantService.removeParticipant(id: participantID)
             await TripStore.shared.loadParticipants()
         } catch {
-            tripActionErrorMessage = error.localizedDescription
+            tripActionErrorMessage = ErrorHelper.simplify(error)
         }
     }
 
@@ -527,7 +527,7 @@ class HomeViewModel {
 
             await TripStore.shared.loadTrips()
         } catch {
-            tripActionErrorMessage = error.localizedDescription
+            tripActionErrorMessage = ErrorHelper.simplify(error)
         }
     }
 

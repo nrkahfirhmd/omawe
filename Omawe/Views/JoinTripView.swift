@@ -17,6 +17,7 @@ struct JoinTripView: View {
     @State private var invitationCode = ""
     @State private var isJoining = false
     @State private var joinErrorMessage: String?
+    @State private var shakeAttempts = 0
 
     private var canJoinTrip: Bool {
         invitationCode.count == 6 && !isJoining
@@ -47,6 +48,7 @@ struct JoinTripView: View {
                         }
                         .padding(.horizontal, 24)
                     }
+                    .modifier(Shake(animatableData: CGFloat(shakeAttempts)))
                     .transition(.scale(scale: 0.18, anchor: .top).combined(with: .opacity))
                     
                     Button {
@@ -67,6 +69,7 @@ struct JoinTripView: View {
                                          : Color.gray.opacity(0.55))
                         .frame(maxWidth: .infinity)
                         .frame(height: 55)
+                        .contentShape(RoundedRectangle(cornerRadius: 37, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 37, style: .continuous)
                                 .stroke(
@@ -110,7 +113,10 @@ struct JoinTripView: View {
                 }
             } catch {
                 isJoining = false
-                joinErrorMessage = error.localizedDescription
+                withAnimation(.default) {
+                    shakeAttempts += 1
+                }
+                joinErrorMessage = ErrorHelper.simplify(error)
             }
         }
     }
@@ -136,7 +142,10 @@ struct JoinTripView: View {
                 }
             } catch {
                 isJoining = false
-                joinErrorMessage = error.localizedDescription
+                withAnimation(.default) {
+                    shakeAttempts += 1
+                }
+                joinErrorMessage = ErrorHelper.simplify(error)
             }
         }
     }
@@ -270,4 +279,16 @@ private struct CursorView: View {
             ],
             inMemory: true
         )
+}
+
+struct Shake: GeometryEffect {
+    var amount: CGFloat = 8
+    var shakesPerUnit = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX:
+            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
+            y: 0))
+    }
 }

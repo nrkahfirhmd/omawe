@@ -57,13 +57,13 @@ struct JoinInvitationView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    if !hasJoined {
-                        header
-                            .padding(.top, 20)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
                     
-                    InvitationTicketContainer(isEditing: false) {
+                    header
+                        .padding(.top, 20)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    
+                    
+                    InvitationTicketContainer(isEditing: false, isJoined: hasJoined) {
                         if hasJoined {
                             joinedTicketContent
                                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -292,114 +292,83 @@ struct JoinInvitationView: View {
     }
     
     private var joinedTicketContent: some View {
-        VStack(spacing: 0) {
-            // Top White Area
-            VStack {
-                ZStack {
-                    Circle()
-                        .fill(Theme.secondary)
-                        .frame(width: 120, height: 120)
-                    
-                    Image(.avatar) // Use actual user avatar if available
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                    
-                    Circle()
-                        .stroke(Color.white, lineWidth: 4)
-                        .frame(width: 120, height: 120)
-                }
-                .padding(.top, 20)
-            }
-            .frame(height: 220) // approximate height of the top white area
-            
-            // Bottom Dark Area
-            VStack(spacing: 16) {
+        
+        VStack(spacing: 16) {
+            Spacer()
+            VStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(.white)
-                
+                    .font(.largeTitle())
                 Text("You have successfully joined")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                
-                Text(displayTripName)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.callout())
+                    .foregroundStyle(.white.opacity(0.46))
+            }
+            
+            
+            Text(displayTripName)
+                .font(.title1().weight(.semibold))
+                .fontWidth(.expanded)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .padding(.bottom, 4)
+            
+            
+            ticketDetail(
+                label: "Event Date",
+                value: trip.startDate.formatted(.dateTime.weekday(.wide).day().month(.wide)),
+                isDark: true
+            )
+            
+            ticketDetail(
+                label: "Meet Time",
+                value: trip.startDate.formatted(date: .omitted, time: .shortened),
+                isDark: true
+            )
+            
+            VStack(spacing: 4) {
+                Text(displayLocationName)
+                    .font(.title3())
                     .fontWidth(.expanded)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .padding(.bottom, 12)
                 
-                VStack(spacing: 16) {
-                    ticketDetail(
-                        label: "Event Date",
-                        value: trip.startDate.formatted(.dateTime.weekday(.wide).day().month(.wide)),
-                        isDark: true
-                    )
-                    
-                    ticketDetail(
-                        label: "Meet Time",
-                        value: trip.startDate.formatted(date: .omitted, time: .shortened),
-                        isDark: true
-                    )
-                }
-                .padding(.bottom, 16)
-                
-                VStack(spacing: 4) {
-                    Text(displayLocationName)
-                        .font(.title3().weight(.bold))
-                        .fontWidth(.expanded)
-                        .foregroundStyle(.white)
+                if let locationAddress = trip.locationAddress, !locationAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(locationAddress)
+                        .font(.caption2())
+                        .foregroundStyle(.white.opacity(0.86))
                         .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                    
-                    if let locationAddress = trip.locationAddress, !locationAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text(locationAddress)
-                            .font(.caption2())
-                            .foregroundStyle(.white.opacity(0.86))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(3)
-                            .lineLimit(3)
-                    }
-                }
-                .padding(.bottom, 12)
-                
-                TripLocationNotePill(
-                    apartmentUnitFloor: trip.apartmentUnitFloor ?? "",
-                    locationNickname: trip.locationNickname ?? ""
-                )
-                .padding(.bottom, 12)
-                
-                HStack {
-                    Text("#Code")
-                        .font(.button().width(.expanded))
-                        .foregroundStyle(.white.opacity(0.4))
-                    
-                    Spacer()
-                    
-                    Text(trip.invitationCode)
-                        .font(.button().width(.expanded))
-                        .foregroundStyle(.white)
+                        .lineSpacing(3)
+                        .lineLimit(3)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-            .padding(.horizontal, 24)
+            
+            HStack {
+                Text("#Code")
+                    .font(.button().width(.expanded))
+                    .foregroundStyle(.white.opacity(0.28))
+                
+                Spacer()
+                
+                Text(trip.invitationCode)
+                    .font(.button().width(.expanded))
+                    .foregroundStyle(.white)
+            }
         }
         .frame(maxWidth: 320, maxHeight: .infinity, alignment: .top)
+        .padding(24)
     }
     
     private func ticketDetail(label: String, value: String, isDark: Bool) -> some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.headline())
-                .foregroundStyle(.black.opacity(0.46))
+                .foregroundStyle(isDark ? .white.opacity(0.46) : .black.opacity(0.46))
             
             Text(value)
                 .font(.title3().weight(.semibold))
                 .fontWidth(.expanded)
-                .foregroundStyle(.black.opacity(0.9))
+                .foregroundStyle(isDark ? .white.opacity(0.9) : .black.opacity(0.9))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.65)
@@ -490,15 +459,15 @@ struct JoinInvitationView: View {
             } catch {
                 await MainActor.run {
                     isJoining = false
-                    joinErrorMessage = error.localizedDescription
+                    joinErrorMessage = ErrorHelper.simplify(error)
                 }
             }
         }
     }
 }
-    
-    
-    
+
+
+
 #Preview {
     JoinInvitationView(
         trip: Trip(
@@ -511,7 +480,7 @@ struct JoinInvitationView: View {
             ownerDisplayName: "Bintang",
             invitationCode: "1A6B7K",
             status: .notStarted,
-            locationAddress: "Jl. Dewi Sri No. 99X, Legian, Bali 80361",
+            locationAddress: "Jl. Dewi Sri No. 99X, Legian, Kec. Kuta, Kabupaten Badung, Bali 80361",
             apartmentUnitFloor: "Luat's House",
             locationNickname: "Meeting Room",
             createdAt: .now,
@@ -573,6 +542,6 @@ struct JoinInvitationView: View {
         onJoinNow: {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         },
-        onDismiss: {}
+        onDismiss: {},
     )
 }

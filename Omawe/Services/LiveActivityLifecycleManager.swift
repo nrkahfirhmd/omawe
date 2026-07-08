@@ -65,7 +65,7 @@ final class LiveActivityLifecycleManager {
             lastContent = initialContent
             lastErrorMessage = nil
         } catch {
-            lastErrorMessage = error.localizedDescription
+            lastErrorMessage = ErrorHelper.simplify(error)
             isActive = false
         }
     }

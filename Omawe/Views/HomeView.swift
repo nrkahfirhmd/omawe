@@ -201,7 +201,10 @@ struct HomeView: View {
     private var greetingAndHintView: some View {
         VStack {
             Spacer()
-            avatarView
+            AvatarView(
+                profile: ProfileHelper.currentUserProfile(from: userProfiles),
+                selectedAvatarFrame: selectedAvatarFrame
+            )
             greetingTextView
             Spacer()
             swipeHintView
@@ -211,54 +214,15 @@ struct HomeView: View {
         .offset(y: selectedTripAction == nil ? 0 : -20)
     }
     
-    private var currentUserProfile: UserProfile? {
-        userProfiles.first { $0.userID == UserSession.shared.userIdentifier } ?? userProfiles.first
-    }
-
     /// The user's avatar.
-    /// Apple Sign In does NOT provide a profile photo, so we generate
-    /// an initials-based avatar using the first character of the display name.
-    /// Falls back to a person icon if no name is available.
     private var avatarView: some View {
-        let session = UserSession.shared
-        let profile = currentUserProfile
-        let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : session.displayName
-        let initials = displayName?.first.map(String.init)
-
-        return Button {
+        Button {
             isProfilePresented = true
         } label: {
-            ZStack {
-                Circle()
-                    .frame(width: 120)
-                    .foregroundColor(.white)
-                    .shadow(color: .init(hex: "#00C3FF").opacity(0.5),
-                            radius: 21)
-
-                Image(selectedAvatarFrame.image)
-
-                if let imageData = profile?.avatarImageData, let uiImage = UIImage(data: imageData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 60, height: 60)
-                        .clipShape(Circle())
-                } else if let initials {
-                    Text(initials.uppercased())
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 60, height: 60)
-                        .glassEffect(.clear, in: .circle)
-                } else {
-                    Image(.avatar)
-                }
-            }
+            AvatarView(
+                profile: ProfileHelper.currentUserProfile(from: userProfiles),
+                selectedAvatarFrame: selectedAvatarFrame
+            )
         }
         .buttonStyle(.plain)
     }
@@ -266,14 +230,9 @@ struct HomeView: View {
     /// Greeting text that displays the user's first name from Apple Sign In.
     /// Falls back to "there" if no name was shared (e.g. user chose to hide it).
     private var greetingTextView: some View {
-        let session = UserSession.shared
-        let profile = currentUserProfile
-        let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : session.displayName
-        
-        let firstName = displayName?
-            .split(separator: " ")
-            .first
-            .map(String.init) ?? "there"
+        let profile = ProfileHelper.currentUserProfile(from: userProfiles)
+        let displayName = ProfileHelper.displayName(for: profile)
+        let firstName = ProfileHelper.firstName(from: displayName)
 
         return VStack(spacing: 12) {
             Text("Hi \(firstName)!")

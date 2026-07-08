@@ -427,7 +427,6 @@ struct TripInvitationView: View {
                         } else {
                             Task {
                                 let code = try await onCreateTrip()
-                                copyShareLink(code)
                             }
                         }
                     } label: {

@@ -45,7 +45,7 @@ final class TripStore {
             saveToCache()
         } catch {
             print("[TripStore] Failed to load trips: \(error.localizedDescription)")
-            lastLoadErrorMessage = error.localizedDescription
+            lastLoadErrorMessage = ErrorHelper.simplify(error)
         }
     }
     

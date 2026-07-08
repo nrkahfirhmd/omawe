@@ -1,12 +1,14 @@
 import SwiftUI
+import SwiftData
 
 struct InvitationTicketContainer<Content: View>: View {
     var isEditing: Bool = false
+    var isJoined: Bool = false
     @ViewBuilder var content: () -> Content
     
     var body: some View {
         ZStack {
-            InvitationTicketBackground(isEditing: isEditing)
+            InvitationTicketBackground(isEditing: isEditing, isJoined: isJoined)
             content()
         }
         .clipShape(RoundedRectangle(cornerRadius: isEditing ? 0 : 48, style: .continuous))
@@ -31,12 +33,37 @@ struct InvitationTicketContainer<Content: View>: View {
 
 struct InvitationTicketBackground: View {
     var isEditing: Bool = false
+    var isJoined: Bool = false
+    @Query(sort: \UserProfile.createdAt, order: .forward) private var userProfiles: [UserProfile]
+    @AppStorage("selectedAvatarFrame") private var selectedAvatarFrame: AvatarFrameStyle = .dark
+    private var cardHeight: CGFloat {
+        if isEditing {
+            return 0.3
+        } else if isJoined {
+            return 0.80
+        } else {
+            return 0.48
+        }
+    }
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .bottom) {
                 Image(.moire)
                     .resizable()
                     .scaledToFill()
+                
+                if isJoined {
+                    VStack {
+                        AvatarView(
+                            profile: ProfileHelper.currentUserProfile(from: userProfiles),
+                            selectedAvatarFrame: selectedAvatarFrame,
+                            size: 100,
+                        )
+                        .padding(.top, 20)
+                        
+                        Spacer()
+                    }
+                }
                 
                 ZStack {
                     LinearGradient(
@@ -58,7 +85,7 @@ struct InvitationTicketBackground: View {
                         )
                 }
                 .clipShape(BottomWave())
-                .frame(height: isEditing ? geo.size.height * 0.3 : geo.size.height * 0.48)
+                .frame(height: geo.size.height * cardHeight)
             }
         }
     }
@@ -107,4 +134,8 @@ struct SpotlightShape: Shape {
         path.closeSubpath()
         return path
     }
+}
+
+#Preview {
+    InvitationTicketBackground(isEditing: false , isJoined: true)
 }
