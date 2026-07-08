@@ -17,13 +17,6 @@ struct TripsListView: View {
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
         }
-
-//    private let trips: [PlaceholderTrip] = [
-//        .init(title: "Kuta Sunset Surf and Chill", date: .now.addingTimeInterval(86400 * 10)),
-//        .init(title: "Nusa Dua Beachside Relaxation", date: .now.addingTimeInterval(86400 * 20)),
-//        .init(title: "Mount Batur Sunrise Trek and Breakfast", date: .now.addingTimeInterval(-86400 * 5)),
-//        .init(title: "Jimbaran Bay Seafood Feast", date: .now.addingTimeInterval(86400 * 30))
-//    ]
     
     @State private var trips: [Trip] = []
     private let tripService = CloudKitTripService()
@@ -238,6 +231,59 @@ struct TripMenuRow: View {
         .frame(height: 68)
         .contentShape(Rectangle())
     }
+}
+
+struct PlaceholderTrip: Identifiable {
+    let id = UUID()
+
+    let name: String
+    let startDate: Date
+    let meetTime: Date
+
+    let ownerUsername: String
+
+    let locationName: String
+    let locationAddress: String
+    let locationNote: String
+
+    let memberCount: Int
+    let invitationCode: String
+}
+
+extension PlaceholderTrip {
+
+    static let samples: [PlaceholderTrip] = [
+
+        PlaceholderTrip(
+            name: "Kuta Sunset Surf and Chill",
+            startDate: Calendar.current.date(
+                from: DateComponents(year: 2026, month: 6, day: 30)
+            )!,
+            meetTime: Calendar.current.date(
+                from: DateComponents(hour: 17)
+            )!,
+            ownerUsername: "Bintang",
+            locationName: "Toko Kopi Jaya, Kuta",
+            locationAddress: "Jl. Dewi Sri No. 99X, Legian, Bali 80361",
+            locationNote: "Luat's House • Room 222",
+            memberCount: 6,
+            invitationCode: "1A6B7K"
+        ),
+
+        PlaceholderTrip(
+            name: "Nusa Dua Beach Day",
+            startDate: .now.addingTimeInterval(86400 * 10),
+            meetTime: Calendar.current.date(
+                from: DateComponents(hour: 9)
+            )!,
+            ownerUsername: "Baeni",
+            locationName: "Nusa Dua Beach",
+            locationAddress: "Badung, Bali",
+            locationNote: "Meet at the entrance",
+            memberCount: 5,
+            invitationCode: "NUSA88"
+        )
+    ]
 }
 
 #Preview {

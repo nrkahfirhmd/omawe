@@ -6,17 +6,8 @@ struct PeopleOrbitPerson: Identifiable, Hashable {
 
     var initials: String {
         let trimmedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmedName.isEmpty {
-            let initials = trimmedName
-                .split(separator: " ")
-                .prefix(2)
-                .compactMap { $0.first }
-                .map(String.init)
-                .joined()
-
-            if !initials.isEmpty {
-                return initials.uppercased()
-            }
+        if let firstChar = trimmedName.first {
+            return String(firstChar).uppercased()
         }
 
         return String(id.prefix(1)).uppercased()
@@ -181,7 +172,7 @@ struct PeopleOrbit: View{
                 DynamicBox(
                     theme: Theme.themeSecondary,
                     title: "Ex-Boyfriends\nCelebration!",
-                    subtitle: "by @Bintang • 27/06/2026 • 11:30",
+                    subtitle: "by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30",
                     helperText: "Swipe to see other trips",//curently this is missing symbol
                     footerTitle: "Trip is not starting yet"
                 ) {

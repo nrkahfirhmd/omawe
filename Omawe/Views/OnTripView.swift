@@ -27,7 +27,7 @@ struct OnTripView: View {
 
     private var subtitle: String {
         [
-            "by @\(shortOwnerID)",
+            "by @\(UserSession.shared.displayName ?? "Anonymous")",
             trip.startDate.formatted(.dateTime.day().month(.twoDigits).year()),
             trip.startDate.formatted(date: .omitted, time: .shortened)
         ].joined(separator: " • ")

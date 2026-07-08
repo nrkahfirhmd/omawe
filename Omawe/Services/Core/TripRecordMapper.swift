@@ -18,6 +18,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let startDate = "startDate"
         static let endDate = "endDate"
         static let ownerID = "ownerID"
+        static let ownerDisplayName = "ownerDisplayName"
         static let invitationCode = "invitationCode"
         static let status = "status"
         static let destinationLatitude = "destinationLatitude"
@@ -46,6 +47,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
         record[Field.startDate] = model.startDate as CKRecordValue
         record[Field.endDate] = model.endDate as CKRecordValue
         record[Field.ownerID] = model.ownerID.recordName as CKRecordValue
+        if let displayName = model.ownerDisplayName {
+            record[Field.ownerDisplayName] = displayName as CKRecordValue
+        }
         record[Field.invitationCode] = model.invitationCode as CKRecordValue
         record[Field.status] = model.status.rawValue as CKRecordValue
         if let destinationLatitude = model.destinationLatitude {
@@ -75,6 +79,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
         // Records saved before the status field existed have no value here —
         // default to .notStarted rather than failing the whole decode.
         let status = (record[Field.status] as? String).flatMap(TripStatus.init(rawValue:)) ?? .notStarted
+        let ownerDisplayName = record[Field.ownerDisplayName] as? String
 
         return Trip(
             id: record.recordID,
@@ -83,6 +88,7 @@ struct TripRecordMapper: CloudKitRecordMappable {
             startDate: startDate,
             endDate: endDate,
             ownerID: CKRecord.ID(recordName: ownerRecordName),
+            ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
             status: status,
             destinationLatitude: record[Field.destinationLatitude] as? Double,

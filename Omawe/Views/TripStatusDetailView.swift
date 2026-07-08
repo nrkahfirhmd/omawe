@@ -142,26 +142,7 @@ struct TripStatusDetailView: View {
     }
 
     private func ownerDisplayName(for trip: Trip) -> String {
-        guard !trip.ownerID.recordName.isEmpty else { return "Owner unavailable" }
-
-        if userProfiles.contains(where: { $0.userID == trip.ownerID.recordName }) {
-            return "Owner \(shortUserID(trip.ownerID))"
-        }
-
-        return "Owner \(shortUserID(trip.ownerID))"
-    }
-
-    private func shortUserID(_ userID: CKRecord.ID) -> String {
-        String(userID.recordName.suffix(6))
-    }
-
-    private func displayName(for userID: CKRecord.ID, role: ParticipantRole, trip: Trip) -> String {
-        let suffix = shortUserID(userID)
-        if role == .owner || userID == trip.ownerID {
-            return "Owner \(suffix)"
-        }
-
-        return "Member \(suffix)"
+        return trip.ownerDisplayName ?? "Owner unavailable"
     }
 }
 
@@ -270,24 +251,28 @@ private struct TripStatusPageContentView: View {
     }
 
     private var tripCodeView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "number")
-                .font(.caption.bold())
+        Button {
+            UIPasteboard.general.string = trip.invitationCode
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.on.doc")
+                    .font(.caption.bold())
 
-            Text(trip.invitationCode.isEmpty ? "No code" : trip.invitationCode)
-                .font(.headline.weight(.bold))
-                .fontWidth(.expanded)
-                .monospaced()
+                Text(trip.invitationCode.isEmpty ? "No code" : trip.invitationCode)
+                    .font(.headline.weight(.bold))
+                    .fontWidth(.expanded)
+                    .monospaced()
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.white.opacity(0.1), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(.white.opacity(0.18), lineWidth: 1)
+            }
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(.white.opacity(0.1), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(.white.opacity(0.18), lineWidth: 1)
-        }
-        .accessibilityLabel("Trip code \(trip.invitationCode)")
+        .accessibilityLabel("Copy trip code \(trip.invitationCode)")
     }
 
     private var memberListView: some View {

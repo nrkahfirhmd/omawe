@@ -16,6 +16,7 @@ struct Trip : Identifiable, Hashable {
     var startDate: Date
     var endDate: Date
     let ownerID: CKRecord.ID
+    var ownerDisplayName: String?
     var invitationCode: String
     var status: TripStatus = .notStarted
     /// Captured once at trip creation from `TripDraft.coordinate` (LOC's

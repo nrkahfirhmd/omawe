@@ -2,7 +2,7 @@
 //  TripStore.swift
 //  Omawe
 //
-//  Created by Codex on 07/07/26.
+//  Created by Muhammad Bintang Al-Fath on 07/07/26.
 //
 
 import SwiftUI
@@ -131,6 +131,7 @@ fileprivate struct CachedTrip: Codable {
     let startDate: Date
     let endDate: Date
     let ownerID: CachedCKRecordID
+    let ownerDisplayName: String?
     let invitationCode: String
     let status: String
     let createdAt: Date
@@ -143,6 +144,7 @@ fileprivate struct CachedTrip: Codable {
         self.startDate = trip.startDate
         self.endDate = trip.endDate
         self.ownerID = CachedCKRecordID(id: trip.ownerID)
+        self.ownerDisplayName = trip.ownerDisplayName
         self.invitationCode = trip.invitationCode
         self.status = trip.status.rawValue
         self.createdAt = trip.createdAt
@@ -173,6 +175,7 @@ fileprivate struct CachedTrip: Codable {
             startDate: startDate,
             endDate: endDate,
             ownerID: ownerID.toID(),
+            ownerDisplayName: ownerDisplayName,
             invitationCode: invitationCode,
             status: TripStatus(rawValue: status) ?? .notStarted,
             createdAt: createdAt,

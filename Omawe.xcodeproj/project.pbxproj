@@ -79,19 +79,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		5F0B59642FFC0ABC00B6B4B1 /* Exceptions for "Omawe" folder in "Omawe" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 8CF43A342FF2497200061915 /* Omawe */;
-		};
-		5FD9DEB12FFCE76C0047FCF3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */ = {
+		5F16F3BD2FFDDC41008420C3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 5FD9DE992FFCE76C0047FCF3 /* OmaweWidgetExtension */;
+		};
+		C543B2D22FFCC71E00AC62BA /* Exceptions for "Omawe" folder in "Omawe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8CF43A342FF2497200061915 /* Omawe */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -99,7 +99,7 @@
 		5FD9DE9D2FFCE76C0047FCF3 /* OmaweWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				5FD9DEB12FFCE76C0047FCF3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */,
+				5F16F3BD2FFDDC41008420C3 /* Exceptions for "OmaweWidget" folder in "OmaweWidgetExtension" target */,
 			);
 			path = OmaweWidget;
 			sourceTree = "<group>";
@@ -107,7 +107,7 @@
 		8CF43A372FF2497200061915 /* Omawe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				5F0B59642FFC0ABC00B6B4B1 /* Exceptions for "Omawe" folder in "Omawe" target */,
+				C543B2D22FFCC71E00AC62BA /* Exceptions for "Omawe" folder in "Omawe" target */,
 			);
 			path = Omawe;
 			sourceTree = "<group>";

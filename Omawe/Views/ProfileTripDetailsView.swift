@@ -18,20 +18,22 @@ struct ProfileTripDetailsView: View {
         NavigationStack{
             ZStack {
             
-                Image(.tripDetailsSheetBG)
+                Image(backgroundImage)
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
                 
                 VStack {
                     tripDateCapsule
-                        .padding(.top, 40)
+                        .padding(.top, 60)
                     
                     Text(trip.title)
                         .font(.title1())
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .frame(height: 68, alignment: .center)
                         .padding(.horizontal, 24)
                         .padding(.top, 40)
 
@@ -92,9 +94,10 @@ struct ProfileTripDetailsView: View {
                             .foregroundStyle(.white)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 40)
                     
-                    Spacer()
+                    //Spacer()
                 }
                 
                 
@@ -107,12 +110,12 @@ struct ProfileTripDetailsView: View {
     }
     
     private var tripDateCapsule: some View {
-        Text("The trip took place on \(formattedTripDate)")
+        Text(tripDateCapsuleText)
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(tripDateCapsuleTextColor)
             .padding(.horizontal, 18)
             .frame(height: 36)
-            .background(.black.opacity(0.05))
+            .background(tripDateCapsuleBackground)
             .clipShape(Capsule())
     }
     
@@ -135,6 +138,37 @@ struct ProfileTripDetailsView: View {
             .frame(maxWidth: 250)
             .background(.white.opacity(0.25))
             .clipShape(Capsule())
+    }
+    
+    // DATE CAPSULE LOGIC
+    private var hasTripPassed: Bool {
+        trip.startDate < Calendar.current.startOfDay(for: .now)
+    }
+
+    private var tripDateCapsuleText: String {
+        if hasTripPassed {
+            return "This trip took place on \(formattedTripDate)"
+        } else {
+            return "This trip is scheduled for \(formattedTripDate)"
+        }
+    }
+
+    private var tripDateCapsuleBackground: Color {
+        hasTripPassed
+        ? .black.opacity(0.05)
+        : .green
+    }
+
+    private var tripDateCapsuleTextColor: Color {
+        hasTripPassed
+        ? .secondary
+        : .white
+    }
+    // DATE CAPSULE LOGIC END
+    
+    // IMAGE CHANGE LOGIC
+    private var backgroundImage: ImageResource {
+        hasTripPassed ? .tripDetailsSheetBG : .upcomingTripDetailsSheetBG
     }
 }
 
@@ -177,7 +211,7 @@ struct TripParticipant: Identifiable {
 
 
 
-#Preview("Trip details") {
+#Preview {
     NavigationStack {
         ProfileTripDetailsView(
             trip: Trip(

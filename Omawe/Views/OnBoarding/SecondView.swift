@@ -4,7 +4,7 @@
 //
 //  Created by Nguyen Minh Luat on 6/7/26.
 //
-
+import UIKit
 import SwiftUI
 import Lottie
 
@@ -31,6 +31,9 @@ struct SecondView: View {
                                ) {
                                    appeared = true
                                }
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 2.3) {
+                                   HapticManager.shared.boom()
+                               }
                            }
                            .offset(y: -420)
             
@@ -38,7 +41,7 @@ struct SecondView: View {
             LottieView {
                 try await DotLottieFile.named("SecondView")
             }
-            .animationSpeed(0.75)
+            .animationSpeed(0.85)
             .looping()
             .resizable()
             .frame(width: 560, height: 560)
@@ -51,18 +54,18 @@ struct SecondView: View {
                     Spacer()
 
                     VStack {
-                        HStack {
-                            Circle()
-                                .fill(Color.gray.opacity(0.4))
-                                .frame(width: 8, height: 8)
-                            Circle()
-                                .fill(Color.gray.opacity(0.4))
-                                .frame(width: 8, height: 8)
-                            Rectangle()
-                                .fill(Color.cyan.opacity(1))
-                                .frame(width: 30, height: 8)
-                                .cornerRadius(12)
-                        }
+//                        HStack {
+//                            Circle()
+//                                .fill(Color.gray.opacity(0.4))
+//                                .frame(width: 8, height: 8)
+//                            Circle()
+//                                .fill(Color.gray.opacity(0.4))
+//                                .frame(width: 8, height: 8)
+//                            Rectangle()
+//                                .fill(Color.cyan.opacity(1))
+//                                .frame(width: 30, height: 8)
+//                                .cornerRadius(12)
+//                        }
                         Text("The journey, at a glance.")
                             .font(.title)
                             .fontWidth(.expanded)
@@ -83,10 +86,10 @@ struct SecondView: View {
                 }
                 Spacer()
                 Button(action: {
-                    HapticManager.shared.tickTickTick()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0){
-                        onNext()
-                    }
+                    
+                    let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    onNext()
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
                         revealBlack = true
                     }
@@ -152,6 +155,7 @@ struct SecondView: View {
                 .ignoresSafeArea()
         }
         .ignoresSafeArea()
+        .statusBarHidden(true) 
     }
 }
 

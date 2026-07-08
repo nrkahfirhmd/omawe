@@ -82,6 +82,11 @@ extension HomeView {
                 guard abs(value.translation.width) < 72 else { return }
 
                 isTransitioningTopPanel = true
+                
+                Task {
+                    await viewModel.loadTrips()
+                }
+                
                 // Show panel in collapsed state, then animate to expanded (mirroring CreateTrip)
                 selectedTripIndex = min(selectedTripIndex, viewModel.trips.count - 1)
                 isTripStatusPresented = true

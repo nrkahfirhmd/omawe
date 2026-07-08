@@ -53,7 +53,7 @@ private struct TripHeader: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
-            Text("by @Bintang • 27/06/2026 • 11:30")
+            Text("by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30")
                 .font(.caption1())
                 .foregroundStyle(.secondary)
         }
