@@ -1,4 +1,3 @@
-
 //
 //  OnBoardingView.swift
 //  Omawe
@@ -15,6 +14,8 @@ import Lottie
 struct ThirdView: View {
     @State private var phase = 0
     @State private var isHolding = false
+    let onFinish: () -> Void
+    @Bindable var viewModel: AuthenticationViewModel
     
     var body: some View {
         ZStack {
@@ -23,8 +24,8 @@ struct ThirdView: View {
             }
             .animationSpeed(0.75)
             .playing(phase == 0
-                ? .fromFrame(0, toFrame: 90, loopMode: .playOnce)
-                : .fromFrame(40, toFrame: 90, loopMode: .loop))
+                     ? .fromFrame(0, toFrame: 90, loopMode: .playOnce)
+                     : .fromFrame(40, toFrame: 90, loopMode: .loop))
             .animationDidFinish { _ in
                 if phase == 0 { phase = 1 }
             }
@@ -82,9 +83,9 @@ struct ThirdView: View {
             }
             .offset(y: -300)
             .allowsHitTesting(false)
-
             
-
+            
+            
             VStack {
                 VStack{
                     
@@ -92,7 +93,7 @@ struct ThirdView: View {
                     Spacer ()
                     
                     VStack{
-
+                        
                         Text("Welcome aboard.")
                             .font(.title)
                             .fontWidth(.expanded)
@@ -113,40 +114,45 @@ struct ThirdView: View {
                     }
                 }
                 Spacer()
-                Button(action: {
+                Button {
                     let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)}) {
-                    Text("   Continue with Apple")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .fontWidth(.expanded)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 22.5)
-                        .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
-                        .background(
-                            Capsule()
-                                .fill(
-                                    LinearGradient(stops: [
-                                        .init(color: Color(hex: "03B9D6"), location: 0.0),
-                                        .init(color: Color(hex: "7AE8FF"), location: 1),
-                                    ], startPoint: UnitPoint.top, endPoint: .bottom)
-                                )
-                        )
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(
-                                    LinearGradient(stops: [
-                                        .init(color: Color(hex: "03B9D6"), location: 0.0),
-                                        .init(color: Color(hex: "7AE8FF"), location: 1),
-                                    ], startPoint: UnitPoint.trailing, endPoint: .leading),
-                                    lineWidth: 1
-                                )
-                                .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
-                        )
-                        .clipShape(Capsule())
+                    generator.notificationOccurred(.success)
+                    Task {
+                        await viewModel.signInWithApple()
+                    }
+                } label: {
+                    ZStack {
+                        Text("   Continue with Apple")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .fontWidth(.expanded)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 22.5)
+                            .shadow(color: .blue.opacity(0.8), radius: 6, x: 0, y: 2)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(stops: [
+                                            .init(color: Color(hex: "03B9D6"), location: 0.0),
+                                            .init(color: Color(hex: "7AE8FF"), location: 1),
+                                        ], startPoint: UnitPoint.top, endPoint: .bottom)
+                                    )
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        LinearGradient(stops: [
+                                            .init(color: Color(hex: "03B9D6"), location: 0.0),
+                                            .init(color: Color(hex: "7AE8FF"), location: 1),
+                                        ], startPoint: UnitPoint.trailing, endPoint: .leading),
+                                        lineWidth: 1
+                                    )
+                                    .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
+                            )
+                            .clipShape(Capsule())
                         // Dim the button text when loading to indicate the button is busy.
-                        .opacity(viewModel.isLoading ? 0.5 : 1.0)
+                            .opacity(viewModel.isLoading ? 0.5 : 1.0)
                         
                         // MARK: - Loading Indicator
                         // Shown on top of the button while the Apple Sign In sheet
@@ -175,22 +181,10 @@ struct ThirdView: View {
         }
         .padding(1)
         .ignoresSafeArea()
-        // MARK: - Error Alert
-        // Displays a user-friendly error when Apple Sign In fails.
-        // Cancellation is handled silently (no alert shown).
-        .alert(
-            "Sign In Failed",
-            isPresented: $viewModel.showError
-        ) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-            }
-        }
         
     }
 }
+
 
 struct SpotlightBeam: View {
     var body: some View {
