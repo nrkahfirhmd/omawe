@@ -24,9 +24,9 @@ final class CloudKitInviteService: InviteServiceProtocol {
     }
 
     func publishInvite(code: String, shareURL: URL) async throws {
-        print("📤 Publishing invite...")
-        print("Code:", code)
-        print("URL:", shareURL)
+        debugLog("📤 Publishing invite...")
+        debugLog("Code:", code)
+        debugLog("URL:", shareURL)
 
         let invite = TripInvite(
             id: nil,
@@ -39,13 +39,13 @@ final class CloudKitInviteService: InviteServiceProtocol {
 
         do {
             let saved = try await database.save(record)
-            print("✅ TripInvite saved:", saved.recordID.recordName)
+            debugLog("✅ TripInvite saved:", saved.recordID.recordName)
         } catch {
-            print("❌ PublishInvite Error:", error)
+            debugLog("❌ PublishInvite Error:", error)
 
             if let ckError = error as? CKError {
-                print("CKError Code:", ckError.code)
-                print("CKError:", ckError)
+                debugLog("CKError Code:", ckError.code)
+                debugLog("CKError:", ckError)
             }
 
             throw error

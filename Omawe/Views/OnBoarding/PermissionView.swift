@@ -200,6 +200,6 @@ struct PermissionView: View {
 
 #Preview {
     PermissionView {
-        print("Next tapped")
+        debugLog("Next tapped")
     }
 }

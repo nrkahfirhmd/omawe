@@ -68,6 +68,16 @@ struct HomeView: View {
                 }
             }
             .onOpenURL { url in
+                // NFR-2: the widget's Live Activity taps and the "Report"
+                // link (`OmaweWidgetLiveActivity.swift`) use the app's own
+                // `omawe://` scheme — route and log those here rather than
+                // treating them as a CKShare acceptance URL. Anything else
+                // opening the app is assumed to be a share-invitation URL,
+                // matching this handler's pre-existing behavior.
+                if url.scheme == "omawe" {
+                    AnalyticsService.shared.log(.liveActivityInteraction(kind: url.host ?? "unknown"))
+                    return
+                }
                 Task { await viewModel.acceptShare(from: url) }
             }
             .task {

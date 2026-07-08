@@ -27,6 +27,8 @@ class HomeViewModel {
     private let liveActivityManager = LiveActivityLifecycleManager()
     private let tripNotificationService = TripNotificationService()
     private let notificationPermissionManager = NotificationPermissionManager()
+    private let analytics: AnalyticsLogging = AnalyticsService.shared
+    private let etaAccuracySampler = ETAAccuracySampler()
     private var cachedUserID: CKRecord.ID?
     /// Which trip this device currently has `locationSharingCoordinator`
     /// running for — guards `ensureLocationSharing` so it only starts once
@@ -107,6 +109,10 @@ class HomeViewModel {
         shareErrorMessage = nil
     }
 
+    /// NFR-2: instruments the PRD §9 "creation success rate" and "setup time"
+    /// metrics over this already-shipped flow — measured from this call's
+    /// entry (the user's "confirm" tap) to the point every CloudKit write it
+    /// depends on (trip, owner participant, share, invite) has succeeded.
     func confirmTripCreation(using modelContext: ModelContext) async throws -> String {
         guard canConfirmTripCreation else {
             throw CloudKitError.operationFailed
@@ -120,6 +126,8 @@ class HomeViewModel {
         defer {
             isSavingTrip = false
         }
+
+        let startedAt = Date()
 
         do {
             // MARK: - Current User
@@ -176,9 +184,11 @@ class HomeViewModel {
 
             hasCreatedTrip = true
 
+            analytics.log(.tripCreateSucceeded(setupSeconds: Date().timeIntervalSince(startedAt)))
             return invitationCode
         } catch {
             creationErrorMessage = error.localizedDescription
+            analytics.log(.tripCreateFailed(reason: String(describing: error)))
             throw error
         }
     }
@@ -201,7 +211,7 @@ class HomeViewModel {
             let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
             await MainActor.run { self.joinPreviewTrip = fetchedTrip }
         } catch {
-            print("[CloudKitSharing] Share URL acceptance failed: \(error.localizedDescription)")
+            debugLog("[CloudKitSharing] Share URL acceptance failed: \(error.localizedDescription)")
         }
     }
 
@@ -211,7 +221,7 @@ class HomeViewModel {
             let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
             await MainActor.run { self.joinPreviewTrip = fetchedTrip }
         } catch {
-            print("[CloudKitSharing] Share metadata acceptance failed: \(error.localizedDescription)")
+            debugLog("[CloudKitSharing] Share metadata acceptance failed: \(error.localizedDescription)")
         }
     }
 
@@ -222,19 +232,19 @@ class HomeViewModel {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
 
-        print("🔍 Looking up invite for preview:", normalizedCode)
+        debugLog("🔍 Looking up invite for preview:", normalizedCode)
 
         guard let invite = try await inviteService.findInvite(by: normalizedCode) else {
-            print("❌ Invite not found")
+            debugLog("❌ Invite not found")
             throw CloudKitError.invalidInvitation
         }
 
-        print("✅ Invite found")
-        print("Share URL:", invite.shareURL.absoluteString)
+        debugLog("✅ Invite found")
+        debugLog("Share URL:", invite.shareURL.absoluteString)
 
         do {
             let tripID = try await joinSharedTrip(from: invite.shareURL)
-            print("✅ Share accepted for preview")
+            debugLog("✅ Share accepted for preview")
 
             let fetchedTrip = try await tripService.fetchSharedTrip(id: tripID)
             
@@ -243,7 +253,7 @@ class HomeViewModel {
             }
 
         } catch {
-            print("❌ Share acceptance failed:", error)
+            debugLog("❌ Share acceptance failed:", error)
             throw error
         }
     }
@@ -262,29 +272,40 @@ class HomeViewModel {
         )
 
         _ = try await participantService.createParticipant(participant)
-        print("✅ Participant record created for confirm joiner")
+        debugLog("✅ Participant record created for confirm joiner")
 
         await TripStore.shared.loadTrips()
     }
 
+    /// NFR-2: instruments the PRD §9 "join success rate" and "setup time"
+    /// metrics — measured from share-acceptance start to the point
+    /// `CloudKitSharingService.acceptShare` actually succeeds.
     func joinSharedTrip(from url: URL) async throws -> CKRecord.ID {
         shareAcceptanceErrorMessage = nil
+        let startedAt = Date()
 
         do {
-            return try await sharingService.acceptShare(from: url)
+            let tripID = try await sharingService.acceptShare(from: url)
+            analytics.log(.shareAcceptSucceeded(setupSeconds: Date().timeIntervalSince(startedAt)))
+            return tripID
         } catch {
             shareAcceptanceErrorMessage = error.localizedDescription
+            analytics.log(.shareAcceptFailed(reason: String(describing: error)))
             throw error
         }
     }
 
     func joinSharedTrip(_ metadata: CKShare.Metadata) async throws -> CKRecord.ID {
         shareAcceptanceErrorMessage = nil
+        let startedAt = Date()
 
         do {
-            return try await sharingService.acceptShare(metadata)
+            let tripID = try await sharingService.acceptShare(metadata)
+            analytics.log(.shareAcceptSucceeded(setupSeconds: Date().timeIntervalSince(startedAt)))
+            return tripID
         } catch {
             shareAcceptanceErrorMessage = error.localizedDescription
+            analytics.log(.shareAcceptFailed(reason: String(describing: error)))
             throw error
         }
     }
@@ -340,6 +361,7 @@ class HomeViewModel {
 
         let previousStates = tripStatusViewModel.participantStates
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
+        etaAccuracySampler.recordTransitions(previous: previousStates, updated: tripStatusViewModel.participantStates)
 
         let states = Array(tripStatusViewModel.participantStates.values)
         let displayNames = Dictionary(
@@ -525,7 +547,7 @@ class HomeViewModel {
             do {
                 try await zoneService.deleteZone(with: zoneID)
             } catch {
-                print("[HomeViewModel] Zone cleanup failed for trip \(tripID.recordName): \(error.localizedDescription)")
+                debugLog("[HomeViewModel] Zone cleanup failed for trip \(tripID.recordName): \(error.localizedDescription)")
             }
         }
     }
@@ -630,61 +652,61 @@ class HomeViewModel {
     }
 
     func debugFetchAllParticipants(for tripID: CKRecord.ID) async {
-        print("🔬 DEBUG: Checking participants for trip:", tripID.recordName)
-        print("🔬 Trip zone:", tripID.zoneID.zoneName, "| owner:", tripID.zoneID.ownerName)
+        debugLog("🔬 DEBUG: Checking participants for trip:", tripID.recordName)
+        debugLog("🔬 Trip zone:", tripID.zoneID.zoneName, "| owner:", tripID.zoneID.ownerName)
 
         let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
         let query = CKQuery(recordType: ParticipantRecordMapper.recordType, predicate: predicate)
 
         // Try private database
         do {
-            print("🔬 --- Checking PRIVATE database ---")
+            debugLog("🔬 --- Checking PRIVATE database ---")
             let result = try await privateDatabase.records(matching: query, inZoneWith: tripID.zoneID)
             for (_, matchResult) in result.matchResults {
                 switch matchResult {
                 case .success(let record):
-                    print("✅ [private] Participant record:", record.recordID.recordName)
-                    print("   tripID field:", record["tripID"] ?? "nil")
-                    print("   userID field:", record["userID"] ?? "nil")
-                    print("   role field:", record["role"] ?? "nil")
-                    print("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
+                    debugLog("✅ [private] Participant record:", record.recordID.recordName)
+                    debugLog("   tripID field:", record["tripID"] ?? "nil")
+                    debugLog("   userID field:", record["userID"] ?? "nil")
+                    debugLog("   role field:", record["role"] ?? "nil")
+                    debugLog("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
                 case .failure(let error):
-                    print("❌ [private] match failure:", error)
+                    debugLog("❌ [private] match failure:", error)
                 }
             }
         } catch {
-            print("❌ [private] query failed:", error)
+            debugLog("❌ [private] query failed:", error)
         }
 
         // Try shared database
         do {
-            print("🔬 --- Checking SHARED database ---")
+            debugLog("🔬 --- Checking SHARED database ---")
             let result = try await sharedDatabase.records(matching: query, inZoneWith: tripID.zoneID)
             for (_, matchResult) in result.matchResults {
                 switch matchResult {
                 case .success(let record):
-                    print("✅ [shared] Participant record:", record.recordID.recordName)
-                    print("   tripID field:", record["tripID"] ?? "nil")
-                    print("   userID field:", record["userID"] ?? "nil")
-                    print("   role field:", record["role"] ?? "nil")
-                    print("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
+                    debugLog("✅ [shared] Participant record:", record.recordID.recordName)
+                    debugLog("   tripID field:", record["tripID"] ?? "nil")
+                    debugLog("   userID field:", record["userID"] ?? "nil")
+                    debugLog("   role field:", record["role"] ?? "nil")
+                    debugLog("   zone:", record.recordID.zoneID.zoneName, "owner:", record.recordID.zoneID.ownerName)
                 case .failure(let error):
-                    print("❌ [shared] match failure:", error)
+                    debugLog("❌ [shared] match failure:", error)
                 }
             }
         } catch {
-            print("❌ [shared] query failed:", error)
+            debugLog("❌ [shared] query failed:", error)
         }
 
         // Also list all zones visible in shared database, to compare zoneID.ownerName
         do {
-            print("🔬 --- All zones in SHARED database ---")
+            debugLog("🔬 --- All zones in SHARED database ---")
             let zones = try await sharedDatabase.allRecordZones()
             for zone in zones {
-                print("   zone:", zone.zoneID.zoneName, "| owner:", zone.zoneID.ownerName)
+                debugLog("   zone:", zone.zoneID.zoneName, "| owner:", zone.zoneID.ownerName)
             }
         } catch {
-            print("❌ Failed to list shared zones:", error)
+            debugLog("❌ Failed to list shared zones:", error)
         }
     }
     

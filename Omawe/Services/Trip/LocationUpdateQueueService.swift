@@ -54,3 +54,30 @@ final class LocationUpdateQueueService: LocationUpdateQueueServiceProtocol {
         }
     }
 }
+
+extension LocationUpdateQueueService {
+    /// Default instance backed by its own `ModelContainer`, pointed at the
+    /// same on-disk store OmaweApp.swift configures for `LocationUpdate`
+    /// ("LocationUpdateStore", no CloudKit mirroring — LOC-4's decision).
+    /// `LocationSharingCoordinator` is a plain class, not a View, so it has
+    /// no `@Environment(\.modelContext)` to receive; pointing a second
+    /// container at the identical store name/schema is how it reaches the
+    /// same durable queue without threading a `ModelContext` through
+    /// `HomeViewModel`'s init and every call site that constructs it.
+    static let shared: LocationUpdateQueueService = {
+        let schema = Schema([LocationUpdate.self])
+        let configuration = ModelConfiguration(
+            "LocationUpdateStore",
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            return LocationUpdateQueueService(modelContext: ModelContext(container))
+        } catch {
+            fatalError("Could not create LocationUpdateQueueService's model container: \(error)")
+        }
+    }()
+}

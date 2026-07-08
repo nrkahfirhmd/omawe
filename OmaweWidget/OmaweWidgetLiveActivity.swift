@@ -159,7 +159,10 @@ struct OmaweWidgetLiveActivity: Widget {
                     .font(.system(size: 10))
                     .foregroundStyle(Theme.tertiary)
             }
-            .widgetURL(URL(string: "http://www.apple.com"))
+            // NFR-2: real, trackable deep link (was a placeholder pointing at
+            // apple.com) — routed and logged in `HomeView.onOpenURL` as the
+            // "Live Activity interaction rate" PRD §9 metric.
+            .widgetURL(URL(string: "omawe://liveactivity"))
             .keylineTint(context.state.myDistanceKm <= 0.5 ? Theme.tertiaryBox : .orange)
         }
     }

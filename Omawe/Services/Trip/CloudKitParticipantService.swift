@@ -59,11 +59,11 @@ final class CloudKitParticipantService: ParticipantServiceProtocol {
                     do {
                         return try ParticipantRecordMapper.makeModel(from: record)
                     } catch {
-                        print("[CloudKitParticipantService] Skipping unreadable Participant record \(record.recordID.recordName): \(error)")
+                        debugLog("[CloudKitParticipantService] Skipping unreadable Participant record \(record.recordID.recordName): \(error)")
                         return nil
                     }
                 case .failure(let error):
-                    print("[CloudKitParticipantService] Match failure: \(error)")
+                    debugLog("[CloudKitParticipantService] Match failure: \(error)")
                     return nil
                 }
             }
