@@ -267,11 +267,16 @@ struct JoinInvitationView: View {
                 }
                 .padding(.bottom, 12)
                 
-                TripLocationNotePill(
-                    apartmentUnitFloor: trip.apartmentUnitFloor ?? "",
-                    locationNickname: trip.locationNickname ?? ""
-                )
-                .padding(.bottom, 12)
+                let unit = (trip.apartmentUnitFloor ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let nickname = (trip.locationNickname ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if !unit.isEmpty || !nickname.isEmpty {
+                    TripLocationNotePill(
+                        apartmentUnitFloor: unit,
+                        locationNickname: nickname
+                    )
+                    .padding(.bottom, 12)
+                }
                 
                 HStack {
                     Text("#Code")

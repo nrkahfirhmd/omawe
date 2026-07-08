@@ -7,6 +7,7 @@
 
 
 import CoreHaptics
+import UIKit
 
 class HapticManager {
     static let shared = HapticManager()
@@ -195,6 +196,90 @@ class HapticManager {
             relativeTime: 0.01
         )
         play(events, curves: [curve])
+    }
+
+    func envelopeJiggle() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        var events: [CHHapticEvent] = []
+        
+        // Two quick, subtle ticks to simulate a left-right jiggle/shake
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.40),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.25)
+            ],
+            relativeTime: 0
+        ))
+        
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.40),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.25)
+            ],
+            relativeTime: 0.10
+        ))
+        
+        play(events)
+    }
+
+    func envelopeOpen() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        var events: [CHHapticEvent] = []
+        var curves: [CHHapticParameterCurve] = []
+        
+        // 1) Flap opens (satisfying tick)
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.55)
+            ],
+            relativeTime: 0
+        ))
+        
+        // 2) Card rising out (continuous hum rising in intensity)
+        let slideStart = 0.2
+        let slideDur = 1.2
+        events.append(CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.35)
+            ],
+            relativeTime: slideStart,
+            duration: slideDur
+        ))
+        
+        curves.append(CHHapticParameterCurve(
+            parameterID: .hapticIntensityControl,
+            controlPoints: [
+                .init(relativeTime: 0.0,             value: 0.15),
+                .init(relativeTime: slideDur * 0.5,  value: 0.55),
+                .init(relativeTime: slideDur,        value: 0.95)
+            ],
+            relativeTime: slideStart
+        ))
+        
+        // 3) Card snaps/settles (final pop)
+        let snapStart = slideStart + slideDur
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.9),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.7)
+            ],
+            relativeTime: snapStart
+        ))
+        
+        play(events, curves: curves)
+    }
+
+    func success() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
 
     func stopAll() {

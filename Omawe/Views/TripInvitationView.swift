@@ -82,7 +82,7 @@ struct TripInvitationView: View {
         if isSavingTrip || isCreatingShare {
             return "Creating Trip..."
         }
-
+        
         return "Create Trip"
     }
     
@@ -116,6 +116,7 @@ struct TripInvitationView: View {
                     .padding(.top, isEditingInvitationDetails ? 0 : 20)
                     .padding(.horizontal, isEditingInvitationDetails ? 0 : 24)
                     .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isEditingInvitationDetails)
+                    
                     .ignoresSafeArea()
                 
                 Spacer(minLength: 20)
@@ -143,6 +144,11 @@ struct TripInvitationView: View {
         .onChange(of: shareURL) { _, newURL in
             guard let newURL else { return }
             copyShareLink(newURL)
+        }
+        .onChange(of: hasCreatedTrip) { _, isCreated in
+            if isCreated {
+                HapticManager.shared.success()
+            }
         }
         .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
@@ -223,14 +229,14 @@ struct TripInvitationView: View {
                     Text("by @\(UserSession.shared.displayName ?? "Anonymous")")
                         .font(.caption1())
                         .foregroundStyle(Theme.primaryBox.opacity(0.72))
-                        .padding(.bottom, 12)
+                        .padding(.bottom, 24)
                     
                     HStack(spacing: -7) {
                         let initials = UserSession.shared.displayName?.trimmingCharacters(in: .whitespacesAndNewlines).first.map { String($0).uppercased() } ?? "A"
                         invitationAvatar(initials: initials, tint: .orange)
                     }
                 }
-                .padding(.bottom, 48)
+                .padding(.bottom, 24)
                 
                 VStack(spacing: 18) {
                     ticketDetail(
@@ -244,11 +250,9 @@ struct TripInvitationView: View {
                     )
                 }
                 
-                Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
-            
-            Spacer(minLength: 0)
+            .padding(.bottom, 72)
             
             VStack {
                 Text("Location")
@@ -275,25 +279,34 @@ struct TripInvitationView: View {
                 }
                 .padding(.bottom, 12)
                 
-                TripLocationNotePill(
-                    apartmentUnitFloor: draft.apartmentUnitFloor,
-                    locationNickname: draft.locationNickname
-                )
-                .padding(.bottom, 12)
+                let unit = draft.apartmentUnitFloor.trimmingCharacters(in: .whitespacesAndNewlines)
+                let nickname = draft.locationNickname.trimmingCharacters(in: .whitespacesAndNewlines)
                 
-                HStack {
-                    Text("#Code")
-                        .font(.button().width(.expanded))
-                        .foregroundStyle(.white.opacity(0.28))
-                    
-                    Spacer()
-                    
-                    Text(draft.invitationCode)
-                        .font(.button().width(.expanded))
-                        .foregroundStyle(.white)
+                if !unit.isEmpty || !nickname.isEmpty {
+                    TripLocationNotePill(
+                        apartmentUnitFloor: unit,
+                        locationNickname: nickname
+                    )
                 }
             }
             .frame(maxWidth: .infinity, alignment: .top)
+            
+            
+            Spacer()
+            
+            HStack {
+                Text("#Code")
+                    .font(.button().width(.expanded))
+                    .foregroundStyle(.white.opacity(0.28))
+                
+                Spacer()
+                
+                Text(draft.invitationCode)
+                    .font(.button().width(.expanded))
+                    .foregroundStyle(.white)
+            }
+            
+            
         }
         .frame(maxWidth: 320, maxHeight: .infinity, alignment: .top)
         .padding(24)
@@ -332,31 +345,31 @@ struct TripInvitationView: View {
                             isEditTitle = false
                         }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    guard !isEditTitle else { return }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
-                        isEditTitle = true
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .onTapGesture {
+                        guard !isEditTitle else { return }
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
+                            isEditTitle = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            isTripNameFocused = true
+                        }
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        isTripNameFocused = true
+                    .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(0.04))
                     }
-                }
-                .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.black.opacity(0.04))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(
-                            isEditTitle ? Theme.primaryBox : Color.black.opacity(0.08),
-                            lineWidth: isEditTitle ? 2 : 1
-                        )
-                }
-                .animation(.spring(response: 0.4, dampingFraction: 0.88), value: isEditTitle)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(
+                                isEditTitle ? Theme.primaryBox : Color.black.opacity(0.08),
+                                lineWidth: isEditTitle ? 2 : 1
+                            )
+                    }
+                    .animation(.spring(response: 0.4, dampingFraction: 0.88), value: isEditTitle)
                 
                 TripDateTimeDraftPicker(
                     arrivalDate: $draft.arrivalDate,
@@ -374,6 +387,7 @@ struct TripInvitationView: View {
                 }
             }
         }
+        
         .padding(24)
         
     }
@@ -570,6 +584,38 @@ struct TripInvitationView: View {
     }
 }
 
+#Preview {
+    @Previewable @State var draft = TripDraft(
+        name: "Bali Summer Splash",
+        arrivalDate: Date(),
+        locationName: "Canggu Beach Club",
+        locationAddress: "Jl. Pantai Batu Bolong, Canggu",
+//                apartmentUnitFloor: "Villa 3, Floor 2",
+//                locationNickname: "Canggu Stay"
+    )
+    @Previewable @State var isCalendarPresented = false
+    @Previewable @State var isEditingInvitationDetails = false
+    @Previewable @State var isLocationSheetPresented = false
+    
+    TripInvitationView(
+        draft: $draft,
+        creationErrorMessage: nil,
+        shareErrorMessage: nil,
+        canConfirmTripCreation: true,
+        isSavingTrip: false,
+        isCreatingShare: false,
+        hasCreatedTrip: false,
+        shareURL: "https://www.icloud.com/share/test",
+        isCalendarPresented: $isCalendarPresented,
+        isEditingInvitationDetails: $isEditingInvitationDetails,
+        isLocationSheetPresented: $isLocationSheetPresented,
+        onCreateTrip: {
+            try? await Task.sleep(for: .seconds(1))
+            return "123456"
+        },
+        onDismissAndReset: {}
+    )
+}
 
 
 
