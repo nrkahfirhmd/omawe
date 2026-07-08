@@ -29,7 +29,7 @@ struct OmaweWidgetLiveActivity: Widget {
                         Text({
                             let eta = Calendar.current.date(
                                 byAdding: .minute,
-                                value: context.state.etaMinutes,
+                                value: context.state.myEtaMinutes,
                                 to: Date()
                             ) ?? Date()
                             let formatter = DateFormatter()
@@ -54,7 +54,7 @@ struct OmaweWidgetLiveActivity: Widget {
                             .bold()
                             .foregroundStyle(.gray)
                         Text({
-                            let km = context.state.distanceKm
+                            let km = context.state.myDistanceKm
                             if km >= 1 {
                                 return "\(Int(km))km"
                             } else {
@@ -74,8 +74,7 @@ struct OmaweWidgetLiveActivity: Widget {
                     VStack(spacing: 8) {
                         // Route progress with mate markers
                         RouteProgressView(
-                            totalMates: context.attributes.totalMates,
-                            arrivedCount: context.state.arrivedCount
+                            mates: context.state.mates
                         )
                         .padding(.horizontal,10)
                         
@@ -117,24 +116,24 @@ struct OmaweWidgetLiveActivity: Widget {
                 HStack(spacing: 3) {
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(Color(red: 0.01, green: 0.78, blue: 0.70))
+                        .foregroundStyle(.white)
                     Text("\(context.state.myEtaMinutes)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.tertiary)
                 }
             } compactTrailing: {
                 // Compact Right: Distance
                 Text("\(Int(context.state.myDistanceKm))km")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.01, green: 0.78, blue: 0.70))
+                    .foregroundStyle(Theme.tertiary)
             } minimal: {
                 // Minimal: People icon
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(red: 0.01, green: 0.78, blue: 0.70))
+                    .foregroundStyle(Theme.tertiary)
             }
             .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color(red: 0.01, green: 0.78, blue: 0.70))
+            .keylineTint(context.state.myDistanceKm <= 0.5 ? Theme.tertiaryBox : .orange)
         }
     }
 }
@@ -214,8 +213,15 @@ extension OmaweWidgetAttributes.ContentState {
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Bintang is 5 mins away",
         myEtaMinutes: 12,
-        myDistanceKm: 15.0,
+        myDistanceKm: 15.0, // Orange border
         arrivedCount: 2,
+        mates: []
+    )
+    OmaweWidgetAttributes.ContentState(
+        statusMessage: "Arrived",
+        myEtaMinutes: 0,
+        myDistanceKm: 0.2, // Green border
+        arrivedCount: 6,
         mates: []
     )
 }

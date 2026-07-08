@@ -118,7 +118,7 @@ struct TripStatusDetailView: View {
                 TripStatusMemberDisplay(
                     userID: member.userID,
                     role: member.role,
-                    displayName: displayName(for: member.userID, role: member.role, trip: trip),
+                    displayName: member.displayName ?? "Unknown",
                     participant: member
                 )
             )
@@ -129,7 +129,7 @@ struct TripStatusDetailView: View {
                 TripStatusMemberDisplay(
                     userID: trip.ownerID,
                     role: .owner,
-                    displayName: displayName(for: trip.ownerID, role: .owner, trip: trip),
+                    displayName: ownerDisplayName(for: trip),
                     participant: nil
                 )
             )

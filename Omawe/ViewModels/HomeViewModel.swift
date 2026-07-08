@@ -338,7 +338,12 @@ class HomeViewModel {
                 }
         )
 
-        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: displayNames)
+        let userID = try? await currentUserID()
+        let content = WidgetContentStateAggregator.aggregate(
+            participantStates: states,
+            displayNames: displayNames,
+            currentUserID: userID
+        )
         await liveActivityManager.update(content)
     }
 
@@ -407,9 +412,10 @@ class HomeViewModel {
         )
         let initialContent = OmaweWidgetAttributes.ContentState(
             statusMessage: "Waiting for location updates",
-            etaMinutes: 0,
+            myEtaMinutes: 0,
+            myDistanceKm: 0,
             arrivedCount: 0,
-            distanceKm: 0
+            mates: []
         )
 
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)
@@ -442,9 +448,10 @@ class HomeViewModel {
             let arrivedCount = tripStatusViewModel.participantStates.values.count { $0.status == .arrived }
             await liveActivityManager.end(OmaweWidgetAttributes.ContentState(
                 statusMessage: "Trip ended",
-                etaMinutes: 0,
+                myEtaMinutes: 0,
+                myDistanceKm: 0,
                 arrivedCount: arrivedCount,
-                distanceKm: 0
+                mates: []
             ))
 
             await TripStore.shared.loadTrips()
