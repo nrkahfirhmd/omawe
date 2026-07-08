@@ -118,13 +118,13 @@ struct OmaweWidgetLiveActivity: Widget {
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(Color(red: 0.01, green: 0.78, blue: 0.70))
-                    Text("\(context.state.etaMinutes)")
+                    Text("\(context.state.myEtaMinutes)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
             } compactTrailing: {
                 // Compact Right: Distance
-                Text("\(Int(context.state.distanceKm))km")
+                Text("\(Int(context.state.myDistanceKm))km")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Color(red: 0.01, green: 0.78, blue: 0.70))
             } minimal: {
@@ -156,18 +156,26 @@ extension OmaweWidgetAttributes.ContentState {
     fileprivate static var onTheWay: OmaweWidgetAttributes.ContentState {
         OmaweWidgetAttributes.ContentState(
             statusMessage: "Bintang is 5 mins away",
-            etaMinutes: 12,
+            myEtaMinutes: 12,
+            myDistanceKm: 15.0,
             arrivedCount: 2,
-            distanceKm: 15.0
+            mates: [
+                OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
+                OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true)
+            ]
         )
     }
     
     fileprivate static var almostThere: OmaweWidgetAttributes.ContentState {
         OmaweWidgetAttributes.ContentState(
             statusMessage: "Kahfi is arriving now!",
-            etaMinutes: 2,
+            myEtaMinutes: 2,
+            myDistanceKm: 2.5,
             arrivedCount: 4,
-            distanceKm: 2.5
+            mates: [
+                OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 0.5, isMe: false),
+                OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 2.5, isMe: true)
+            ]
         )
     }
 }
@@ -189,9 +197,10 @@ extension OmaweWidgetAttributes.ContentState {
 } contentStates: {
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Bintang is 5 mins away",
-        etaMinutes: 12,
+        myEtaMinutes: 12,
+        myDistanceKm: 15.0,
         arrivedCount: 2,
-        distanceKm: 15.0
+        mates: []
     )
 }
 
@@ -204,8 +213,9 @@ extension OmaweWidgetAttributes.ContentState {
 } contentStates: {
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Bintang is 5 mins away",
-        etaMinutes: 12,
+        myEtaMinutes: 12,
+        myDistanceKm: 15.0,
         arrivedCount: 2,
-        distanceKm: 15.0
+        mates: []
     )
 }
