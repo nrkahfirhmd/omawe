@@ -3,6 +3,7 @@ import SwiftUI
 struct PeopleOrbitPerson: Identifiable, Hashable {
     let id: String
     var displayName: String?
+    var avatarImageData: Data?
 
     var initials: String {
         let trimmedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -57,16 +58,30 @@ struct CirclesLayoutView: View {
             ZStack {
                 ForEach(Array(visiblePeople.enumerated()), id: \.element.id) { i, person in
                     let spec = specs[i]
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: spec.size, height: spec.size)
-                        .overlay(
-                            Text(person.initials.isEmpty ? spec.label : person.initials)
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(Color.black)
-                        )
-                        .position(x: width * spec.xRatio, y: height * spec.yRatio)
+                    Group {
+                        if let data = person.avatarImageData, let uiImage = UIImage(data: data) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: spec.size, height: spec.size)
+                                .clipShape(Circle())
+                                .overlay {
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 1.5)
+                                }
+                        } else {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: spec.size, height: spec.size)
+                                .overlay(
+                                    Text(person.initials.isEmpty ? spec.label : person.initials)
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(Color.black)
+                                )
+                        }
+                    }
+                    .position(x: width * spec.xRatio, y: height * spec.yRatio)
                 }
             }
         }

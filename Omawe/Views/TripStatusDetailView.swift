@@ -187,7 +187,8 @@ private struct TripStatusPageContentView: View {
         members.map { member in
             PeopleOrbitPerson(
                 id: member.userID.recordName,
-                displayName: displayName(for: member)
+                displayName: displayName(for: member),
+                avatarImageData: member.participant?.avatarImageData
             )
         }
     }

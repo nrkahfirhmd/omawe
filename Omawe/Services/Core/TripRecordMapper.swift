@@ -23,6 +23,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let status = "status"
         static let destinationLatitude = "destinationLatitude"
         static let destinationLongitude = "destinationLongitude"
+        static let locationAddress = "locationAddress"
+        static let apartmentUnitFloor = "apartmentUnitFloor"
+        static let locationNickname = "locationNickname"
         static let createdAt = "createdAt"
         static let updatedAt = "updatedAt"
     }
@@ -58,6 +61,15 @@ struct TripRecordMapper: CloudKitRecordMappable {
         if let destinationLongitude = model.destinationLongitude {
             record[Field.destinationLongitude] = destinationLongitude as CKRecordValue
         }
+        if let locationAddress = model.locationAddress {
+            record[Field.locationAddress] = locationAddress as CKRecordValue
+        }
+        if let apartmentUnitFloor = model.apartmentUnitFloor {
+            record[Field.apartmentUnitFloor] = apartmentUnitFloor as CKRecordValue
+        }
+        if let locationNickname = model.locationNickname {
+            record[Field.locationNickname] = locationNickname as CKRecordValue
+        }
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
     }
@@ -80,7 +92,10 @@ struct TripRecordMapper: CloudKitRecordMappable {
         // default to .notStarted rather than failing the whole decode.
         let status = (record[Field.status] as? String).flatMap(TripStatus.init(rawValue:)) ?? .notStarted
         let ownerDisplayName = record[Field.ownerDisplayName] as? String
-
+        let locationAddress = record[Field.locationAddress] as? String
+        let apartmentUnitFloor = record[Field.apartmentUnitFloor] as? String
+        let locationNickname = record[Field.locationNickname] as? String
+ 
         return Trip(
             id: record.recordID,
             title: title,
@@ -93,6 +108,9 @@ struct TripRecordMapper: CloudKitRecordMappable {
             status: status,
             destinationLatitude: record[Field.destinationLatitude] as? Double,
             destinationLongitude: record[Field.destinationLongitude] as? Double,
+            locationAddress: locationAddress,
+            apartmentUnitFloor: apartmentUnitFloor,
+            locationNickname: locationNickname,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

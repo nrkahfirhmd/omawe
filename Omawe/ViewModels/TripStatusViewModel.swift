@@ -75,7 +75,7 @@ final class TripStatusViewModel {
             }
             participantStates = updated
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorHelper.simplify(error)
         }
     }
 

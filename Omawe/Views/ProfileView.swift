@@ -48,7 +48,7 @@ struct ProfileView: View {
                     
                     profileAvatar
 
-                    Text(profile?.displayName.isEmpty == false ? "Hi \(profile!.displayName)" : "Hi \(UserSession.shared.displayName ?? "New User")")
+                    Text("Hi \(ProfileHelper.displayName(for: profile) ?? "New User")")
                         .font(.largeTitle)
                         .fontWidth(.expanded)
                         .fontWeight(.semibold)
@@ -72,7 +72,7 @@ struct ProfileView: View {
     }
 
     private func setupProfile() {
-        if let existing = userProfiles.first(where: { $0.userID == UserSession.shared.userIdentifier }) ?? userProfiles.first {
+        if let existing = ProfileHelper.currentUserProfile(from: userProfiles) {
             profile = existing
         } else {
             let newProfile = UserProfile(
@@ -86,36 +86,12 @@ struct ProfileView: View {
 
     private var profileAvatar: some View {
         ZStack {
-
-            Image(selectedAvatarFrame.image)
-            
-            if let imageData = profile?.avatarImageData, let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 60, height: 60)
-                    .clipShape(Circle())
-            } else {
-                let displayName = profile?.displayName.isEmpty == false ? profile!.displayName : UserSession.shared.displayName
-                if let initials = displayName?.first.map(String.init) {
-                    Text(initials.uppercased())
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 60, height: 60)
-                        .glassEffect(.clear, in: .circle)
-                } else {
-                    Image(.avatar)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 60, height: 60)
-                }
-            }
+            AvatarView(
+                profile: profile,
+                selectedAvatarFrame: selectedAvatarFrame,
+                initialsSize: 32,
+                showBackgroundCircle: false
+            )
             
             NavigationLink {
                 if let profile {
@@ -376,7 +352,7 @@ struct EditProfileView: View {
                             .clipShape(Circle())
                     } else {
                         let displayName = nickname.isEmpty ? UserSession.shared.displayName : nickname
-                        if let initials = displayName?.first.map(String.init) {
+                        if let initials = ProfileHelper.initials(for: displayName) {
                             Text(initials.uppercased())
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .foregroundStyle(

@@ -8,17 +8,24 @@
 
 import CloudKit
 
+struct UserProfileDetails {
+    let displayName: String?
+    let avatarData: Data?
+}
+
 protocol ParticipantServiceProtocol {
     func createParticipant(_ participant: Participant) async throws -> Participant
     func fetchParticipants(for tripID: CKRecord.ID) async throws -> [Participant]
     func updateParticipant(_ participant: Participant) async throws -> Participant
     func removeParticipant(id: CKRecord.ID) async throws
+    func fetchProfileDetails(for userID: CKRecord.ID) async -> UserProfileDetails?
 }
 
 final class CloudKitParticipantService: ParticipantServiceProtocol {
 
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
+    private let publicDatabase = CloudKitContainer.shared.publicDatabase
     private let identityService = CloudKitIdentityService()
 
     func createParticipant(_ participant: Participant) async throws -> Participant {
@@ -132,6 +139,57 @@ final class CloudKitParticipantService: ParticipantServiceProtocol {
         } catch {
             throw CloudKitError.unknown(error)
         }
+    }
+
+    func fetchProfileDetails(for userID: CKRecord.ID) async -> UserProfileDetails? {
+        let predicate = NSPredicate(format: "CD_userID == %@", userID.recordName)
+        let query = CKQuery(recordType: "CD_UserProfile", predicate: predicate)
+        
+        let databasesWithZones: [(CKDatabase, CKRecordZone.ID)] = [
+            (sharedDatabase, CKRecordZone.ID(zoneName: "com.apple.coredata.cloudkit.zone", ownerName: userID.recordName)),
+            (privateDatabase, CKRecordZone.ID(zoneName: "com.apple.coredata.cloudkit.zone", ownerName: CKCurrentUserDefaultName))
+        ]
+        
+        for (db, zoneID) in databasesWithZones {
+            do {
+                let result = try await db.records(matching: query, inZoneWith: zoneID, resultsLimit: 1)
+                if let record = try result.matchResults.first?.1.get() {
+                    let displayName = record["CD_displayName"] as? String
+                    var avatarData: Data? = nil
+                    
+                    if let asset = record["CD_avatarImageData_ckAsset"] as? CKAsset, let fileURL = asset.fileURL {
+                        avatarData = try? Data(contentsOf: fileURL)
+                    } else if let data = record["CD_avatarImageData"] as? Data {
+                        avatarData = data
+                    }
+                    
+                    return UserProfileDetails(displayName: displayName, avatarData: avatarData)
+                }
+            } catch {
+                // Continue
+            }
+        }
+        
+        // Try public database (default zone query)
+        do {
+            let result = try await publicDatabase.records(matching: query, resultsLimit: 1)
+            if let record = try result.matchResults.first?.1.get() {
+                let displayName = record["CD_displayName"] as? String
+                var avatarData: Data? = nil
+                
+                if let asset = record["CD_avatarImageData_ckAsset"] as? CKAsset, let fileURL = asset.fileURL {
+                    avatarData = try? Data(contentsOf: fileURL)
+                } else if let data = record["CD_avatarImageData"] as? Data {
+                    avatarData = data
+                }
+                
+                return UserProfileDetails(displayName: displayName, avatarData: avatarData)
+            }
+        } catch {
+            // Ignore
+        }
+        
+        return nil
     }
 }
 

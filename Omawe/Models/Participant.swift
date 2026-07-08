@@ -15,6 +15,7 @@ struct Participant : Identifiable, Hashable {
     var displayName: String?
     var role: ParticipantRole
     var joinedAt: Date
+    var avatarImageData: Data?
 }
 
 enum ParticipantRole : String {

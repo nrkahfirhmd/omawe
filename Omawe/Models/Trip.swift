@@ -25,6 +25,9 @@ struct Trip : Identifiable, Hashable {
     /// result — callers must re-geocode `destination` as a fallback in that case.
     var destinationLatitude: Double?
     var destinationLongitude: Double?
+    var locationAddress: String?
+    var apartmentUnitFloor: String?
+    var locationNickname: String?
     var createdAt: Date
     var updatedAt: Date
 

@@ -22,6 +22,12 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
         record[Field.userID] = model.userID.recordName as CKRecordValue
         record[Field.role] = model.role.rawValue as CKRecordValue
         record[Field.joinedAt] = model.joinedAt as CKRecordValue
+        if let displayName = model.displayName {
+            record[Field.displayName] = displayName as CKRecordValue
+        }
+        if let avatarImageData = model.avatarImageData {
+            record[Field.avatarImageData] = avatarImageData as CKRecordValue
+        }
 
         // Required for non-owner writes into a shared zone — CloudKit needs
         // to know this record's place in the share's hierarchy.
@@ -47,6 +53,8 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
         static let userID = "userID"
         static let role = "role"
         static let joinedAt = "joinedAt"
+        static let displayName = "displayName"
+        static let avatarImageData = "avatarImageData"
     }
 
     static func makeModel(from record: CKRecord) throws -> Participant {
@@ -60,14 +68,19 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
             throw CloudKitError.invalidRecord
         }
 
+        let displayName = record[Field.displayName] as? String
+        let avatarImageData = record[Field.avatarImageData] as? Data
+
         let tripID = CKRecord.ID(recordName: tripRecordName, zoneID: record.recordID.zoneID)
 
         return Participant(
             id: record.recordID,
             tripID: tripID,
             userID: CKRecord.ID(recordName: userRecordName),
+            displayName: displayName,
             role: role,
-            joinedAt: joinedAt
+            joinedAt: joinedAt,
+            avatarImageData: avatarImageData
         )
     }
 }
