@@ -19,6 +19,6 @@ final class CloudKitContainer {
         privateDatabase = container.privateCloudDatabase
         publicDatabase = container.publicCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
-        print("Container:", container.containerIdentifier ?? "nil")
+        debugLog("Container:", container.containerIdentifier ?? "nil")
     }
 }

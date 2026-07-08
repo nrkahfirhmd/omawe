@@ -32,10 +32,10 @@ final class CloudKitTripService: TripServiceProtocol {
                 named: "Trip-\(recordName)"
             )
             
-            print("Returned Zone Name:", zone.zoneID.zoneName)
-            print("Returned Owner:", zone.zoneID.ownerName)
+            debugLog("Returned Zone Name:", zone.zoneID.zoneName)
+            debugLog("Returned Owner:", zone.zoneID.ownerName)
             
-            print("Zone ID:", zone.zoneID)
+            debugLog("Zone ID:", zone.zoneID)
 
             let recordID = CKRecord.ID(
                 recordName: recordName,
@@ -47,13 +47,13 @@ final class CloudKitTripService: TripServiceProtocol {
                 recordID: recordID
             )
             
-            print("Created Zone:", record.recordID.zoneID.zoneName)
-            print("Created Record:", record.recordID.recordName)
+            debugLog("Created Zone:", record.recordID.zoneID.zoneName)
+            debugLog("Created Record:", record.recordID.recordName)
 
             let savedRecord = try await database.save(record)
 
-            print("Saved Zone:", savedRecord.recordID.zoneID.zoneName)
-            print("Saved Record:", savedRecord.recordID.recordName)
+            debugLog("Saved Zone:", savedRecord.recordID.zoneID.zoneName)
+            debugLog("Saved Record:", savedRecord.recordID.recordName)
 
             return try TripRecordMapper.makeModel(from: savedRecord)
         } catch {
@@ -106,11 +106,11 @@ final class CloudKitTripService: TripServiceProtocol {
                         do {
                             return try TripRecordMapper.makeModel(from: record)
                         } catch {
-                            print("[CloudKitTripService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                            debugLog("[CloudKitTripService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
                             return nil
                         }
                     case .failure(let error):
-                        print("[CloudKitTripService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
+                        debugLog("[CloudKitTripService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
                         return nil
                     }
                 }

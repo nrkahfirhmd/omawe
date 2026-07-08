@@ -65,14 +65,14 @@ final class OmaweAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        print("[Push] Registered for remote notifications")
+        debugLog("[Push] Registered for remote notifications")
     }
 
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("[Push] Failed to register for remote notifications:", error.localizedDescription)
+        debugLog("[Push] Failed to register for remote notifications:", error.localizedDescription)
     }
 
     func application(

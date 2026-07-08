@@ -7,6 +7,7 @@
 
 import CoreLocation
 import CloudKit
+import MapKit
 
 /// Per-participant computed trip status: ETA-1's raw ETA/distance plus
 /// ETA-2's derived state machine. One value per participant currently
@@ -76,6 +77,14 @@ final class TripStatusViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// NFR-4: exposes the already-computed route for `userID` so a map view
+    /// can draw it directly, instead of issuing its own separate
+    /// `MKDirections` request for the same origin/destination this view
+    /// model already resolved during `refresh`.
+    func route(for userID: CKRecord.ID) -> MKRoute? {
+        routeCache[userID]?.result.route
     }
 
     private func computeState(
