@@ -25,13 +25,20 @@ struct TripRecordMapper: CloudKitRecordMappable {
     }
 
     static func makeRecord(from model: Trip, recordID: CKRecord.ID? = nil) -> CKRecord {
-        
+
         guard let recordID = recordID ?? model.id else {
                 preconditionFailure("TripRecordMapper requires a CKRecord.ID when creating a CKRecord.")
             }
 
         let record = makeRecord(with: recordID)
+        apply(model, to: record)
+        return record
+    }
 
+    /// Writes `model`'s fields onto an existing `CKRecord` in place, preserving
+    /// that record's system metadata (change tag) so CloudKit treats the save
+    /// as an update rather than a conflicting insert of an already-existing record.
+    static func apply(_ model: Trip, to record: CKRecord) {
         record[Field.title] = model.title as CKRecordValue
         record[Field.destination] = model.destination as CKRecordValue
         record[Field.startDate] = model.startDate as CKRecordValue
@@ -41,8 +48,6 @@ struct TripRecordMapper: CloudKitRecordMappable {
         record[Field.status] = model.status.rawValue as CKRecordValue
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
-        print(record.allKeys())
-        return record
     }
 
     static func makeModel(from record: CKRecord) throws -> Trip {

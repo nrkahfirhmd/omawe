@@ -114,9 +114,13 @@ final class CloudKitTripService: TripServiceProtocol {
     }
     
     func updateTrip(_ trip: Trip) async throws -> Trip {
-        let record = TripRecordMapper.makeRecord(from: trip)
-        
+        guard let tripID = trip.id else {
+            throw CloudKitError.invalidRecord
+        }
+
         do {
+            let record = try await database.record(for: tripID)
+            TripRecordMapper.apply(trip, to: record)
             let savedRecord = try await database.save(record)
             return try TripRecordMapper.makeModel(from: savedRecord)
         } catch {

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 enum TripAction {
     case create
@@ -29,6 +30,7 @@ struct HomeView: View {
     @State var isTransitioningTopPanel = false
     @State var isProfilePresented = false
     @State private var isKeyboardVisible = false
+    @State private var currentUserID: CKRecord.ID?
 
     var body: some View {
         NavigationStack {
@@ -69,7 +71,8 @@ struct HomeView: View {
             }
             .task {
                 await viewModel.loadTrips()
-                
+                currentUserID = try? await viewModel.currentUserID()
+
                 for metadata in CloudKitShareAcceptanceBridge.drainPendingMetadata() {
                     await viewModel.acceptShare(metadata)
                 }
@@ -440,6 +443,17 @@ struct HomeView: View {
                 isStartingTrip: viewModel.isUpdatingTripStatus,
                 onStartTrip: { trip in
                     Task { await viewModel.startTrip(trip) }
+                },
+                currentUserID: currentUserID,
+                tripActionErrorMessage: viewModel.tripActionErrorMessage,
+                onEndTrip: { trip in
+                    Task { await viewModel.endTrip(trip) }
+                },
+                onLeaveTrip: { trip in
+                    Task { await viewModel.leaveTrip(trip) }
+                },
+                onRemoveParticipant: { participant in
+                    Task { await viewModel.removeParticipant(participant) }
                 }
             )
         } else if selectedTripAction == .join {

@@ -16,6 +16,11 @@ struct TripStatusDetailView: View {
     var onClose: () -> Void
     var isStartingTrip: Bool = false
     var onStartTrip: (Trip) -> Void = { _ in }
+    var currentUserID: CKRecord.ID? = nil
+    var tripActionErrorMessage: String? = nil
+    var onEndTrip: (Trip) -> Void = { _ in }
+    var onLeaveTrip: (Trip) -> Void = { _ in }
+    var onRemoveParticipant: (Participant) -> Void = { _ in }
 
     private var selectedIndex: Int {
         guard !trips.isEmpty else { return 0 }
@@ -58,7 +63,13 @@ struct TripStatusDetailView: View {
                                     members: memberDisplays(for: trip),
                                     totalTripCount: trips.count,
                                     isStartingTrip: isStartingTrip,
-                                    onStartTrip: { onStartTrip(trip) }
+                                    isOwner: isOwner(of: trip),
+                                    currentUserID: currentUserID,
+                                    tripActionErrorMessage: tripActionErrorMessage,
+                                    onStartTrip: { onStartTrip(trip) },
+                                    onEndTrip: { onEndTrip(trip) },
+                                    onLeaveTrip: { onLeaveTrip(trip) },
+                                    onRemoveParticipant: onRemoveParticipant
                                 )
                                 .tag(index)
                             }
@@ -86,6 +97,12 @@ struct TripStatusDetailView: View {
         )
     }
 
+    private func isOwner(of trip: Trip) -> Bool {
+        guard let currentUserID else { return false }
+        if trip.ownerID == currentUserID { return true }
+        return members.contains { $0.tripID == trip.id && $0.userID == currentUserID && $0.role == .owner }
+    }
+
     private func memberDisplays(for trip: Trip) -> [TripStatusMemberDisplay] {
         let matchedMembers = members
             .filter { $0.tripID == trip.id }
@@ -101,7 +118,8 @@ struct TripStatusDetailView: View {
                 TripStatusMemberDisplay(
                     userID: member.userID,
                     role: member.role,
-                    displayName: displayName(for: member.userID, role: member.role, trip: trip)
+                    displayName: displayName(for: member.userID, role: member.role, trip: trip),
+                    participant: member
                 )
             )
         }
@@ -111,7 +129,8 @@ struct TripStatusDetailView: View {
                 TripStatusMemberDisplay(
                     userID: trip.ownerID,
                     role: .owner,
-                    displayName: displayName(for: trip.ownerID, role: .owner, trip: trip)
+                    displayName: displayName(for: trip.ownerID, role: .owner, trip: trip),
+                    participant: nil
                 )
             )
         }
@@ -151,6 +170,7 @@ private struct TripStatusMemberDisplay: Identifiable, Hashable {
     let userID: CKRecord.ID
     let role: ParticipantRole
     let displayName: String
+    let participant: Participant?
 }
 
 private struct TripStatusPageContentView: View {
@@ -158,7 +178,13 @@ private struct TripStatusPageContentView: View {
     let members: [TripStatusMemberDisplay]
     let totalTripCount: Int
     var isStartingTrip: Bool = false
+    var isOwner: Bool = false
+    var currentUserID: CKRecord.ID? = nil
+    var tripActionErrorMessage: String? = nil
     var onStartTrip: () -> Void = {}
+    var onEndTrip: () -> Void = {}
+    var onLeaveTrip: () -> Void = {}
+    var onRemoveParticipant: (Participant) -> Void = { _ in }
 
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
@@ -187,14 +213,38 @@ private struct TripStatusPageContentView: View {
             tripCodeView
                 .padding(.bottom, 12)
 
-//            memberListView
-//                .padding(.bottom, 18)
+            memberListView
+                .padding(.bottom, 12)
+
+            if let tripActionErrorMessage {
+                Text(tripActionErrorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+            }
 
             HStack(spacing: 12) {
                 if trip.status == .notStarted {
                     StartTripButton(isDisabled: isStartingTrip, action: onStartTrip)
+                } else if trip.status == .active {
+                    if isOwner {
+                        Button(role: .destructive, action: onEndTrip) {
+                            Text("End trip")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isStartingTrip)
+                    } else {
+                        Button(role: .destructive, action: onLeaveTrip) {
+                            Text("Leave trip")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 } else {
-                    Text(trip.status == .active ? "Trip is on the way" : "Trip has ended")
+                    Text("Trip has ended")
                         .font(.subheadline.weight(.semibold))
                         .fontWidth(.expanded)
                         .foregroundStyle(.white)
@@ -262,6 +312,15 @@ private struct TripStatusPageContentView: View {
                     }
 
                     Spacer(minLength: 8)
+
+                    if isOwner, let participant = member.participant, member.userID != currentUserID {
+                        Button {
+                            onRemoveParticipant(participant)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                    }
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
