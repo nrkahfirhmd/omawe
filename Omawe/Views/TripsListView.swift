@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct TripsListView: View {
     @State private var selectedSegment: TripListSegment = .totalTrips
     @State private var searchText = ""
     @State private var homeViewModel = HomeViewModel()
+    @State private var currentUserID: CKRecord.ID?
 
     init(initialSegment: TripListSegment = .totalTrips) {
             _selectedSegment = State(initialValue: initialSegment)
@@ -74,7 +76,16 @@ struct TripsListView: View {
                     participantCount: max(
                         homeViewModel.participants.filter { $0.tripID == activeTrip.id }.count,
                         1
-                    )
+                    ),
+                    isOwner: currentUserID.map { homeViewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
+                    isUpdatingTripStatus: homeViewModel.isUpdatingTripStatus,
+                    tripActionErrorMessage: homeViewModel.tripActionErrorMessage,
+                    onEndTrip: {
+                        Task { await homeViewModel.endTrip(activeTrip) }
+                    },
+                    onLeaveTrip: {
+                        Task { await homeViewModel.leaveTrip(activeTrip) }
+                    }
                 )
             } else {
                 ZStack {
@@ -118,6 +129,7 @@ struct TripsListView: View {
         }
         .task {
             await homeViewModel.loadTrips()
+            currentUserID = try? await homeViewModel.currentUserID()
         }
     }
 

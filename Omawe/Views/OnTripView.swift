@@ -11,6 +11,11 @@ import CloudKit
 struct OnTripView: View {
     let trip: Trip
     var participantCount: Int = 1
+    var isOwner: Bool = false
+    var isUpdatingTripStatus: Bool = false
+    var tripActionErrorMessage: String? = nil
+    var onEndTrip: () -> Void = {}
+    var onLeaveTrip: () -> Void = {}
 
     private var shortOwnerID: String {
         String(trip.ownerID.recordName.suffix(6))
@@ -94,6 +99,28 @@ struct OnTripView: View {
                 .background(GridGradientBackground(color: Theme.tertiaryBox))
                 .border(Color.white.opacity(0.1), width: 2)
                 .clipShape(RoundedRectangle(cornerRadius: 35))
+
+                if let tripActionErrorMessage {
+                    Text(tripActionErrorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                if isOwner {
+                    Button(role: .destructive, action: onEndTrip) {
+                        Text("End trip")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isUpdatingTripStatus)
+                } else {
+                    Button(role: .destructive, action: onLeaveTrip) {
+                        Text("Leave trip")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
             .padding(.horizontal, 24)
         }

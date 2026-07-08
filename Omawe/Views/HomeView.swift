@@ -431,9 +431,32 @@ struct HomeView: View {
     
     // MARK: - Top panel
     
+    /// A trip in progress takes over the panel entirely — no point paging
+    /// through not-started trips while one is already active.
+    private var activeTrip: Trip? {
+        viewModel.trips.first { $0.status == .active }
+    }
+
     @ViewBuilder
     private var topPanelView: some View {
-        if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
+        if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil, let activeTrip {
+            OnTripView(
+                trip: activeTrip,
+                participantCount: max(
+                    viewModel.participants.filter { $0.tripID == activeTrip.id }.count,
+                    1
+                ),
+                isOwner: currentUserID.map { viewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
+                isUpdatingTripStatus: viewModel.isUpdatingTripStatus,
+                tripActionErrorMessage: viewModel.tripActionErrorMessage,
+                onEndTrip: {
+                    Task { await viewModel.endTrip(activeTrip) }
+                },
+                onLeaveTrip: {
+                    Task { await viewModel.leaveTrip(activeTrip) }
+                }
+            )
+        } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
             TripStatusDetailView(
                 trips: viewModel.trips,
                 members: viewModel.participants,
