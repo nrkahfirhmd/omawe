@@ -11,6 +11,8 @@ import CloudKit
 struct OnTripView: View {
     let trip: Trip
     var participantCount: Int = 1
+    var etaMinutes: Int? = nil
+    var distanceKm: Double? = nil
     var isOwner: Bool = false
     var isUpdatingTripStatus: Bool = false
     var tripActionErrorMessage: String? = nil
@@ -79,7 +81,7 @@ struct OnTripView: View {
                     Label(trip.destination.isEmpty ? "Location unavailable" : trip.destination, systemImage: "location")
                         .font(.caption1().bold())
 
-                    HeaderStats(peopleCount: participantCount)
+                    HeaderStats(peopleCount: participantCount, etaMinutes: etaMinutes, distanceKm: distanceKm)
 
                     NavigationLink {
                         LocationView()
@@ -130,6 +132,8 @@ struct OnTripView: View {
 
 private struct HeaderStats: View {
     var peopleCount: Int = 1
+    var etaMinutes: Int? = nil
+    var distanceKm: Double? = nil
 
     var body: some View {
         HStack(spacing: 0) {
@@ -139,15 +143,15 @@ private struct HeaderStats: View {
                 .frame(height: 40)
                 .background(Color.white)
 
-            // ETA/distance need TripStatusViewModel's ETA math (Sprint 2 scope,
-            // not built yet) — placeholder rather than fabricated numbers.
-            stat(title: "ETA", value: "--", color: .yellow)
+            // "--" until TripStatusViewModel (ETA-1) has computed a real
+            // reading for this device — not a fabricated number.
+            stat(title: "ETA", value: etaMinutes.map { "\($0)m" } ?? "--", color: .yellow)
 
             Divider()
                 .frame(height: 40)
                 .background(Color.white)
 
-            stat(title: "Distance", value: "--", color: .yellow)
+            stat(title: "Distance", value: distanceKm.map { String(format: "%.1fkm", $0) } ?? "--", color: .yellow)
         }
     }
 

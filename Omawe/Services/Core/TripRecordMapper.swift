@@ -20,6 +20,8 @@ struct TripRecordMapper: CloudKitRecordMappable {
         static let ownerID = "ownerID"
         static let invitationCode = "invitationCode"
         static let status = "status"
+        static let destinationLatitude = "destinationLatitude"
+        static let destinationLongitude = "destinationLongitude"
         static let createdAt = "createdAt"
         static let updatedAt = "updatedAt"
     }
@@ -46,6 +48,12 @@ struct TripRecordMapper: CloudKitRecordMappable {
         record[Field.ownerID] = model.ownerID.recordName as CKRecordValue
         record[Field.invitationCode] = model.invitationCode as CKRecordValue
         record[Field.status] = model.status.rawValue as CKRecordValue
+        if let destinationLatitude = model.destinationLatitude {
+            record[Field.destinationLatitude] = destinationLatitude as CKRecordValue
+        }
+        if let destinationLongitude = model.destinationLongitude {
+            record[Field.destinationLongitude] = destinationLongitude as CKRecordValue
+        }
         record[Field.createdAt] = model.createdAt as CKRecordValue
         record[Field.updatedAt] = model.updatedAt as CKRecordValue
     }
@@ -77,6 +85,8 @@ struct TripRecordMapper: CloudKitRecordMappable {
             ownerID: CKRecord.ID(recordName: ownerRecordName),
             invitationCode: invitationCode,
             status: status,
+            destinationLatitude: record[Field.destinationLatitude] as? Double,
+            destinationLongitude: record[Field.destinationLongitude] as? Double,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

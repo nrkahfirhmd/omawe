@@ -77,6 +77,8 @@ struct TripsListView: View {
                         homeViewModel.participants.filter { $0.tripID == activeTrip.id }.count,
                         1
                     ),
+                    etaMinutes: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
+                    distanceKm: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
                     isOwner: currentUserID.map { homeViewModel.isOwner(of: activeTrip, userID: $0) } ?? false,
                     isUpdatingTripStatus: homeViewModel.isUpdatingTripStatus,
                     tripActionErrorMessage: homeViewModel.tripActionErrorMessage,
@@ -87,6 +89,15 @@ struct TripsListView: View {
                         Task { await homeViewModel.leaveTrip(activeTrip) }
                     }
                 )
+                .task(id: activeTrip.id) {
+                    // See HomeView's equivalent .task — polls at roughly
+                    // LOC-1's propagation budget pending a real push-triggered
+                    // recompute path.
+                    while !Task.isCancelled {
+                        await homeViewModel.refreshTripStatus(for: activeTrip)
+                        try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    }
+                }
             } else {
                 ZStack {
                     Image(.homeBackground)

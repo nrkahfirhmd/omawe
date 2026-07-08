@@ -7,7 +7,7 @@ import CloudKit
 
 protocol LocationSyncServiceProtocol {
     func saveLocation(_ location: LocationSample) async throws
-    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: Location]
+    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample]
     func subscribeToLocationUpdates(for tripID: CKRecord.ID) async throws
 }
 
@@ -48,7 +48,7 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
         }
     }
 
-    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: Location] {
+    func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample] {
         let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
         let query = CKQuery(recordType: LocationRecordMapper.recordType, predicate: predicate)
 
@@ -76,7 +76,6 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
             }
 
             return Self.latestByUser(from: samples)
-                .mapValues { Location(latitude: $0.latitude, longitude: $0.longitude) }
         } catch let error as CKError {
             throw mapCKError(error)
         } catch {

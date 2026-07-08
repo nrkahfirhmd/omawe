@@ -22,6 +22,8 @@ class HomeViewModel {
     private let locationService = LocationService()
     private let locationSyncService = CloudKitLocationSyncService()
     private let locationSharingCoordinator: LocationSharingCoordinator
+    private let tripStatusViewModel: TripStatusViewModel
+    private let liveActivityManager = LiveActivityLifecycleManager()
     private var cachedUserID: CKRecord.ID?
 
     init() {
@@ -29,6 +31,7 @@ class HomeViewModel {
             locationService: locationService,
             syncService: locationSyncService
         )
+        tripStatusViewModel = TripStatusViewModel(locationSyncService: locationSyncService)
     }
 
     // MARK: - Trip Draft
@@ -128,6 +131,8 @@ class HomeViewModel {
                 endDate: createTripDraft.arrivalDate,
                 ownerID: ownerID,
                 invitationCode: invitationCode,
+                destinationLatitude: createTripDraft.coordinate?.latitude,
+                destinationLongitude: createTripDraft.coordinate?.longitude,
                 createdAt: Date(),
                 updatedAt: Date()
             )
@@ -277,6 +282,41 @@ class HomeViewModel {
         }
     }
 
+    // MARK: - ETA / Live Activity (Sprint 2)
+
+    /// This device's own computed ETA/distance/status for `trip`, once
+    /// available — nil until `refreshTripStatus` has run at least once with
+    /// a fresh location for the current user.
+    func currentUserTripState(for trip: Trip, userID: CKRecord.ID) -> ParticipantTripState? {
+        tripStatusViewModel.participantStates[userID]
+    }
+
+    /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) for
+    /// `trip` and pushes the aggregated result into the Live Activity
+    /// (ETA-3/ETA-4). Call this whenever new location data is expected —
+    /// LOC-1's sync tick/subscription fire — not from an independent fixed
+    /// timer.
+    func refreshTripStatus(for trip: Trip, isBackgrounded: Bool = false) async {
+        guard trip.status == .active,
+              let tripID = trip.id,
+              let destination = trip.destinationCoordinate else { return }
+
+        await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
+
+        let states = Array(tripStatusViewModel.participantStates.values)
+        let displayNames = Dictionary(
+            uniqueKeysWithValues: participants
+                .filter { $0.tripID == tripID }
+                .compactMap { participant -> (CKRecord.ID, String)? in
+                    guard let displayName = participant.displayName else { return nil }
+                    return (participant.userID, displayName)
+                }
+        )
+
+        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: displayNames)
+        await liveActivityManager.update(content)
+    }
+
     // MARK: - Trip Lifecycle
 
     /// Transitions a trip to `.active` and starts publishing this device's
@@ -302,10 +342,35 @@ class HomeViewModel {
             locationSharingCoordinator.startSharing(tripID: tripID, userID: userID)
             try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
 
+            startLiveActivity(for: updatedTrip)
+
             await TripStore.shared.loadTrips()
         } catch {
             tripActionErrorMessage = error.localizedDescription
         }
+    }
+
+    /// `Activity.request` failure (Live Activities disabled in Settings, or
+    /// the app is at ActivityKit's concurrent-activity limit) is a soft
+    /// failure — trip start must succeed regardless of whether the Live
+    /// Activity does.
+    private func startLiveActivity(for trip: Trip) {
+        guard let tripID = trip.id else { return }
+
+        let totalMates = max(1, participants.filter { $0.tripID == tripID }.count)
+        let attributes = OmaweWidgetAttributes(
+            tripName: trip.title,
+            destinationName: trip.destination,
+            totalMates: totalMates
+        )
+        let initialContent = OmaweWidgetAttributes.ContentState(
+            statusMessage: "Waiting for location updates",
+            etaMinutes: 0,
+            arrivedCount: 0,
+            distanceKm: 0
+        )
+
+        liveActivityManager.start(attributes: attributes, initialContent: initialContent)
     }
 
     /// Orchestrates TRIP-3's "End Trip" flow: stop location sharing, then mark
@@ -330,6 +395,14 @@ class HomeViewModel {
             updatedTrip.status = .ended
             updatedTrip.updatedAt = Date()
             _ = try await tripService.updateTrip(updatedTrip)
+
+            let arrivedCount = tripStatusViewModel.participantStates.values.count { $0.status == .arrived }
+            await liveActivityManager.end(OmaweWidgetAttributes.ContentState(
+                statusMessage: "Trip ended",
+                etaMinutes: 0,
+                arrivedCount: arrivedCount,
+                distanceKm: 0
+            ))
 
             await TripStore.shared.loadTrips()
         } catch {
