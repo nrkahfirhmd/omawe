@@ -71,45 +71,65 @@ struct OmaweWidgetLiveActivity: Widget {
                 
                 // Expanded UI - Bottom (Route + Alert/Report)
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
-                        // Route progress with mate markers
-                        RouteProgressView(
-                            mates: context.state.mates
+                    ZStack {
+                        PolkaDotBackground(
+                            dotSize: 3,
+                            spacing: 10,
+                            color: Color(red: 0.01, green: 0.78, blue: 0.70).opacity(1) // LATheme.teal
                         )
-                        .padding(.horizontal,10)
+                        .offset(y: -15)
                         
-                        // Alert icon + Report button
-                        HStack(spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.red)
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white)
-                            }
-                            .frame(width: 44, height: 44)
+                        .mask {
+                            Ellipse()
+                                .padding(.horizontal, 20)
+                                .blur(radius: 50)
+                                .scaleEffect(x: 1, y: 0.35)
+                                .offset(y: -30)
+                        }
+                        
+//                        .padding(.bottom, 40)
+                        .frame(maxWidth: .infinity, maxHeight: 100)
+                        
+                        VStack(spacing: 8) {
+                            // Route progress with mate markers
+                            RouteProgressView(
+                                mates: context.state.mates
+                            )
+                            .padding(.horizontal,10)
                             
-                            Link(destination: URL(string: "omawe://report")!) {
-                                HStack(spacing: 7) {
-                                    Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                            // Alert icon + Report button
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.red)
+                                    Image(systemName: "exclamationmark.triangle.fill")
                                         .font(.subheadline)
-                                        .foregroundStyle(.white)
-                                    Text("Report")
-                                        .font(.subheadline)
-                                        .fontWeight(.bold)
-                                        .fontWidth(.expanded)
                                         .foregroundStyle(.white)
                                 }
-                                .foregroundStyle(.black)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(.orange)
-                                .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                                .frame(width: 44, height: 44)
+                                
+                                Link(destination: URL(string: "omawe://report")!) {
+                                    HStack(spacing: 7) {
+                                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.white)
+                                        Text("Report")
+                                            .font(.subheadline)
+                                            .fontWeight(.bold)
+                                            .fontWidth(.expanded)
+                                            .foregroundStyle(.white)
+                                    }
+                                    .foregroundStyle(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(.orange)
+                                    .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                                }
                             }
                         }
+                        .padding(.top, 4)
+                        .padding(.horizontal, 10)
                     }
-                    .padding(.top, 4)
-                    .padding(.horizontal, 10)
                 }
             }  compactLeading: {
                 // Compact Left: People icon + ETA
@@ -187,19 +207,26 @@ extension OmaweWidgetAttributes.ContentState {
 }
 
 
-#Preview("Dynamic Island Expanded", as: .dynamicIsland(.expanded), using: OmaweWidgetAttributes(
-    tripName: "Ex-Boyfriends Celebration!",
-    destinationName: "Toko Kopi Jaya, Kuta",
+#Preview("Dynamic Island - 6 Mates (Expanded)", as: .dynamicIsland(.expanded), using: OmaweWidgetAttributes(
+    tripName: "Bali Road Trip",
+    destinationName: "Uluwatu Temple",
     totalMates: 6
 )) {
     OmaweWidgetLiveActivity()
 } contentStates: {
     OmaweWidgetAttributes.ContentState(
-        statusMessage: "Bintang is 5 mins away",
-        myEtaMinutes: 12,
-        myDistanceKm: 15.0,
-        arrivedCount: 2,
-        mates: []
+        statusMessage: "Everyone is on the move",
+        myEtaMinutes: 20,
+        myDistanceKm: 10.0,
+        arrivedCount: 0,
+        mates: [
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true),
+            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, isMe: false)
+        ]
     )
 }
 
