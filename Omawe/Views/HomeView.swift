@@ -210,31 +210,35 @@ struct HomeView: View {
     /// Falls back to a person icon if no name is available.
     private var avatarView: some View {
         let session = UserSession.shared
-        let initials = session.displayName?.first.map(String.init) ?? nil
+        let initials = session.displayName?.first.map(String.init)
 
-        return ZStack {
-            Circle()
-                .frame(width: 120)
-                .foregroundColor(.white)
-                .shadow(color: .init(hex: "#00C3FF").opacity(0.5), radius: 21, x: 0, y: 0)
-            Image(.frame74)
+        return Button {
+            isProfilePresented = true
+        } label: {
+            ZStack {
+                Circle()
+                    .frame(width: 120)
+                    .foregroundColor(.white)
+                    .shadow(color: .init(hex: "#00C3FF").opacity(0.5),
+                            radius: 21)
 
-            // Show the user's initial if a name was shared during Apple Sign In,
-            // otherwise fall back to the existing avatar asset.
-            if let initials {
-                Text(initials.uppercased())
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
-                            startPoint: .top,
-                            endPoint: .bottom
+                Image(.frame74)
+
+                if let initials {
+                    Text(initials.uppercased())
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: "03B9D6"), Color(hex: "7AE8FF")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
-                    .frame(width: 60, height: 60)
-                    .glassEffect(.clear, in: .circle)
-            } else {
-                Image(.avatar)
+                        .frame(width: 60, height: 60)
+                        .glassEffect(.clear, in: .circle)
+                } else {
+                    Image(.avatar)
+                }
             }
         }
         .buttonStyle(.plain)
