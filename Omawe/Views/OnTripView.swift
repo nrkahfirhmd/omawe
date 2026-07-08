@@ -11,6 +11,8 @@ import CloudKit
 struct OnTripView: View {
     let trip: Trip
     var participantCount: Int = 1
+    var participants: [Participant] = []
+    var currentUserID: CKRecord.ID? = nil
     var etaMinutes: Int? = nil
     var distanceKm: Double? = nil
     var isOwner: Bool = false
@@ -84,7 +86,7 @@ struct OnTripView: View {
                     HeaderStats(peopleCount: participantCount, etaMinutes: etaMinutes, distanceKm: distanceKm)
 
                     NavigationLink {
-                        LocationView()
+                        LocationView(trip: trip, participants: participants, currentUserID: currentUserID)
                     } label: {
                         ZStack {
                             Capsule()
