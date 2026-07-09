@@ -376,12 +376,17 @@ class HomeViewModel {
               let destination = trip.destinationCoordinate else { return }
 
         await ensureLocationSharing(for: trip)
-        
-        // Fetch new participants on each polling tick so newly joined members appear
-        await TripStore.shared.loadParticipants()
 
         let previousStates = tripStatusViewModel.participantStates
+
+        // Fetch new participants on each polling tick so newly joined
+        // members appear, in parallel with the location/ETA refresh below
+        // instead of serially before it — these are independent CloudKit
+        // round trips, so running them one after another only doubled every
+        // tick's latency for no reason.
+        async let participantsReload: Void = TripStore.shared.loadParticipants()
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination, isBackgrounded: isBackgrounded)
+        await participantsReload
         etaAccuracySampler.recordTransitions(previous: previousStates, updated: tripStatusViewModel.participantStates)
 
         let states = Array(tripStatusViewModel.participantStates.values)

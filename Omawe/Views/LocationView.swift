@@ -138,14 +138,23 @@ struct LocationView: View {
             }
             .task(id: trip.id) {
                 guard let tripID = trip.id else { return }
-                // Polls at roughly LOC-1's propagation budget, same cadence
-                // as HomeView's ETA refresh — there's no push-triggered
-                // recompute path yet.
+                // 5s backstop poll — the CKQuerySubscription push below
+                // (`.onReceive`) drives the actually-fast path, this is just
+                // the fallback for missed/throttled pushes. Safe to be this
+                // tight now that each tick is a single fetch (locations are
+                // upserted per-participant, not appended forever) instead of
+                // two redundant full-history fetches.
                 while !Task.isCancelled {
-                    await refreshParticipantLocations(tripID: tripID)
-                    await refreshParticipantStatuses(tripID: tripID)
+                    await refreshParticipantAndStatuses(tripID: tripID)
                     fitRegionIfParticipantsChanged()
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: LocationUpdateNotificationBridge.notificationName)) { _ in
+                guard let tripID = trip.id else { return }
+                Task {
+                    await refreshParticipantAndStatuses(tripID: tripID)
+                    fitRegionIfParticipantsChanged()
                 }
             }
 
@@ -266,25 +275,27 @@ struct LocationView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    /// Fetches every participant's latest location for annotations. Route
-    /// computation is no longer this view's job (NFR-4) — `refreshParticipantStatuses`
-    /// below drives `TripStatusViewModel`, which already resolves and caches
-    /// the current user's route for ETA purposes; the map just reads it.
-    private func refreshParticipantLocations(tripID: CKRecord.ID) async {
+    /// Fetches every participant's latest location once per tick and feeds
+    /// both this view's map annotations and `TripStatusViewModel`'s ETA/
+    /// distance/status computation from the same result — these used to be
+    /// two independent `fetchLatestLocations` round trips per tick (map pins
+    /// fetched their own copy, then `TripStatusViewModel.refresh` fetched it
+    /// again internally), doubling every tick's CloudKit latency for no
+    /// reason since both needed the exact same data.
+    private func refreshParticipantAndStatuses(tripID: CKRecord.ID) async {
         do {
             let samples = try await locationSyncService.fetchLatestLocations(for: tripID)
             participantSamples = samples
+
+            guard let destination = trip.destinationCoordinate else { return }
+            await tripStatusViewModel.refresh(
+                tripID: tripID,
+                destination: destination,
+                prefetchedLocations: samples
+            )
         } catch {
             return
         }
-    }
-
-    /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) so
-    /// `TripHeaderCard` can show each person's live status, not just pin
-    /// positions on the map.
-    private func refreshParticipantStatuses(tripID: CKRecord.ID) async {
-        guard let destination = trip.destinationCoordinate else { return }
-        await tripStatusViewModel.refresh(tripID: tripID, destination: destination)
     }
 
     /// NFR-1: derives this participant's display state (normal/stale/

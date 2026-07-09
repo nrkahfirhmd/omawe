@@ -97,13 +97,15 @@ struct TripsListView: View {
                     }
                 )
                 .task(id: activeTrip.id) {
-                    // See HomeView's equivalent .task — polls at roughly
-                    // LOC-1's propagation budget pending a real push-triggered
-                    // recompute path.
+                    // See HomeView's equivalent .task — 5s backstop poll,
+                    // push-driven refresh below covers the fast path.
                     while !Task.isCancelled {
                         await homeViewModel.refreshTripStatus(for: activeTrip)
-                        try? await Task.sleep(nanoseconds: 20_000_000_000)
+                        try? await Task.sleep(nanoseconds: 5_000_000_000)
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: LocationUpdateNotificationBridge.notificationName)) { _ in
+                    Task { await homeViewModel.refreshTripStatus(for: activeTrip) }
                 }
             } else {
                 ZStack {

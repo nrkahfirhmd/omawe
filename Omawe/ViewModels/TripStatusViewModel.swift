@@ -63,22 +63,72 @@ final class TripStatusViewModel {
     /// ETA/distance/status against `destination`. Call this whenever new
     /// location data is expected (LOC-1 sync tick/subscription fire) — not
     /// from an independent fixed timer.
-    func refresh(tripID: CKRecord.ID, destination: CLLocationCoordinate2D, isBackgrounded: Bool = false) async {
+    ///
+    /// `prefetchedLocations` lets a caller that already fetched this tick's
+    /// locations for its own purposes (e.g. `LocationView` populating map
+    /// pins) hand them over instead of this method issuing its own second,
+    /// redundant `fetchLatestLocations` round trip for the same data.
+    func refresh(
+        tripID: CKRecord.ID,
+        destination: CLLocationCoordinate2D,
+        isBackgrounded: Bool = false,
+        prefetchedLocations: [CKRecord.ID: LocationSample]? = nil
+    ) async {
         do {
-            let locations = try await locationSyncService.fetchLatestLocations(for: tripID)
+            let locations: [CKRecord.ID: LocationSample]
+            if let prefetchedLocations {
+                locations = prefetchedLocations
+            } else {
+                locations = try await locationSyncService.fetchLatestLocations(for: tripID)
+            }
             errorMessage = nil
 
+            // Route resolution is the expensive, network-bound step
+            // (`MKDirections` per participant) — fan it out concurrently
+            // instead of awaiting one participant at a time, which used to
+            // multiply this tick's latency by participant count. Only the
+            // pure network call runs inside the task group; `routeCache` and
+            // `statusTrackers` are read/written back on this single task
+            // afterward so no shared mutable state is touched concurrently.
+            let localRouteCache = routeCache
+            let resolved: [(userID: CKRecord.ID, sample: LocationSample, result: RouteResult?, usedFallback: Bool, newCacheEntry: (CLLocationCoordinate2D, RouteResult)?)] = await withTaskGroup(of: (CKRecord.ID, LocationSample, RouteResult?, Bool, (CLLocationCoordinate2D, RouteResult)?).self) { group in
+                for (userID, sample) in locations {
+                    group.addTask { [routeProvider, movementThresholdMeters] in
+                        let origin = CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude)
+                        let (result, usedFallback, newEntry) = await Self.resolveRoute(
+                            origin: origin,
+                            destination: destination,
+                            cached: localRouteCache[userID],
+                            movementThresholdMeters: movementThresholdMeters,
+                            routeProvider: routeProvider
+                        )
+                        return (userID, sample, result, usedFallback, newEntry)
+                    }
+                }
+
+                var collected: [(CKRecord.ID, LocationSample, RouteResult?, Bool, (CLLocationCoordinate2D, RouteResult)?)] = []
+                for await item in group {
+                    collected.append(item)
+                }
+                return collected
+            }
+
             var updated: [CKRecord.ID: ParticipantTripState] = [:]
-            for (userID, sample) in locations {
-                updated[userID] = await computeState(
+            for (userID, sample, result, usedFallback, newCacheEntry) in resolved {
+                if let newCacheEntry {
+                    routeCache[userID] = newCacheEntry
+                }
+                updated[userID] = finalizeState(
                     userID: userID,
                     sample: sample,
                     destination: destination,
+                    result: result,
+                    usedFallback: usedFallback,
                     isBackgrounded: isBackgrounded
                 )
             }
             participantStates = updated
-            
+
             let currentMax = updated.values.map { $0.distanceKm }.max() ?? 0.0
             if currentMax > maxDistanceEverSeen {
                 maxDistanceEverSeen = currentMax
@@ -96,14 +146,20 @@ final class TripStatusViewModel {
         routeCache[userID]?.result.route
     }
 
-    private func computeState(
+    /// Turns an already-resolved route (or fallback) into the participant's
+    /// discrete status/ETA/distance. Reads/writes `statusTrackers` — only
+    /// ever called serially from `refresh`, after the concurrent route
+    /// fan-out has completed, so this dictionary is never touched from more
+    /// than one task at a time.
+    private func finalizeState(
         userID: CKRecord.ID,
         sample: LocationSample,
         destination: CLLocationCoordinate2D,
+        result: RouteResult?,
+        usedFallback: Bool,
         isBackgrounded: Bool
-    ) async -> ParticipantTripState {
+    ) -> ParticipantTripState {
         let origin = CLLocationCoordinate2D(latitude: sample.latitude, longitude: sample.longitude)
-        let (result, usedFallback) = await resolveRoute(userID: userID, origin: origin, destination: destination)
 
         let tracker = statusTrackers[userID] ?? {
             let tracker = ParticipantStatusTracker()
@@ -143,28 +199,33 @@ final class TripStatusViewModel {
 
     /// Route-succeeds-use-it / route-fails-use-straight-line, throttled by
     /// `movementThresholdMeters`. Returns `usedFallback: true` whenever
-    /// `MKDirections` was skipped or failed for this tick.
-    private func resolveRoute(
-        userID: CKRecord.ID,
+    /// `MKDirections` was skipped or failed for this tick. `static` and
+    /// parameterized (no `self` access) so it's safe to call concurrently
+    /// from multiple tasks in `refresh`'s route fan-out — it touches no
+    /// shared mutable state; the caller merges `newCacheEntry` back into
+    /// `routeCache` serially afterward.
+    private static func resolveRoute(
         origin: CLLocationCoordinate2D,
-        destination: CLLocationCoordinate2D
-    ) async -> (RouteResult?, usedFallback: Bool) {
-        if let cached = routeCache[userID] {
+        destination: CLLocationCoordinate2D,
+        cached: (coordinate: CLLocationCoordinate2D, result: RouteResult)?,
+        movementThresholdMeters: CLLocationDistance,
+        routeProvider: RouteProviding
+    ) async -> (result: RouteResult?, usedFallback: Bool, newCacheEntry: (CLLocationCoordinate2D, RouteResult)?) {
+        if let cached {
             let moved = LocationCore.straightLineDistance(
                 from: Location(coordinate: cached.coordinate),
                 to: Location(coordinate: origin)
             )
             if moved < movementThresholdMeters {
-                return (cached.result, false)
+                return (cached.result, false, nil)
             }
         }
 
         do {
             let result = try await routeProvider.route(from: origin, to: destination)
-            routeCache[userID] = (origin, result)
-            return (result, false)
+            return (result, false, (origin, result))
         } catch {
-            return (nil, true)
+            return (nil, true, nil)
         }
     }
 }

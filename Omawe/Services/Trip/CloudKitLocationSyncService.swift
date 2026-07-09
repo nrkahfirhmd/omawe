@@ -41,8 +41,15 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
     /// success/failure-with-attempt-count metric NFR-3 requires to actually
     /// verify the 99% sync-success target, not just assume it.
     func saveLocation(_ location: LocationSample) async throws {
+        // Deterministic per-(trip, user) record name — this is an upsert
+        // (`savePolicy: .changedKeys` below), not an insert. A fresh UUID
+        // per save used to leave every prior sample in the zone forever, so
+        // `fetchLatestLocations` scanned the trip's entire location history
+        // on every poll tick — a query that only got slower the longer a
+        // trip ran. One record per participant keeps that query O(participant
+        // count) for the whole trip instead of O(samples ever written).
         let recordID = CKRecord.ID(
-            recordName: UUID().uuidString,
+            recordName: "location-\(location.tripID.recordName)-\(location.userID.recordName)",
             zoneID: location.tripID.zoneID
         )
 

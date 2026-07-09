@@ -26,7 +26,7 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
     }
 
     func testAggregate_emptyParticipants_returnsDefinedDefaultNotCrash() {
-        let content = WidgetContentStateAggregator.aggregate(participantStates: [], displayNames: [:])
+        let content = WidgetContentStateAggregator.aggregate(participantStates: [], displayNames: [:], trackScaleKm: 0)
 
         XCTAssertEqual(content.arrivedCount, 0)
         XCTAssertEqual(content.myEtaMinutes, 0)
@@ -40,7 +40,7 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
             state(user: "b", etaMinutes: 0, distanceKm: 0.02, status: .arrived)
         ]
 
-        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: [:])
+        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: [:], trackScaleKm: 0)
 
         XCTAssertEqual(content.arrivedCount, 2)
         XCTAssertEqual(content.statusMessage, "Everyone has arrived")
@@ -54,6 +54,7 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
         let content = WidgetContentStateAggregator.aggregate(
             participantStates: [near, far, arrived],
             displayNames: ["far".ckRecordID: "Bintang"],
+            trackScaleKm: 0,
             currentUserID: "near".ckRecordID
         )
 
@@ -66,7 +67,7 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
     func testAggregate_missingDisplayName_fallsBackToGenericName() {
         let states = [state(user: "unknown", etaMinutes: 5, distanceKm: 1, status: .onTheWay)]
 
-        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: [:])
+        let content = WidgetContentStateAggregator.aggregate(participantStates: states, displayNames: [:], trackScaleKm: 0)
 
         XCTAssertTrue(content.statusMessage.contains("Someone"))
     }
@@ -76,7 +77,8 @@ final class WidgetContentStateAggregatorTests: XCTestCase {
 
         let content = WidgetContentStateAggregator.aggregate(
             participantStates: states,
-            displayNames: ["offline-user".ckRecordID: "Kahfi"]
+            displayNames: ["offline-user".ckRecordID: "Kahfi"],
+            trackScaleKm: 0
         )
 
         XCTAssertTrue(content.statusMessage.contains("unavailable"))

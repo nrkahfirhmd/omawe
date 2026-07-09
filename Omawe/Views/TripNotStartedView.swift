@@ -15,6 +15,7 @@ struct TripData: Identifiable {
     var title: String
     var subtitle: String
     var people: Int
+    var members: [String] = []
     var location: String
     var footerTitle: String
 }
@@ -57,8 +58,8 @@ struct TripNotStarted: View {
                             HStack(spacing: 12) {
                                 StartTripButton()
                                 
-                                Button {
-                                    
+                                NavigationLink {
+                                    TripDetailView(trip: trips[currentPage], members: currentTrip.members)
                                 } label: {
                                     Image(systemName: "list.bullet.indent")
                                         .font(.largeTitle)
@@ -156,5 +157,44 @@ struct StartTripButton: View {
                 .opacity(isDisabled ? 0.5 : 1)
         }
         .disabled(isDisabled)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        TripNotStarted(
+            trips: [
+                TripData(
+                    theme: Theme.themePrimary,
+                    icon: "birthday.cake.fill",
+                    title: "Ex-Boyfriends Celebration",
+                    subtitle: "27 Jun 2026 • 11:30",
+                    people: 12,
+                    members: (1...12).map { "Member \($0)" },
+                    location: "Toko Kopi Jaya, Kuta",
+                    footerTitle: "Ready to start"
+                ),
+                TripData(
+                    theme: Theme.themeSecondary,
+                    icon: "mountain.2.fill",
+                    title: "Morning Hike",
+                    subtitle: "2 Jul 2026 • 06:00",
+                    people: 6,
+                    members: (1...6).map { "Member \($0)" },
+                    location: "Mount Batur",
+                    footerTitle: "Starts in 2 hours"
+                ),
+                TripData(
+                    theme: Theme.themeTertiary,
+                    icon: "car.fill",
+                    title: "Road Trip Bali",
+                    subtitle: "5 Jul 2026 • 09:00",
+                    people: 4,
+                    members: (1...4).map { "Member \($0)" },
+                    location: "Ubud",
+                    footerTitle: "Waiting for everyone"
+                )
+            ]
+        )
     }
 }

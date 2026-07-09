@@ -468,14 +468,19 @@ struct HomeView: View {
                 }
             )
             .task(id: activeTrip.id) {
-                // Polls at roughly LOC-1's location-propagation budget rather
-                // than a single one-shot refresh — there's no push-triggered
-                // recompute path yet (that's LOC-1/ETA-4's shared push-token
-                // gap), so this is the interim data-driven-ish substitute.
+                // 5s backstop poll — the CKQuerySubscription push below
+                // (`.onReceive`) drives the fast path; this only covers
+                // missed/throttled pushes. Safe at this cadence now that
+                // each tick is a bounded per-participant fetch (not a
+                // full-history scan) with route lookups fanned out
+                // concurrently instead of one participant at a time.
                 while !Task.isCancelled {
                     await viewModel.refreshTripStatus(for: activeTrip)
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: LocationUpdateNotificationBridge.notificationName)) { _ in
+                Task { await viewModel.refreshTripStatus(for: activeTrip) }
             }
         } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
             TripStatusDetailView(
