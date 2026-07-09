@@ -34,6 +34,14 @@ struct LocationView: View {
     // Shared with TripHeaderCard's "Gonna be late" toggle — either entry
     // point sets the same self-reported status for this device's user.
     @State private var isReportedLate = false
+    // Shared with TripHeaderCard's status display — set by the danger
+    // button below, distinct from (and more urgent than) `isReportedLate`.
+    @State private var needsHelp = false
+    // Transient confirmation toast — separate from the persistent
+    // `isReportedLate`/`needsHelp` status so it can auto-dismiss without
+    // clearing the underlying report.
+    @State private var confirmationMessage: String? = nil
+    @State private var bannerDismissTask: Task<Void, Never>?
     // Full samples (not just coordinates) so NFR-1 can tell "never received"
     // (absent from this dict) apart from "received, but old" (present with a
     // stale `recordedAt`) — a plain `[CKRecord.ID: Location]` couldn't
@@ -66,6 +74,19 @@ struct LocationView: View {
     /// lighter notice, fully-authorized shows nothing.
     private var permissionDisplayState: PermissionDisplayState {
         PermissionDisplayState.from(locationService.authorizationState)
+    }
+
+    /// Shows `text` as a toast and auto-dismisses it after a few seconds.
+    /// Cancels any pending dismiss first so back-to-back taps (Report then
+    /// the danger button) don't race and clear each other's message early.
+    private func showConfirmationBanner(_ text: String) {
+        bannerDismissTask?.cancel()
+        withAnimation { confirmationMessage = text }
+        bannerDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation { confirmationMessage = nil }
+        }
     }
 
     /// Participants other than the current device — the current user is
@@ -136,7 +157,8 @@ struct LocationView: View {
                     participants: participants,
                     participantStates: tripStatusViewModel.participantStates,
                     currentUserID: currentUserID,
-                    isReportedLate: $isReportedLate
+                    isReportedLate: $isReportedLate,
+                    needsHelp: $needsHelp
                 )
                     .onTapGesture {
                         HapticManager.shared.boom()
@@ -154,18 +176,19 @@ struct LocationView: View {
                 Spacer()
 
                 VStack(spacing: 18) {
-                    if isReportedLate {
+                    if let confirmationMessage {
                         HStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.red)
 
-                            Text("Your report has been recorded")
+                            Text(confirmationMessage)
                                 .foregroundStyle(.red)
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(.white.opacity(0.9))
                         .clipShape(Capsule())
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
 
                     HStack(alignment: .bottom) {
@@ -186,7 +209,13 @@ struct LocationView: View {
 
                         Button {
                             HapticManager.shared.boom()
-                            isReportedLate = true
+                            isReportedLate.toggle()
+                            if isReportedLate {
+                                needsHelp = false
+                                showConfirmationBanner("Your report has been recorded")
+                            } else {
+                                showConfirmationBanner("Your report has been cleared")
+                            }
                         } label: {
                             Text(isReportedLate ? "Reported" : "Report")
                                 .font(.headline)
@@ -205,17 +234,24 @@ struct LocationView: View {
                                     Capsule()
                                 )
                         }
-                        .disabled(isReportedLate)
 
                         Spacer()
 
                         Button {
+                            HapticManager.shared.boom()
+                            needsHelp.toggle()
+                            if needsHelp {
+                                isReportedLate = false
+                                showConfirmationBanner("Your help request has been sent")
+                            } else {
+                                showConfirmationBanner("Your help request has been cleared")
+                            }
                         } label: {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.title3)
-                                .foregroundStyle(.black)
+                                .foregroundStyle(needsHelp ? .white : .black)
                                 .frame(width: 62, height: 62)
-                                .background(.ultraThinMaterial)
+                                .background(needsHelp ? AnyShapeStyle(Color.red) : AnyShapeStyle(.ultraThinMaterial))
                                 .clipShape(Circle())
                         }
                     }

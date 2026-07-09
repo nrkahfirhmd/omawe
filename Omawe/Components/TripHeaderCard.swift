@@ -18,6 +18,9 @@ struct TripHeaderCard: View {
     /// device's user up) — surfaced here as the "Gonna be late" state so
     /// both entry points show/toggle the same self-reported status.
     @Binding var isReportedLate: Bool
+    /// Set by LocationView's danger button — more urgent than
+    /// `isReportedLate`, takes priority in the status display below.
+    @Binding var needsHelp: Bool
 
     private var ownEtaMinutes: Int? {
         currentUserID.flatMap { participantStates[$0]?.etaMinutes }
@@ -45,7 +48,8 @@ struct TripHeaderCard: View {
                     participants: participants,
                     participantStates: participantStates,
                     currentUserID: currentUserID,
-                    isReportedLate: $isReportedLate
+                    isReportedLate: $isReportedLate,
+                    needsHelp: $needsHelp
                 )
                 .transition(
                     .asymmetric(
@@ -141,6 +145,7 @@ private struct ExpandedContent: View {
     let participantStates: [CKRecord.ID: ParticipantTripState]
     let currentUserID: CKRecord.ID?
     @Binding var isReportedLate: Bool
+    @Binding var needsHelp: Bool
 
     @State private var selectedIndex = 0
 
@@ -173,6 +178,9 @@ private struct ExpandedContent: View {
         VStack(spacing: 28) {
             Button {
                 isReportedLate.toggle()
+                if isReportedLate {
+                    needsHelp = false
+                }
             } label: {
                 Label(
                     isReportedLate ? "Reported — gonna be late" : "Arriving On-time",
@@ -205,7 +213,12 @@ private struct ExpandedContent: View {
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
 
-                    if current?.userID == currentUserID && isReportedLate {
+                    if current?.userID == currentUserID && needsHelp {
+                        Text("Needs help")
+                            .font(.caption1())
+                            .fontWeight(.bold)
+                            .foregroundStyle(.red)
+                    } else if current?.userID == currentUserID && isReportedLate {
                         Text("Gonna be late")
                             .font(.caption1())
                             .foregroundStyle(.red)
@@ -294,6 +307,7 @@ private extension ParticipantTripStatus {
             createdAt: .now,
             updatedAt: .now
         ),
-        isReportedLate: .constant(false)
+        isReportedLate: .constant(false),
+        needsHelp: .constant(false)
     )
 }
