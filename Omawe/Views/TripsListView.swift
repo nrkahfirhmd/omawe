@@ -82,6 +82,7 @@ struct TripsListView: View {
                         1
                     ),
                     participants: homeViewModel.participants.filter { $0.tripID == activeTrip.id },
+                    participantStates: homeViewModel.allParticipantTripStates,
                     currentUserID: currentUserID,
                     etaMinutes: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
                     distanceKm: currentUserID.flatMap { homeViewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },

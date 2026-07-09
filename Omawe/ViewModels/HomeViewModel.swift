@@ -358,6 +358,13 @@ class HomeViewModel {
         tripStatusViewModel.participantStates[userID]
     }
 
+    /// Every participant's live ETA/distance/status (ETA-1/ETA-2) for the
+    /// active trip, keyed by user — feeds the in-app route progress markers
+    /// so they match the Live Activity's mate markers.
+    var allParticipantTripStates: [CKRecord.ID: ParticipantTripState] {
+        tripStatusViewModel.participantStates
+    }
+
     /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) for
     /// `trip` and pushes the aggregated result into the Live Activity
     /// (ETA-3/ETA-4). Call this whenever new location data is expected —
