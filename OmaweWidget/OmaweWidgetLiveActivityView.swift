@@ -170,16 +170,14 @@ struct LiveActivityLockScreenView: View {
 struct RouteProgressView: View {
     let mates: [OmaweWidgetAttributes.MateProgress]
     
-    /// Build dynamic markers based on distances
     private var markers: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] {
-        let sorted = mates.sorted { $0.distanceKm > $1.distanceKm }
-        let maxDistance = sorted.first?.distanceKm ?? 1.0
-        let scale = maxDistance > 0 ? maxDistance : 1.0
+        // Sort by progress from lowest (left) to highest (right)
+        let sorted = mates.sorted { $0.progress < $1.progress }
         
         var clusters: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] = []
         
         for mate in sorted {
-            let pos = CGFloat(1.0 - (mate.distanceKm / scale))
+            let pos = CGFloat(mate.progress)
             let clampedPos = max(0.05, min(0.95, pos)) // Keep within bounds
             
             if let lastIndex = clusters.indices.last, abs(clusters[lastIndex].position - clampedPos) < 0.05 {
@@ -371,9 +369,10 @@ struct PolkaDotBackground: View {
         myDistanceKm: 15.0,
         arrivedCount: 2,
         mates: [
-            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true)
-        ]
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, progress: 0.25, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, progress: 0.5, isMe: true)
+        ],
+        trackScaleKm: 20.0
     )
 }
 
@@ -390,9 +389,10 @@ struct PolkaDotBackground: View {
         myDistanceKm: 2.5,
         arrivedCount: 4,
         mates: [
-            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 0.5, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 2.5, isMe: true)
-        ]
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 0.5, progress: 0.95, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 2.5, progress: 0.75, isMe: true)
+        ],
+        trackScaleKm: 10.0
     )
 }
 
@@ -410,17 +410,18 @@ struct PolkaDotBackground: View {
         arrivedCount: 0,
         mates: [
             // Max distance = 15.0 (0.0 on curve)
-            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, progress: 0.0, isMe: false),
             // Close to B, should cluster
-            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, progress: 0.02, isMe: false),
             // Middle
-            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, progress: 0.33, isMe: true),
             // Close to G, should cluster with G
-            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, progress: 0.4, isMe: false),
             // Arrived / Very Close (Green)
-            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, isMe: false)
-        ]
+            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, progress: 0.98, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, progress: 0.99, isMe: false)
+        ],
+        trackScaleKm: 15.0
     )
 }
 
