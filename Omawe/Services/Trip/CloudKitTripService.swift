@@ -145,7 +145,7 @@ final class CloudKitTripService: TripServiceProtocol {
     
     func deleteTrip(id: CKRecord.ID) async throws {
         do {
-            _ = try await database.deleteRecord(withID: id)
+            try await zoneService.deleteZone(with: id.zoneID)
         } catch {
             throw CloudKitError.unknown(error)
         }

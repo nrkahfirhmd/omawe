@@ -223,6 +223,7 @@ class HomeViewModel {
             analytics.log(.tripCreateSucceeded(setupSeconds: Date().timeIntervalSince(startedAt)))
             return invitationCode
         } catch {
+            print("❌ confirmTripCreation failed with error: \(error)")
             creationErrorMessage = ErrorHelper.simplify(error)
             throw error
         }
@@ -313,6 +314,8 @@ class HomeViewModel {
         _ = try await participantService.createParticipant(participant)
         debugLog("✅ Participant record created for confirm joiner")
 
+        // Remove from the left-trip blocklist in case the user is rejoining
+        TripStore.shared.unmarkTripAsLeft(tripID)
         await TripStore.shared.loadTrips()
     }
 
@@ -618,7 +621,6 @@ class HomeViewModel {
             ))
 
             await TripStore.shared.loadTrips()
-            scheduleZoneCleanup(for: trip)
         } catch {
             tripActionErrorMessage = ErrorHelper.simplify(error)
         }
@@ -685,16 +687,39 @@ class HomeViewModel {
     /// routine occurrence, not a reliable "gone" signal.
     func leaveTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
+        print("🚪 User is leaving trip '\(trip.title)' (ID: \(trip.id?.recordName ?? "nil"))...")
 
         do {
             let userID = try await currentUserID()
-            guard let participant = participants.first(where: { $0.tripID == trip.id && $0.userID == userID }),
-                  let participantID = participant.id else {
+            print("👤 Current User ID: \(userID.recordName)")
+            
+            // Print all participants for debugging
+            print("👥 All cached participants count: \(participants.count)")
+            for part in participants {
+                print("  - Part: tripID=\(part.tripID.recordName), userID=\(part.userID.recordName), role=\(part.role)")
+            }
+            
+            guard let participant = participants.first(where: { $0.tripID == trip.id && $0.userID == userID }) else {
+                print("⚠️ Mismatch: Could not find participant record matching current userID \(userID.recordName) for trip \(trip.id?.recordName ?? "nil")!")
+                return
+            }
+            
+            guard let participantID = participant.id else {
+                print("❌ Mismatch: Participant record has nil ID!")
                 return
             }
 
             let wasOwner = participant.role == .owner
             try await participantService.removeParticipant(id: participantID)
+
+            // Optimistically remove the trip from the local list immediately
+            // so the UI updates instantly without waiting for a CloudKit re-fetch.
+            // Also persist to the blocklist so it stays hidden on future fetches.
+            if let tripID = trip.id {
+                TripStore.shared.markTripAsLeft(tripID)
+                TripStore.shared.trips.removeAll { $0.id == tripID }
+                TripStore.shared.participants.removeAll { $0.tripID == tripID }
+            }
 
             if wasOwner {
                 await reassignOwnershipIfNeeded(tripID: trip.id, departedUserID: userID)
@@ -714,8 +739,13 @@ class HomeViewModel {
                 mates: []
             ))
 
-            await TripStore.shared.loadTrips()
+            // Background refresh to sync with server state
+            Task {
+                await TripStore.shared.loadTrips()
+                await TripStore.shared.loadParticipants()
+            }
         } catch {
+            print("❌ leaveTrip error: \(error)")
             tripActionErrorMessage = ErrorHelper.simplify(error)
         }
     }

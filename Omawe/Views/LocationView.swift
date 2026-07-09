@@ -231,11 +231,11 @@ struct LocationView: View {
                             }
                         } label: {
                             Text(isReportedLate ? "Reported" : "Report")
-                                .font(.headline)
-                                .foregroundStyle(.white)
+                                .font(.button())
+                                .fontWidth(.expanded)
+                                .foregroundStyle(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 58)
-                                .background(.ultraThinMaterial)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 28)
                                         .stroke(
@@ -243,10 +243,8 @@ struct LocationView: View {
                                             lineWidth: 2
                                         )
                                 }
-                                .clipShape(
-                                    Capsule()
-                                )
                         }
+                        .glassEffect(.clear)
 
                         Spacer()
 

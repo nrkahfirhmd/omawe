@@ -7,21 +7,47 @@
 
 import SwiftUI
 
+struct TripDetailMember: Identifiable, Equatable {
+    var id: String { name }
+    let name: String
+    let avatarData: Data?
+}
+
 // MARK: - Trip Detail View
 struct TripDetailView: View {
     var trip: TripData
-    var members: [String]
+    var members: [TripDetailMember]
+    var isOwner: Bool = false
+    var tripModel: Trip? = nil
+    var onLeave: (() async -> Void)? = nil
+    var onRemoveMember: ((TripDetailMember) -> Void)? = nil
+    var onDeleteTrip: (() async -> Void)? = nil
+    var onUpdateTrip: ((TripDraft) -> Void)? = nil
+    
     @State private var currentMemberPage = 0
-    @State private var isEditing = false
-    @State private var editableMembers: [String] = []
+    @State private var isEditing = false    
+    @State private var editableMembers: [TripDetailMember] = []
+    @State private var isShowingInvitation = false
+    @State private var editDraft = TripDraft()
+    @State private var isCalendarPresented = false
+    @State private var isEditingInvitationDetails = false
+    @State private var isLocationSheetPresented = false
+    @State private var isProcessingAction = false
+    @Environment(\.dismiss) private var dismiss
     
-    private let membersPerPage = 6
+    private let membersPerPage = 5
     
-    private var displayMembers: [String] {
+    var resolvedIsOwner: Bool {
+        if isOwner { return true }
+        let ownerName = UserSession.shared.displayName ?? ""
+        return !ownerName.isEmpty && trip.subtitle.contains("@\(ownerName)")
+    }
+    
+    private var displayMembers: [TripDetailMember] {
         isEditing ? editableMembers : members
     }
     
-    private var memberPages: [[String]] {
+    private var memberPages: [[TripDetailMember]] {
         let source = displayMembers
         guard !source.isEmpty else { return [[]] }
         return stride(from: 0, to: source.count, by: membersPerPage).map {
@@ -29,89 +55,203 @@ struct TripDetailView: View {
         }
     }
     
+    private var detailSubtitle: String {
+        if isEditing {
+            return trip.subtitle
+        }
+        if resolvedIsOwner {
+            return "You are the group creator"
+        } else {
+            if let range = trip.subtitle.range(of: "by @"),
+               let endRange = trip.subtitle.range(of: " •") {
+                let owner = trip.subtitle[range.upperBound..<endRange.lowerBound]
+                return "Created by @\(owner)"
+            }
+            return "You are a participant"
+        }
+    }
+    
+    private var tripDateTimeString: String {
+        let components = trip.subtitle.components(separatedBy: " • ")
+        if components.count >= 2 {
+            return components.dropFirst().joined(separator: " • ")
+        }
+        return trip.subtitle
+    }
+    
+    private var tripOwnerName: String {
+        if let ownerName = tripModel?.ownerDisplayName {
+            return ownerName
+        }
+        if let range = trip.subtitle.range(of: "by @"),
+           let endRange = trip.subtitle.range(of: " •") {
+            return String(trip.subtitle[range.upperBound..<endRange.lowerBound])
+        }
+        return ""
+    }
+    
     var body: some View {
-        ZStack(alignment: .top) {
-            Color.white
-                .ignoresSafeArea()
+        ZStack {
+            InvitationStageBackground(hasJoined: true)
             
             VStack(spacing: 0) {
-                DynamicBox(
-                    theme: trip.theme,
-                    title: trip.title,
-                    subtitle: isEditing
-                        ? trip.subtitle
-                        : "by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30",
-                    helperText: "Swipe to see other friends",
-                    footerTitle: isEditing ? "Edit your trip" : "Trip detail"
-                ) {
-                    VStack(spacing: 0) {
-                        // People count
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("\(displayMembers.count)")
-                                .font(.largeTitle)
-                                .fontWeight(.semibold)
-                                .fontWidth(.expanded)
-                                .foregroundStyle(trip.theme.gradientSoft)
-                                .contentTransition(.numericText())
-                            Text("People")
-                                .font(.caption)
-                                .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-                        }
-                        .padding(.bottom, 12)
+                // Top Custom Dynamic Island
+                CustomDynamicIsland(
+                    color: Theme.primaryBox,
+                    fillColor: Theme.primaryBox,
+                    borderWidth: 2,
+                    width: 126,
+                    height: 37,
+                    isContentVisible: false
+                )
+                .padding(.top, 8)
+                
+                // Location Card
+                HStack(spacing: 12) {
+                    let locationParts = trip.location.split(separator: ",", maxSplits: 1).map(String.init)
+                    let placeName = locationParts.first ?? trip.location
+                    let address = locationParts.count > 1 ? locationParts[1].trimmingCharacters(in: .whitespaces) : ""
+                    
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "03B9D6"))
+                            .frame(width: 40, height: 40)
                         
-                        // Location + Date
-                        HStack(spacing: 16) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "location.circle.fill")
-                                Text(trip.location)
-                            }
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                Text(trip.subtitle.replacingOccurrences(of: "by @\(UserSession.shared.displayName ?? "Anonymous") • ", with: ""))
-                            }
-                        }
-                        .font(.caption.bold())
-                        .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-                        .padding(.bottom, 20)
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color(red: 0.05, green: 0.25, blue: 0.24))
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(placeName)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
                         
-                        // Paginated members list
-                        PaginatedMemberList(
-                            pages: memberPages,
-                            currentPage: $currentMemberPage,
-                            isEditing: isEditing,
-                            onRemove: { name in
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    editableMembers.removeAll { $0 == name }
-                                    // Fix page index if current page no longer exists
-                                    let maxPage = max(0, memberPages.count - 1)
-                                    if currentMemberPage > maxPage {
-                                        currentMemberPage = maxPage
+                        if !address.isEmpty {
+                            Text(address)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineLimit(1)
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+                
+                // Title and Header info
+                VStack(spacing: 4) {
+                    HStack(spacing: 12) {
+                        Text(trip.title)
+                            .font(.title2)
+                            .fontWidth(.expanded)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color(hex: "49FFEC"))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        if isEditing {
+                            Button {
+                                isProcessingAction = true
+                                Task {
+                                    if let onDeleteTrip {
+                                        await onDeleteTrip()
                                     }
+                                    isProcessingAction = false
+                                    dismiss()
+                                }
+                            } label: {
+                                if isProcessingAction {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .frame(width: 36, height: 36)
+                                } else {
+                                    Image(systemName: "trash.fill")
+                                        .foregroundStyle(.white)
+                                        .padding(10)
+                                        .background(Color.white.opacity(0.12), in: Circle())
                                 }
                             }
-                        )
-                        
-                        // Page indicator
-                        MemberPageIndicator(
-                            totalPages: memberPages.count,
-                            currentPage: currentMemberPage
-                        )
-                        .padding(.top, 14)
-                        .padding(.bottom, 8)
+                            .disabled(isProcessingAction)
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    
+                    Text(detailSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(.bottom, 16)
+                    
+                    // People count
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(displayMembers.count)")
+                            .font(.system(size: 54, weight: .bold, design: .rounded))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(Color(hex: "49FFEC"))
+                        Text("People")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    .padding(.bottom, 8)
+                    
+                    // Date & Time
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(.white.opacity(0.6))
+                        Text(tripDateTimeString)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.bottom, 20)
                 }
-                .animation(.smooth(duration: 0.3), value: isEditing)
+                
+                // Paginated members list
+                PaginatedMemberList(
+                    pages: memberPages,
+                    currentPage: $currentMemberPage,
+                    isEditing: isEditing,
+                    ownerName: tripOwnerName,
+                    onRemove: { name in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            editableMembers.removeAll { $0 == name }
+                            let maxPage = max(0, memberPages.count - 1)
+                            if currentMemberPage > maxPage {
+                                currentMemberPage = maxPage
+                            }
+                        }
+                    }
+                )
+                
+                // Page indicator
+                MemberPageIndicator(
+                    totalPages: memberPages.count,
+                    currentPage: currentMemberPage
+                )
+                .padding(.top, 14)
+                .padding(.bottom, 24)
                 
                 Spacer()
                 
-                // Bottom buttons
+                // Bottom controls
                 if isEditing {
                     EditBottomBar(
-                        onDelete: {
-                            // Delete trip action
+                        onCancel: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                editableMembers = members
+                                isEditing = false
+                            }
                         },
                         onSave: {
+                            let removedMembers = members.filter { !editableMembers.contains($0) }
+                            for member in removedMembers {
+                                onRemoveMember?(member)
+                            }
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isEditing = false
                             }
@@ -121,47 +261,96 @@ struct TripDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     TripDetailBottomBar(
+                        isOwner: resolvedIsOwner,
+                        onBack: {
+                            dismiss()
+                        },
+                        onLeave: {
+                            isProcessingAction = true
+                            Task {
+                                if let onLeave {
+                                    await onLeave()
+                                }
+                                isProcessingAction = false
+                                dismiss()
+                            }
+                        },
                         onEdit: {
                             editableMembers = members
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isEditing = true
                             }
+                        }, onSeeInvitation: {
+                            if let tripModel {
+                                editDraft = TripDraft(
+                                    name: tripModel.title,
+                                    arrivalDate: tripModel.startDate,
+                                    locationName: tripModel.destination,
+                                    locationAddress: tripModel.locationAddress ?? "",
+                                    apartmentUnitFloor: tripModel.apartmentUnitFloor ?? "",
+                                    locationNickname: tripModel.locationNickname ?? "",
+                                    coordinate: tripModel.destinationCoordinate,
+                                    invitationCode: tripModel.invitationCode
+                                )
+                            }
+                            isShowingInvitation = true
                         }
                     )
                     .padding(.bottom, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .ignoresSafeArea(edges: .top)
+            .navigationBarBackButtonHidden(true)
+            .navigationDestination(isPresented: $isShowingInvitation) {
+                TripInvitationView(
+                    draft: $editDraft,
+                    isViewOnly: true,
+                    isOwner: resolvedIsOwner,
+                    isCalendarPresented: $isCalendarPresented,
+                    isEditingInvitationDetails: $isEditingInvitationDetails,
+                    isLocationSheetPresented: $isLocationSheetPresented,
+                    onUpdateTrip: {
+                        onUpdateTrip?(editDraft)
+                        isShowingInvitation = false
+                    },
+                    onDismiss: {
+                        isShowingInvitation = false
+                    }
+                )
+            }
         }
-        .ignoresSafeArea(edges: .top)
     }
 }
 
 // MARK: - Paginated Member List
 struct PaginatedMemberList: View {
-    var pages: [[String]]
+    var pages: [[TripDetailMember]]
     @Binding var currentPage: Int
     var isEditing: Bool
-    var onRemove: ((String) -> Void)?
+    var ownerName: String = ""
+    var onRemove: ((TripDetailMember) -> Void)?
     
     var body: some View {
         TabView(selection: $currentPage) {
             ForEach(pages.indices, id: \.self) { pageIndex in
                 VStack(spacing: 8) {
-                    ForEach(Array(pages[pageIndex].enumerated()), id: \.offset) { _, name in
+                    ForEach(Array(pages[pageIndex].enumerated()), id: \.offset) { _, member in
                         MemberRow(
-                            name: name,
-                            isEditing: isEditing,
-                            onRemove: { onRemove?(name) }
+                            name: member.name,
+                            avatarData: member.avatarData,
+                            isEditing: isEditing && (member.name != ownerName),
+                            onRemove: { onRemove?(member) }
                         )
                     }
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
                 .tag(pageIndex)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: 360)
+        .frame(height: 360, alignment: .top)
     }
 }
 
@@ -188,24 +377,28 @@ struct MemberPageIndicator: View {
 // MARK: - Member Row
 struct MemberRow: View {
     var name: String
+    var avatarData: Data? = nil
     var isEditing: Bool = false
     var onRemove: (() -> Void)?
     
     var body: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(Color.gray.opacity(0.4))
-                .frame(width: 38, height: 38)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.8))
-                )
+            if let avatarData, let uiImage = UIImage(data: avatarData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 38, height: 38)
+                    .clipShape(Circle())
+            } else {
+                Image(.avatar)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 38, height: 38)
+            }
             
             Text(name)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
             
             Spacer()
             
@@ -222,43 +415,79 @@ struct MemberRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .background(Color.white.opacity(0.04))
+        .clipShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
     }
 }
 
 // MARK: - Bottom Bar (View Mode)
 struct TripDetailBottomBar: View {
+    var isOwner: Bool = false
+    var onBack: () -> Void
+    var onLeave: (() -> Void)? = nil
     var onEdit: () -> Void
+    var onSeeInvitation: () -> Void = {}
     
     var body: some View {
         HStack(spacing: 12) {
             Button {
-                // Back action
+                onBack()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .fontWeight(.semibold)
-                    Text("Back to Home")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                Image(systemName: "chevron.left")
+                    .font(.headline())
+                    .padding(8)
             }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Go back")
             
             Button {
-                onEdit()
+                onSeeInvitation()
             } label: {
-                Image(systemName: "pencil")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .frame(width: 55, height: 55)
-                    .background(Color(white: 0.08))
-                    .clipShape(Circle())
+                HStack(spacing: 14) {
+                    Image(systemName: "eyes")
+                        .font(.button())
+                    
+                    Text("See Invitation")
+                        .font(.button())
+                        .fontWidth(.expanded)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(16)
+                .foregroundStyle(.white)
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.primary, lineWidth: 1.5)
+                }
+            }
+            .glassEffect(.clear)
+            
+            if isOwner {
+                Button {
+                    onEdit()
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.headline())
+                        .padding(8)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel("Edit trip")
+            } else {
+                Button {
+                    onLeave?()
+                } label: {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.headline())
+                        .padding(8)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel("Leave trip")
             }
         }
         .padding(.horizontal, 16)
@@ -267,59 +496,72 @@ struct TripDetailBottomBar: View {
 
 // MARK: - Bottom Bar (Edit Mode)
 struct EditBottomBar: View {
-    var onDelete: () -> Void
+    var onCancel: () -> Void
     var onSave: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
             Button {
-                onDelete()
+                onCancel()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "trash.fill")
-                    Text("Delete")
-                        .fontWeight(.semibold)
+                HStack(spacing: 14) {
+                    Image(systemName: "xmark")
+                        .font(.button())
+                    
+                    Text("Cancel")
+                        .font(.button())
+                        .fontWidth(.expanded)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color(white: 0.08))
+                .padding(16)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.primary, lineWidth: 1.5)
+                }
             }
+            .glassEffect(.clear)
             
             Button {
                 onSave()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 14) {
                     Image(systemName: "checkmark")
-                        .fontWeight(.semibold)
-                    Text("Save")
-                        .fontWeight(.semibold)
+                        .font(.button())
+                    
+                    Text("Done")
+                        .font(.button())
+                        .fontWidth(.expanded)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.05, green: 0.25, blue: 0.24),
-                            Color(red: 0.11, green: 0.35, blue: 0.32)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .padding(16)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(
-                            Color(red: 0.4, green: 0.85, blue: 0.9),
-                            lineWidth: 1.5
-                        )
-                        .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.4), radius: 6)
-                )
+                .background(Capsule().fill(Color.blue.opacity(0.32)))
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.primary, lineWidth: 1.5)
+                }
             }
+            .glassEffect(.clear)
         }
         .padding(.horizontal, 16)
     }
+}
+
+#Preview {
+    let trip = TripData(
+        theme: Theme.themeSecondary,
+        icon: "balloon.2",
+        title: "Ex-Boyfriends Celebration! hashfhasfgasgfksa",
+        subtitle: "by @Bintang • 27/06/2026 • 11:30",
+        people: 12,
+        location: "Fore Kopi, Jl. Dewi Sri No.69, Legian, Kec...",
+        footerTitle: "Trip detail"
+    )
+    
+    let members = [
+        TripDetailMember(name: "Gleen Ryan", avatarData: nil)
+    ]
+    
+    TripDetailView(trip: trip, members: members)
 }

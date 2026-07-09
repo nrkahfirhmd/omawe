@@ -5,11 +5,16 @@ struct JoinInvitationView: View {
     let trip: Trip
     let onJoinNow: () async throws -> Void
     let onDismiss: () -> Void
+    var isViewOnly: Bool = false
+    var isOwner: Bool = false
+    var onLeave: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
     
     @State private var hasJoined = false
     @State private var isJoining = false
     @State private var joinErrorMessage: String?
     @State private var participants: [Participant]
+    @State private var isFetchingShareLink = false
     
     init(
         trip: Trip,
@@ -21,6 +26,29 @@ struct JoinInvitationView: View {
         self._participants = State(initialValue: participants)
         self.onJoinNow = onJoinNow
         self.onDismiss = onDismiss
+        self.isViewOnly = false
+        self.isOwner = false
+        self.onLeave = nil
+        self.onEdit = nil
+    }
+
+    init(
+        trip: Trip,
+        participants: [Participant] = [],
+        isViewOnly: Bool,
+        isOwner: Bool,
+        onLeave: (() -> Void)? = nil,
+        onEdit: (() -> Void)? = nil,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.trip = trip
+        self._participants = State(initialValue: participants)
+        self.onJoinNow = {}
+        self.onDismiss = onDismiss
+        self.isViewOnly = isViewOnly
+        self.isOwner = isOwner
+        self.onLeave = onLeave
+        self.onEdit = onEdit
     }
     
     private var displayTripName: String {
@@ -207,7 +235,71 @@ struct JoinInvitationView: View {
     
     private var bottomControls: some View {
         VStack(spacing: 12) {
-            if hasJoined {
+            if isViewOnly {
+                HStack(spacing: 12) {
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.headline())
+                            .padding(8)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Go back")
+                    
+                    Button {
+                        shareTripLink()
+                    } label: {
+                        HStack(spacing: 14) {
+                            if isFetchingShareLink {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "link")
+                                    .font(.button())
+                            }
+                            
+                            Text("Share link")
+                                .font(.button())
+                                .fontWidth(.expanded)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .foregroundStyle(.white)
+                        .overlay {
+                            Capsule()
+                                .stroke(Theme.primary, lineWidth: 1.5)
+                        }
+                    }
+                    .glassEffect(.clear)
+                    .disabled(isFetchingShareLink)
+                    
+                    if isOwner {
+                        Button {
+                            onEdit?()
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.headline())
+                                .padding(8)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Edit trip")
+                    } else {
+                        Button {
+                            onLeave?()
+                        } label: {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.headline())
+                                .padding(8)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Leave trip")
+                    }
+                }
+            } else if hasJoined {
                 Button {
                     onDismiss()
                 } label: {
@@ -292,6 +384,52 @@ struct JoinInvitationView: View {
                     joinErrorMessage = ErrorHelper.simplify(error)
                 }
             }
+        }
+    }
+    
+    private func shareTripLink() {
+        guard !trip.invitationCode.isEmpty else { return }
+        isFetchingShareLink = true
+        
+        Task {
+            do {
+                let inviteService = CloudKitInviteService()
+                if let invite = try await inviteService.findInvite(by: trip.invitationCode) {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        shareURL(invite.shareURL)
+                    }
+                } else {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        if let url = URL(string: "https://omawe.app/join?code=\(trip.invitationCode)") {
+                            shareURL(url)
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isFetchingShareLink = false
+                    if let url = URL(string: "https://omawe.app/join?code=\(trip.invitationCode)") {
+                        shareURL(url)
+                    }
+                }
+            }
+        }
+    }
+
+    private func shareURL(_ url: URL) {
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            
+            if let popoverController = activityVC.popoverPresentationController {
+                popoverController.sourceView = rootViewController.view
+                popoverController.sourceRect = CGRect(x: rootViewController.view.bounds.midX, y: rootViewController.view.bounds.midY, width: 0, height: 0)
+                popoverController.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityVC, animated: true, completion: nil)
         }
     }
 }

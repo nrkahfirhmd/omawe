@@ -23,10 +23,40 @@ final class TripStore {
     var participants: [Participant] = []
     var lastLoadErrorMessage: String?
 
+    /// Trip record names the current user has left — persisted to UserDefaults
+    /// so they are filtered out immediately on every fetch without a participant round-trip.
+    private var leftTripIDs: Set<String> {
+        didSet { Self.saveLeftTripIDs(leftTripIDs) }
+    }
+
     private let cacheFileName = "OmaweTripCache.json"
 
     private init() {
+        self.leftTripIDs = Self.loadLeftTripIDs()
         loadFromCache()
+    }
+
+    // MARK: - Left-trip blocklist persistence
+
+    private static let leftTripIDsKey = "OmaweLeftTripIDs"
+
+    private static func loadLeftTripIDs() -> Set<String> {
+        let array = UserDefaults.standard.stringArray(forKey: leftTripIDsKey) ?? []
+        return Set(array)
+    }
+
+    private static func saveLeftTripIDs(_ ids: Set<String>) {
+        UserDefaults.standard.set(Array(ids), forKey: leftTripIDsKey)
+    }
+
+    /// Call this when the user leaves a trip so it's immediately blocklisted.
+    func markTripAsLeft(_ tripID: CKRecord.ID) {
+        leftTripIDs.insert(tripID.recordName)
+    }
+
+    /// Call this when the user (re-)joins a trip so it's removed from the blocklist.
+    func unmarkTripAsLeft(_ tripID: CKRecord.ID) {
+        leftTripIDs.remove(tripID.recordName)
     }
 
     func loadTrips() async {
@@ -36,7 +66,13 @@ final class TripStore {
 
             let (ownedTrips, sharedTrips) = try await (owned, shared)
 
-            self.trips = (ownedTrips + sharedTrips).sorted {
+            // Filter out trips the user has previously left
+            let allTrips = (ownedTrips + sharedTrips).filter { trip in
+                guard let id = trip.id else { return true }
+                return !leftTripIDs.contains(id.recordName)
+            }
+
+            self.trips = allTrips.sorted {
                 $0.updatedAt > $1.updatedAt
             }
             lastLoadErrorMessage = nil
@@ -81,6 +117,30 @@ final class TripStore {
         }
         
         self.participants = loadedParticipants
+        
+        // Discover any shared trips where the user is no longer a participant
+        // and add them to the persistent blocklist so they stay hidden.
+        let identityService = CloudKitIdentityService()
+        if let currentUserID = try? await identityService.currentUserRecordID() {
+            var didFilter = false
+            for trip in currentTrips {
+                guard let tripID = trip.id else { continue }
+                let isOwned = tripID.zoneID.ownerName == currentUserID.recordName || tripID.zoneID.ownerName == CKCurrentUserDefaultName
+                if !isOwned {
+                    let isUserParticipant = loadedParticipants.contains { $0.tripID == trip.id && $0.userID == currentUserID }
+                    if !isUserParticipant {
+                        leftTripIDs.insert(tripID.recordName)
+                        didFilter = true
+                    }
+                }
+            }
+            if didFilter {
+                self.trips = currentTrips.filter { trip in
+                    guard let id = trip.id else { return true }
+                    return !leftTripIDs.contains(id.recordName)
+                }
+            }
+        }
     }
     
     // MARK: - Caching

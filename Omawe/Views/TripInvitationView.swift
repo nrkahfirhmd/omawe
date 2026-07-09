@@ -36,20 +36,24 @@ struct TripInvitationView: View {
         ]
     }
     @Binding var draft: TripDraft
-    let creationErrorMessage: String?
-    let shareErrorMessage: String?
+    @Binding var creationErrorMessage: String?
+    @Binding var shareErrorMessage: String?
     let canConfirmTripCreation: Bool
-    let isSavingTrip: Bool
-    let isCreatingShare: Bool
-    let hasCreatedTrip: Bool
-    let shareURL: String?
+    @Binding var isSavingTrip: Bool
+    @Binding var isCreatingShare: Bool
+    @Binding var hasCreatedTrip: Bool
+    @Binding var shareURL: String?
     let onCreateTrip: () async throws -> String
     let onDismissAndReset: () -> Void
+    let isViewOnly: Bool
+    var isOwner: Bool = false
+    var onUpdateTrip: (() -> Void)? = nil
     
     @Binding var isCalendarPresented: Bool
     @Binding var isEditingInvitationDetails: Bool
     @Binding var isLocationSheetPresented: Bool
     @State private var didCopyShareLink = false
+    @State private var isFetchingShareLink = false
     @State private var locationSearchQuery = ""
     @State private var isResolvingLocation = false
     @State private var isEditTitle = false
@@ -59,32 +63,63 @@ struct TripInvitationView: View {
     
     init(
         draft: Binding<TripDraft>,
-        creationErrorMessage: String?,
-        shareErrorMessage: String?,
+        creationErrorMessage: Binding<String?>,
+        shareErrorMessage: Binding<String?>,
         canConfirmTripCreation: Bool,
-        isSavingTrip: Bool,
-        isCreatingShare: Bool,
-        hasCreatedTrip: Bool,
-        shareURL: String?,
+        isSavingTrip: Binding<Bool>,
+        isCreatingShare: Binding<Bool>,
+        hasCreatedTrip: Binding<Bool>,
+        shareURL: Binding<String?>,
         isCalendarPresented: Binding<Bool>,
         isEditingInvitationDetails: Binding<Bool>,
         isLocationSheetPresented: Binding<Bool>,
         onCreateTrip: @escaping () async throws -> String,
-        onDismissAndReset: @escaping () -> Void
+        onDismissAndReset: @escaping () -> Void,
+        isViewOnly: Bool = false
     ) {
         self._draft = draft
-        self.creationErrorMessage = creationErrorMessage
-        self.shareErrorMessage = shareErrorMessage
+        self._creationErrorMessage = creationErrorMessage
+        self._shareErrorMessage = shareErrorMessage
         self.canConfirmTripCreation = canConfirmTripCreation
-        self.isSavingTrip = isSavingTrip
-        self.isCreatingShare = isCreatingShare
-        self.hasCreatedTrip = hasCreatedTrip
-        self.shareURL = shareURL
+        self._isSavingTrip = isSavingTrip
+        self._isCreatingShare = isCreatingShare
+        self._hasCreatedTrip = hasCreatedTrip
+        self._shareURL = shareURL
         self._isCalendarPresented = isCalendarPresented
         self._isEditingInvitationDetails = isEditingInvitationDetails
         self._isLocationSheetPresented = isLocationSheetPresented
         self.onCreateTrip = onCreateTrip
         self.onDismissAndReset = onDismissAndReset
+        self.isViewOnly = isViewOnly
+    }
+    
+    // Convenience initializer for read-only view from TripDetailView
+    init(
+        draft: Binding<TripDraft>,
+        isViewOnly: Bool,
+        isOwner: Bool = false,
+        isCalendarPresented: Binding<Bool> = .constant(false),
+        isEditingInvitationDetails: Binding<Bool> = .constant(false),
+        isLocationSheetPresented: Binding<Bool> = .constant(false),
+        onUpdateTrip: (() -> Void)? = nil,
+        onDismiss: @escaping () -> Void
+    ) {
+        self._draft = draft
+        self._creationErrorMessage = .constant(nil)
+        self._shareErrorMessage = .constant(nil)
+        self.canConfirmTripCreation = false
+        self._isSavingTrip = .constant(false)
+        self._isCreatingShare = .constant(false)
+        self._hasCreatedTrip = .constant(true)
+        self._shareURL = .constant(nil)
+        self._isCalendarPresented = isCalendarPresented
+        self._isEditingInvitationDetails = isEditingInvitationDetails
+        self._isLocationSheetPresented = isLocationSheetPresented
+        self.onCreateTrip = { "" }
+        self.onDismissAndReset = onDismiss
+        self.isViewOnly = isViewOnly
+        self.isOwner = isOwner
+        self.onUpdateTrip = onUpdateTrip
     }
     
     private var displayTripName: String {
@@ -141,7 +176,7 @@ struct TripInvitationView: View {
                     .padding(.top, isEditingInvitationDetails ? 0 : 20)
                     .padding(.horizontal, isEditingInvitationDetails ? 0 : 24)
                     .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isEditingInvitationDetails)
-                    
+                
                     .ignoresSafeArea()
                 
                 Spacer(minLength: 20)
@@ -151,6 +186,19 @@ struct TripInvitationView: View {
                 
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            if let creationErrorMessage {
+                VStack {
+                    Spacer()
+                    Text(creationErrorMessage)
+                        .font(.caption.bold())
+                        .foregroundStyle(.red)
+                        .padding()
+                        .background(.black.opacity(0.8), in: Capsule())
+                        .padding(.bottom, 120)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .animation(.spring(response: 0.54, dampingFraction: 0.88), value: isEditingInvitationDetails)
         .sheet(isPresented: $isLocationSheetPresented) {
@@ -221,7 +269,7 @@ struct TripInvitationView: View {
         }
     }
     
-
+    
     
     private var editingTicketContent: some View {
         GeometryReader { geo in
@@ -323,16 +371,20 @@ struct TripInvitationView: View {
         .padding(24)
     }
     
-
+    
     
     private var bottomControls: some View {
         VStack(spacing: 12) {
             if !isEditingInvitationDetails {
                 HStack(spacing: 12) {
-                    if !hasCreatedTrip {
+                    if !hasCreatedTrip || isViewOnly {
                         Button {
-                            dismiss()
-                            onDismissAndReset()
+                            if isViewOnly {
+                                onDismissAndReset()
+                            } else {
+                                dismiss()
+                                onDismissAndReset()
+                            }
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.headline())
@@ -344,7 +396,9 @@ struct TripInvitationView: View {
                     }
                     
                     Button {
-                        if hasCreatedTrip {
+                        if isViewOnly {
+                            shareTripLink()
+                        } else if hasCreatedTrip {
                             if let shareURL {
                                 copyShareLink(shareURL)
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -355,35 +409,45 @@ struct TripInvitationView: View {
                                 dismiss()
                                 onDismissAndReset()
                             }
+                        } else {
+                            Task {
+                                do {
+                                    let code = try await onCreateTrip()
+                                    copyShareLink(code)
+                                    hasCreatedTrip = true
+                                } catch {
+                                    print("❌ onCreateTrip task failed with error: \(error)")
+                                }
+                            }
                         }
                     } label: {
                         HStack(spacing: 14) {
-                            if isSavingTrip || isCreatingShare {
+                            if isSavingTrip || isCreatingShare || isFetchingShareLink {
                                 ProgressView()
                                     .tint(.white)
                                     .frame(height: 15)
                             } else {
-                                Image(systemName: primaryButtonIconName)
+                                Image(systemName: isViewOnly ? "link" : primaryButtonIconName)
                                     .font(.button())
                             }
                             
-                            Text(buttonTitle)
+                            Text(isViewOnly ? "Share link" : buttonTitle)
                                 .font(.button())
                                 .fontWidth(.expanded)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(16)
-                        .foregroundStyle(canConfirmTripCreation || isSavingTrip || hasCreatedTrip || isCreatingShare ? .white : .white.opacity(0.52))
+                        .foregroundStyle(isViewOnly || canConfirmTripCreation || isSavingTrip || hasCreatedTrip || isCreatingShare ? .white : .white.opacity(0.52))
                         .overlay {
                             Capsule()
-                                .stroke(hasCreatedTrip ? Theme.secondary : Theme.primary, lineWidth: 1.5)
+                                .stroke(isViewOnly || hasCreatedTrip ? Theme.secondary : Theme.primary, lineWidth: 1.5)
                         }
                     }
                     .glassEffect(.clear)
-                    .disabled(hasCreatedTrip ? false : (!canConfirmTripCreation || isSavingTrip))
-                    .accessibilityLabel(buttonTitle)
+                    .disabled(isViewOnly ? isFetchingShareLink : (hasCreatedTrip ? false : (!canConfirmTripCreation || isSavingTrip)))
+                    .accessibilityLabel(isViewOnly ? "Share link" : buttonTitle)
                     
-                    if !hasCreatedTrip {
+                    if !hasCreatedTrip || isOwner {
                         Button {
                             withAnimation(.spring(response: 0.54, dampingFraction: 0.88)) {
                                 isEditingInvitationDetails = true
@@ -407,14 +471,13 @@ struct TripInvitationView: View {
                             Image(systemName: "xmark")
                                 .font(.button())
                             
-                            
                             Text("Cancel")
                                 .font(.button())
                                 .fontWidth(.expanded)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(16)
-                        .foregroundStyle(.white )
+                        .foregroundStyle(.white)
                         .overlay {
                             Capsule()
                                 .stroke(Theme.primary, lineWidth: 1.5)
@@ -424,11 +487,13 @@ struct TripInvitationView: View {
                     
                     Button {
                         dismissEditMode()
+                        if isViewOnly {
+                            onUpdateTrip?()
+                        }
                     } label: {
                         HStack(spacing: 14) {
                             Image(systemName: "checkmark")
                                 .font(.button())
-                            
                             
                             Text("Done")
                                 .font(.button())
@@ -484,6 +549,52 @@ struct TripInvitationView: View {
         }
     }
     
+    private func shareTripLink() {
+        guard !draft.invitationCode.isEmpty else { return }
+        isFetchingShareLink = true
+        
+        Task {
+            do {
+                let inviteService = CloudKitInviteService()
+                if let invite = try await inviteService.findInvite(by: draft.invitationCode) {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        shareURL(invite.shareURL)
+                    }
+                } else {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        if let url = URL(string: "https://omawe.app/join?code=\(draft.invitationCode)") {
+                            shareURL(url)
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isFetchingShareLink = false
+                    if let url = URL(string: "https://omawe.app/join?code=\(draft.invitationCode)") {
+                        shareURL(url)
+                    }
+                }
+            }
+        }
+    }
+
+    private func shareURL(_ url: URL) {
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            
+            if let popoverController = activityVC.popoverPresentationController {
+                popoverController.sourceView = rootViewController.view
+                popoverController.sourceRect = CGRect(x: rootViewController.view.bounds.midX, y: rootViewController.view.bounds.midY, width: 0, height: 0)
+                popoverController.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityVC, animated: true, completion: nil)
+        }
+    }
+    
     private func invitationAvatar(initials: String, tint: Color) -> some View {
         Text(initials)
             .font(.bodyText())
@@ -503,8 +614,8 @@ struct TripInvitationView: View {
         arrivalDate: Date(),
         locationName: "Canggu Beach Club",
         locationAddress: "Jl. Pantai Batu Bolong, Canggu",
-//                apartmentUnitFloor: "Villa 3, Floor 2",
-//                locationNickname: "Canggu Stay"
+        //                apartmentUnitFloor: "Villa 3, Floor 2",
+        //                locationNickname: "Canggu Stay"
     )
     @Previewable @State var isCalendarPresented = false
     @Previewable @State var isEditingInvitationDetails = false
@@ -512,13 +623,13 @@ struct TripInvitationView: View {
     
     TripInvitationView(
         draft: $draft,
-        creationErrorMessage: nil,
-        shareErrorMessage: nil,
+        creationErrorMessage: .constant(nil),
+        shareErrorMessage: .constant(nil),
         canConfirmTripCreation: true,
-        isSavingTrip: false,
-        isCreatingShare: false,
-        hasCreatedTrip: false,
-        shareURL: "https://www.icloud.com/share/test",
+        isSavingTrip: .constant(false),
+        isCreatingShare: .constant(false),
+        hasCreatedTrip: .constant(false),
+        shareURL: .constant("https://www.icloud.com/share/test"),
         isCalendarPresented: $isCalendarPresented,
         isEditingInvitationDetails: $isEditingInvitationDetails,
         isLocationSheetPresented: $isLocationSheetPresented,

@@ -19,8 +19,10 @@ struct TripStatusDetailView: View {
     var currentUserID: CKRecord.ID? = nil
     var tripActionErrorMessage: String? = nil
     var onEndTrip: (Trip) -> Void = { _ in }
-    var onLeaveTrip: (Trip) -> Void = { _ in }
+    var onLeaveTrip: (Trip) async -> Void = { _ in }
     var onRemoveParticipant: (Participant) -> Void = { _ in }
+    var onDeleteTrip: (Trip) async -> Void = { _ in }
+    var onUpdateTrip: (Trip, TripDraft) -> Void = { _, _ in }
 
     private var selectedIndex: Int {
         guard !trips.isEmpty else { return 0 }
@@ -68,8 +70,10 @@ struct TripStatusDetailView: View {
                                     tripActionErrorMessage: tripActionErrorMessage,
                                     onStartTrip: { onStartTrip(trip) },
                                     onEndTrip: { onEndTrip(trip) },
-                                    onLeaveTrip: { onLeaveTrip(trip) },
-                                    onRemoveParticipant: onRemoveParticipant
+                                    onLeaveTrip: { await onLeaveTrip(trip) },
+                                    onRemoveParticipant: onRemoveParticipant,
+                                    onDeleteTrip: { await onDeleteTrip(trip) },
+                                    onUpdateTrip: { draft in onUpdateTrip(trip, draft) }
                                 )
                                 .tag(index)
                             }
@@ -180,8 +184,10 @@ private struct TripStatusPageContentView: View {
     var tripActionErrorMessage: String? = nil
     var onStartTrip: () -> Void = {}
     var onEndTrip: () -> Void = {}
-    var onLeaveTrip: () -> Void = {}
+    var onLeaveTrip: () async -> Void = {}
     var onRemoveParticipant: (Participant) -> Void = { _ in }
+    var onDeleteTrip: () async -> Void = {}
+    var onUpdateTrip: (TripDraft) -> Void = { _ in }
 
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
@@ -193,8 +199,35 @@ private struct TripStatusPageContentView: View {
         }
     }
 
+    private var detailMembers: [TripDetailMember] {
+        members.map { member in
+            TripDetailMember(
+                name: member.displayName,
+                avatarData: member.participant?.avatarImageData
+            )
+        }
+    }
+
+    private var tripData: TripData {
+        let owner = trip.ownerDisplayName ?? "Owner unavailable"
+        let dateStr = trip.startDate.formatted(.dateTime.day().month(.abbreviated).year())
+        let timeStr = trip.endDate.formatted(date: .omitted, time: .shortened)
+        let subtitle = "by @\(owner) • \(dateStr) • \(timeStr)"
+        
+        return TripData(
+            theme: Theme.themeSecondary,
+            icon: "balloon.2",
+            title: trip.title.isEmpty ? "Untitled trip" : trip.title,
+            subtitle: subtitle,
+            people: members.count,
+            location: trip.destination.isEmpty ? "Location unavailable" : trip.destination,
+            footerTitle: "Trip detail"
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            
             PeopleOrbit(people: orbitPeople)
                 .padding(.bottom, 12)
 
@@ -206,13 +239,10 @@ private struct TripStatusPageContentView: View {
             }
             .font(.caption.bold())
             .foregroundStyle(Color(uiColor: .tertiarySystemBackground).opacity(0.7))
-            .padding(.bottom, 10)
+            .padding(.bottom, 24)
 
             tripCodeView
-                .padding(.bottom, 12)
-
-//            memberListView
-//                .padding(.bottom, 12)
+                .padding(.bottom, 24)
 
             if let tripActionErrorMessage {
                 Text(tripActionErrorMessage)
@@ -225,21 +255,44 @@ private struct TripStatusPageContentView: View {
 
             HStack(spacing: 12) {
                 if trip.status == .notStarted {
-                    StartTripButton(isDisabled: isStartingTrip, action: onStartTrip)
+                    if isOwner {
+                        StartTripButton(isDisabled: isStartingTrip, action: onStartTrip)
+                    } else {
+                        Text("Waiting to start...")
+                            .font(.subheadline.weight(.semibold))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(.white.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 22.5)
+                            .background(.white.opacity(0.12), in: Capsule())
+                    }
                 } else if trip.status == .active {
                     if isOwner {
                         Button(role: .destructive, action: onEndTrip) {
-                            Text("End trip")
+                            Text("End Trip")
+                                .font(.headline.weight(.semibold))
+                                .fontWidth(.expanded)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .buttonStyle(.glassProminent)
                         .disabled(isStartingTrip)
                     } else {
-                        Button(role: .destructive, action: onLeaveTrip) {
+                        Button(role: .destructive) {
+                            Task {
+                                await onLeaveTrip()
+                            }
+                        } label: {
                             Text("Leave trip")
+                                .font(.headline.weight(.semibold))
+                                .fontWidth(.expanded)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
                         }
-                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .buttonStyle(.glassProminent)
+                        .disabled(isStartingTrip)
                     }
                 } else {
                     Text("Trip has ended")
@@ -251,12 +304,25 @@ private struct TripStatusPageContentView: View {
                         .background(.white.opacity(0.12), in: Capsule())
                 }
 
-                Button {
-                } label: {
+                NavigationLink(destination: TripDetailView(
+                    trip: tripData,
+                    members: detailMembers,
+                    isOwner: isOwner,
+                    tripModel: trip,
+                    onLeave: onLeaveTrip,
+                    onRemoveMember: { member in
+                        if let displayMember = members.first(where: { $0.displayName == member.name }),
+                           let participant = displayMember.participant {
+                            onRemoveParticipant(participant)
+                        }
+                    },
+                    onDeleteTrip: onDeleteTrip,
+                    onUpdateTrip: onUpdateTrip
+                )) {
                     Image(systemName: "list.bullet.indent")
-                        .font(.largeTitle)
+                        .font(.title1())
                         .foregroundStyle(Color.primary)
-                        .frame(width: 55, height: 55)
+                        .frame(width: 48, height: 48)
                 }
                 .buttonStyle(.glass)
                 .clipShape(Circle())
@@ -357,5 +423,113 @@ private struct TripStatusPageContentView: View {
             .joined()
 
         return initials.isEmpty ? "?" : initials.uppercased()
+    }
+}
+
+#Preview {
+    @Previewable @State var selectedTripIndex = 0
+
+    let trip1 = Trip(
+        id: CKRecord.ID(recordName: "dummy-trip-1"),
+        title: "Bali Surf Trip",
+        destination: "Canggu Beach Club",
+        startDate: .now,
+        endDate: .now.addingTimeInterval(86400 * 3),
+        ownerID: CKRecord.ID(recordName: "owner-1"),
+        ownerDisplayName: "Bintang",
+        invitationCode: "BALI99",
+        status: .active,
+        createdAt: .now,
+        updatedAt: .now
+    )
+
+    let trip2 = Trip(
+        id: CKRecord.ID(recordName: "dummy-trip-2"),
+        title: "Kuta Beach Sunset",
+        destination: "Kuta Beach, Bali",
+        startDate: .now.addingTimeInterval(86400 * 4),
+        endDate: .now.addingTimeInterval(86400 * 5),
+        ownerID: CKRecord.ID(recordName: "owner-1"),
+        ownerDisplayName: "Bintang",
+        invitationCode: "KUTA22",
+        status: .active,
+        createdAt: .now,
+        updatedAt: .now
+    )
+
+    let trip3 = Trip(
+        id: CKRecord.ID(recordName: "dummy-trip-3"),
+        title: "Ubud Yoga Retreat",
+        destination: "Ubud Yoga Barn",
+        startDate: .now.addingTimeInterval(86400 * 6),
+        endDate: .now.addingTimeInterval(86400 * 8),
+        ownerID: CKRecord.ID(recordName: "owner-2"),
+        ownerDisplayName: "Gleen",
+        invitationCode: "UBUD55",
+        status: .notStarted,
+        createdAt: .now,
+        updatedAt: .now
+    )
+
+    let members = [
+        Participant(
+            id: CKRecord.ID(recordName: "p1"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-1"),
+            userID: CKRecord.ID(recordName: "owner-1"),
+            displayName: "Bintang",
+            role: .owner,
+            joinedAt: .now
+        ),
+        Participant(
+            id: CKRecord.ID(recordName: "p2"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-1"),
+            userID: CKRecord.ID(recordName: "member-1"),
+            displayName: "Gleen",
+            role: .member,
+            joinedAt: .now.addingTimeInterval(3600)
+        ),
+        Participant(
+            id: CKRecord.ID(recordName: "p3"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-2"),
+            userID: CKRecord.ID(recordName: "owner-1"),
+            displayName: "Bintang",
+            role: .owner,
+            joinedAt: .now
+        ),
+        Participant(
+            id: CKRecord.ID(recordName: "p4"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-2"),
+            userID: CKRecord.ID(recordName: "member-2"),
+            displayName: "Baeni",
+            role: .member,
+            joinedAt: .now.addingTimeInterval(1800)
+        ),
+        Participant(
+            id: CKRecord.ID(recordName: "p5"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-3"),
+            userID: CKRecord.ID(recordName: "owner-2"),
+            displayName: "Gleen",
+            role: .owner,
+            joinedAt: .now
+        ),
+        Participant(
+            id: CKRecord.ID(recordName: "p6"),
+            tripID: CKRecord.ID(recordName: "dummy-trip-3"),
+            userID: CKRecord.ID(recordName: "owner-1"),
+            displayName: "Bintang",
+            role: .member,
+            joinedAt: .now.addingTimeInterval(3600)
+        )
+    ]
+
+    NavigationStack {
+        TripStatusDetailView(
+            trips: [trip1, trip2, trip3],
+            members: members,
+            userProfiles: [],
+            selectedTripIndex: $selectedTripIndex,
+            onClose: {},
+            currentUserID: CKRecord.ID(recordName: "owner-1")
+        )
     }
 }
