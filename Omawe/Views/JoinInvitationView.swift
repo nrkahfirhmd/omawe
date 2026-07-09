@@ -5,6 +5,10 @@ struct JoinInvitationView: View {
     let trip: Trip
     let onJoinNow: () async throws -> Void
     let onDismiss: () -> Void
+    var isViewOnly: Bool = false
+    var isOwner: Bool = false
+    var onLeave: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
     
     @State private var hasJoined = false
     @State private var isJoining = false
@@ -21,6 +25,29 @@ struct JoinInvitationView: View {
         self._participants = State(initialValue: participants)
         self.onJoinNow = onJoinNow
         self.onDismiss = onDismiss
+        self.isViewOnly = false
+        self.isOwner = false
+        self.onLeave = nil
+        self.onEdit = nil
+    }
+
+    init(
+        trip: Trip,
+        participants: [Participant] = [],
+        isViewOnly: Bool,
+        isOwner: Bool,
+        onLeave: (() -> Void)? = nil,
+        onEdit: (() -> Void)? = nil,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.trip = trip
+        self._participants = State(initialValue: participants)
+        self.onJoinNow = {}
+        self.onDismiss = onDismiss
+        self.isViewOnly = isViewOnly
+        self.isOwner = isOwner
+        self.onLeave = onLeave
+        self.onEdit = onEdit
     }
     
     private var displayTripName: String {
@@ -207,7 +234,65 @@ struct JoinInvitationView: View {
     
     private var bottomControls: some View {
         VStack(spacing: 12) {
-            if hasJoined {
+            if isViewOnly {
+                HStack(spacing: 12) {
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.headline())
+                            .padding(8)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Go back")
+                    
+                    Button {
+                        onDismiss()
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "house.fill")
+                                .font(.button())
+                            
+                            Text("Back to detail")
+                                .font(.button())
+                                .fontWidth(.expanded)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .foregroundStyle(.white)
+                        .overlay {
+                            Capsule()
+                                .stroke(Theme.primary, lineWidth: 1.5)
+                        }
+                    }
+                    .glassEffect(.clear)
+                    
+                    if isOwner {
+                        Button {
+                            onEdit?()
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.headline())
+                                .padding(8)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Edit trip")
+                    } else {
+                        Button {
+                            onLeave?()
+                        } label: {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.headline())
+                                .padding(8)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel("Leave trip")
+                    }
+                }
+            } else if hasJoined {
                 Button {
                     onDismiss()
                 } label: {

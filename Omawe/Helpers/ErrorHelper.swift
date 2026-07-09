@@ -19,7 +19,7 @@ struct ErrorHelper {
         }
         
         let errorMsg = error.localizedDescription.lowercased()
-        if errorMsg.contains("owner participant") || errorMsg.contains("owner") {
+        if errorMsg.contains("owner cannot accept") || errorMsg.contains("caller is the owner") {
             return "You are the owner of this trip."
         } else if errorMsg.contains("network") || errorMsg.contains("connection") || errorMsg.contains("offline") {
             return "Please check your internet connection and try again."

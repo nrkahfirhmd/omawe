@@ -10,6 +10,7 @@ struct DynamicBox<Content: View>: View {
     var theme: AppTheme
     var icon: String?
     var title: String?
+    var titleColor: Color = .white
     var subtitle: String?
     var helperText: String?
     var footerTitle: String
@@ -19,6 +20,7 @@ struct DynamicBox<Content: View>: View {
         theme: AppTheme,
         icon: String? = nil,
         title: String? = nil,
+        titleColor: Color = .white,
         subtitle: String? = nil,
         helperText: String? = nil,
         footerTitle: String,
@@ -27,6 +29,7 @@ struct DynamicBox<Content: View>: View {
         self.theme = theme
         self.icon = icon
         self.title = title
+        self.titleColor = titleColor
         self.subtitle = subtitle
         self.helperText = helperText
         self.footerTitle = footerTitle
@@ -48,7 +51,7 @@ struct DynamicBox<Content: View>: View {
                     Text(title)
                         .font(.title2())
                         .fontWidth(.expanded)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(titleColor)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)

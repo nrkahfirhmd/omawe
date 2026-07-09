@@ -156,27 +156,28 @@ struct HomeView: View {
     }
     
     private var tripInvitationDestination: some View {
-        TripInvitationView(
-            draft: $viewModel.createTripDraft,
-            creationErrorMessage: viewModel.creationErrorMessage,
-            shareErrorMessage: viewModel.shareErrorMessage,
-            canConfirmTripCreation: viewModel.canConfirmTripCreation,
-            isSavingTrip: viewModel.isSavingTrip,
-            isCreatingShare: viewModel.isCreatingShare,
-            hasCreatedTrip: viewModel.hasCreatedTrip,
-            shareURL: viewModel.shareURL,
-            isCalendarPresented: $viewModel.isCalendarPresented,
-            isEditingInvitationDetails: $viewModel.isEditingInvitationDetails,
-            isLocationSheetPresented: $viewModel.isLocationPresented,
+        @Bindable var vm = viewModel
+        return TripInvitationView(
+            draft: $vm.createTripDraft,
+            creationErrorMessage: $vm.creationErrorMessage,
+            shareErrorMessage: $vm.shareErrorMessage,
+            canConfirmTripCreation: vm.canConfirmTripCreation,
+            isSavingTrip: $vm.isSavingTrip,
+            isCreatingShare: $vm.isCreatingShare,
+            hasCreatedTrip: $vm.hasCreatedTrip,
+            shareURL: $vm.shareURL,
+            isCalendarPresented: $vm.isCalendarPresented,
+            isEditingInvitationDetails: $vm.isEditingInvitationDetails,
+            isLocationSheetPresented: $vm.isLocationPresented,
             onCreateTrip: {
-                let code = try await viewModel.confirmTripCreation(using: modelContext)
+                let code = try await vm.confirmTripCreation(using: modelContext)
                 return code
             },
             onDismissAndReset: {
-                viewModel.isInvitationPresented = false
+                vm.isInvitationPresented = false
                 selectedTripAction = nil
                 isDynamicBoxExpanded = false
-                viewModel.resetCreateTripFlow()
+                vm.resetCreateTripFlow()
             }
         )
     }
@@ -504,6 +505,13 @@ struct HomeView: View {
                 },
                 onRemoveParticipant: { participant in
                     Task { await viewModel.removeParticipant(participant) }
+                },
+                onDeleteTrip: { trip in
+                    Task {
+                        guard let tripID = trip.id else { return }
+                        try? await CloudKitTripService().deleteTrip(id: tripID)
+                        await viewModel.loadTrips()
+                    }
                 }
             )
         } else if selectedTripAction == .join {
