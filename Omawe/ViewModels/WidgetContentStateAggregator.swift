@@ -24,17 +24,32 @@ enum WidgetContentStateAggregator {
     static func aggregate(
         participantStates: [ParticipantTripState],
         displayNames: [CKRecord.ID: String],
+        trackScaleKm: Double,
         currentUserID: CKRecord.ID? = nil
     ) -> OmaweWidgetAttributes.ContentState {
         let arrivedCount = participantStates.count { $0.status == .arrived }
         
-        let mates = participantStates.map { state -> OmaweWidgetAttributes.MateProgress in
-            let name = displayNames[state.userID] ?? "Someone"
+        let mates = displayNames.map { (userID, name) -> OmaweWidgetAttributes.MateProgress in
             let initial = String(name.prefix(1)).uppercased()
-            let isMe = state.userID == currentUserID
+            let isMe = userID == currentUserID
+            let state = participantStates.first { $0.userID == userID }
+            
+            let distanceKm = state?.distanceKm ?? trackScaleKm
+            var progress = 0.0
+            
+            if trackScaleKm > 0 {
+                progress = 1.0 - (distanceKm / trackScaleKm)
+            }
+            if state?.status == .arrived || distanceKm <= 0 {
+                progress = 1.0
+            }
+            // clamp
+            progress = max(0.0, min(1.0, progress))
+            
             return OmaweWidgetAttributes.MateProgress(
                 label: initial,
-                distanceKm: state.distanceKm,
+                distanceKm: distanceKm,
+                progress: progress,
                 isMe: isMe
             )
         }
@@ -55,7 +70,8 @@ enum WidgetContentStateAggregator {
                 myEtaMinutes: myEtaMinutes,
                 myDistanceKm: myDistanceKm,
                 arrivedCount: arrivedCount,
-                mates: mates
+                mates: mates,
+                trackScaleKm: trackScaleKm
             )
         }
 
@@ -66,7 +82,8 @@ enum WidgetContentStateAggregator {
             myEtaMinutes: myEtaMinutes,
             myDistanceKm: myDistanceKm,
             arrivedCount: arrivedCount,
-            mates: mates
+            mates: mates,
+            trackScaleKm: trackScaleKm
         )
     }
 

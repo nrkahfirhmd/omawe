@@ -230,13 +230,14 @@ extension OmaweWidgetAttributes.ContentState {
         myDistanceKm: 10.0,
         arrivedCount: 0,
         mates: [
-            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, isMe: true),
-            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, isMe: false),
-            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, isMe: false)
-        ]
+            OmaweWidgetAttributes.MateProgress(label: "B", distanceKm: 15.0, progress: 0.25, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "K", distanceKm: 14.8, progress: 0.26, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "G", distanceKm: 10.0, progress: 0.5, isMe: true),
+            OmaweWidgetAttributes.MateProgress(label: "A", distanceKm: 9, progress: 0.55, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "C", distanceKm: 0.2, progress: 0.99, isMe: false),
+            OmaweWidgetAttributes.MateProgress(label: "D", distanceKm: 0.1, progress: 0.995, isMe: false)
+        ],
+        trackScaleKm: 20.0
     )
 }
 
@@ -252,13 +253,15 @@ extension OmaweWidgetAttributes.ContentState {
         myEtaMinutes: 12,
         myDistanceKm: 15.0, // Orange border
         arrivedCount: 2,
-        mates: []
+        mates: [],
+        trackScaleKm: 20.0
     )
     OmaweWidgetAttributes.ContentState(
         statusMessage: "Arrived",
         myEtaMinutes: 0,
         myDistanceKm: 0.2, // Green border
         arrivedCount: 6,
-        mates: []
+        mates: [],
+        trackScaleKm: 20.0
     )
 }

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import CloudKit
 
+@MainActor
 @Observable
 class HomeViewModel {
     // MARK: - Services
@@ -399,6 +400,7 @@ class HomeViewModel {
         let content = WidgetContentStateAggregator.aggregate(
             participantStates: states,
             displayNames: displayNames,
+            trackScaleKm: tripStatusViewModel.maxDistanceEverSeen,
             currentUserID: userID
         )
         await liveActivityManager.update(content)
@@ -470,7 +472,21 @@ class HomeViewModel {
     private func startLiveActivity(for trip: Trip) {
         guard let tripID = trip.id else { return }
 
-        let totalMates = max(1, participants.filter { $0.tripID == tripID }.count)
+        let tripParticipants = participants.filter { $0.tripID == tripID }
+        let totalMates = max(1, tripParticipants.count)
+        
+        let mates = tripParticipants.compactMap { participant -> OmaweWidgetAttributes.MateProgress? in
+            guard let name = participant.displayName else { return nil }
+            let initial = String(name.prefix(1)).uppercased()
+            let isMe = participant.userID == cachedUserID
+            return OmaweWidgetAttributes.MateProgress(
+                label: initial,
+                distanceKm: 999.0, // Large enough to not trigger "arrived" green state
+                progress: 0.0,
+                isMe: isMe
+            )
+        }
+
         let attributes = OmaweWidgetAttributes(
             tripName: trip.title,
             destinationName: trip.destination,
@@ -481,7 +497,7 @@ class HomeViewModel {
             myEtaMinutes: 0,
             myDistanceKm: 0,
             arrivedCount: 0,
-            mates: []
+            mates: mates
         )
 
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)

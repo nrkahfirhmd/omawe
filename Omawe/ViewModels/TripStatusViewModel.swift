@@ -36,6 +36,10 @@ final class TripStatusViewModel {
 
     private(set) var participantStates: [CKRecord.ID: ParticipantTripState] = [:]
     var errorMessage: String?
+    
+    /// Tracks the absolute maximum distance ever reported by any participant in this trip.
+    /// This provides a fixed visual scale for progress bars so they don't dynamically shrink.
+    private(set) var maxDistanceEverSeen: Double = 0.0
 
     /// Last coordinate an `MKDirections` request was actually made for, plus
     /// its result — Apple rate-limits this API, so a sub-threshold move
@@ -74,6 +78,11 @@ final class TripStatusViewModel {
                 )
             }
             participantStates = updated
+            
+            let currentMax = updated.values.map { $0.distanceKm }.max() ?? 0.0
+            if currentMax > maxDistanceEverSeen {
+                maxDistanceEverSeen = currentMax
+            }
         } catch {
             errorMessage = ErrorHelper.simplify(error)
         }
