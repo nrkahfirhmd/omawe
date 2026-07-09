@@ -21,6 +21,7 @@ struct CreateJoinButton: View {
     }
     
     @State private var selection: Selection = .none
+    @State private var lastHapticZone: Selection = .none
     
     @State private var dragOffset: CGFloat = 0
     @State private var dragStartOffset: CGFloat = 0
@@ -156,12 +157,33 @@ struct CreateJoinButton: View {
                                             centerControlPressStartedAt = Date()
                                             centerControlSpinStoppedAt = nil
                                             isCenterControlPressed = true
+                                            lastHapticZone = .none
+                                            HapticManager.shared.impact(style: .light)
                                         }
                                         
                                         let proposedOffset = dragStartOffset + value.translation.width
                                         dragOffset = min(max(proposedOffset, -maxOffset), maxOffset)
                                         let progress = min(max(-dragOffset / max(maxOffset, 1), 0), 1)
                                         createProgressChanged(progress)
+                                        
+                                        let dragNormalizedOffset = maxOffset == 0 ? 0 : dragOffset / maxOffset
+                                        let currentZone: Selection
+                                        if dragNormalizedOffset <= -activationThreshold {
+                                            currentZone = .create
+                                        } else if dragNormalizedOffset >= activationThreshold {
+                                            currentZone = .join
+                                        } else {
+                                            currentZone = .none
+                                        }
+                                        
+                                        if currentZone != lastHapticZone {
+                                            if currentZone != .none {
+                                                HapticManager.shared.impact(style: .medium)
+                                            } else {
+                                                HapticManager.shared.impact(style: .light)
+                                            }
+                                            lastHapticZone = currentZone
+                                        }
                                         
                                         if abs(dragOffset) >= maxOffset - 0.5,
                                            centerControlSpinStoppedAt == nil {
@@ -224,6 +246,7 @@ struct CreateJoinButton: View {
         selection = .none
         createProgressChanged(0)
         resetAction()
+        HapticManager.shared.impact(style: .light)
         withAnimation(.spring(response: 0.24, dampingFraction: 0.62)) {
             isCenterControlPopping = true
         }
@@ -248,6 +271,7 @@ struct CreateJoinButton: View {
         } else {
             joinAction()
         }
+        HapticManager.shared.success()
 
         withAnimation(.spring(response: 0.24, dampingFraction: 0.62)) {
             isCenterControlPopping = true
@@ -279,6 +303,7 @@ struct CreateJoinButton: View {
         } else {
             joinAction()
         }
+        HapticManager.shared.success()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             withAnimation(.interactiveSpring(response: 0.24, dampingFraction: 0.9, blendDuration: 0.05)) {

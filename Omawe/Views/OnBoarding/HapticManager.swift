@@ -282,6 +282,18 @@ class HapticManager {
         generator.notificationOccurred(.success)
     }
 
+    func selectionChanged() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+
+    func impact(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+
     func stopAll() {
         engine?.stop(completionHandler: nil)
         do {
