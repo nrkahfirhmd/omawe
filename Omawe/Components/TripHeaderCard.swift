@@ -64,7 +64,7 @@ struct TripHeaderCard: View {
         .padding(.top, 56)
         .frame(maxWidth: .infinity)
         .background(GridGradientBackground(color: Theme.secondaryBox))
-        .clipShape(RoundedRectangle(cornerRadius: 35))
+        .clipShape(RoundedRectangle(cornerRadius: 56))
         .animation(.spring(duration: 0.45), value: isExpanded)
         .foregroundStyle(.white)
     }

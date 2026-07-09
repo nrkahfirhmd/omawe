@@ -484,9 +484,9 @@ struct HomeView: View {
                     try? await Task.sleep(nanoseconds: 10_000_000_000)
                 }
             }
-        } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {
+        } else if isTripStatusPresented && viewModel.trips.contains(where: { $0.status != .ended }) && selectedTripAction == nil {
             TripStatusDetailView(
-                trips: viewModel.trips,
+                trips: viewModel.trips.filter { $0.status != .ended },
                 members: viewModel.participants,
                 userProfiles: userProfiles,
                 selectedTripIndex: $selectedTripIndex,
@@ -501,16 +501,49 @@ struct HomeView: View {
                     Task { await viewModel.endTrip(trip) }
                 },
                 onLeaveTrip: { trip in
-                    Task { await viewModel.leaveTrip(trip) }
+                    await viewModel.leaveTrip(trip)
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isTripStatusPresented = false
+                    }
                 },
                 onRemoveParticipant: { participant in
                     Task { await viewModel.removeParticipant(participant) }
                 },
                 onDeleteTrip: { trip in
+                    guard let tripID = trip.id else {
+                        print("❌ onDeleteTrip: trip.id is nil!")
+                        return
+                    }
+                    print("🗑️ Deleting trip '\(trip.title)' (ID: \(tripID.recordName))...")
+                    do {
+                        try await CloudKitTripService().deleteTrip(id: tripID)
+                        print("✅ Trip deleted successfully from CloudKit!")
+                    } catch {
+                        print("❌ CloudKit delete error: \(error)")
+                    }
+                    await viewModel.loadTrips()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isTripStatusPresented = false
+                    }
+                },
+                onUpdateTrip: { trip, draft in
                     Task {
-                        guard let tripID = trip.id else { return }
-                        try? await CloudKitTripService().deleteTrip(id: tripID)
-                        await viewModel.loadTrips()
+                        var updatedTrip = trip
+                        updatedTrip.title = draft.name
+                        updatedTrip.destination = draft.locationName
+                        updatedTrip.startDate = draft.arrivalDate
+                        updatedTrip.endDate = draft.arrivalDate
+                        updatedTrip.locationAddress = draft.locationAddress
+                        updatedTrip.apartmentUnitFloor = draft.apartmentUnitFloor
+                        updatedTrip.locationNickname = draft.locationNickname
+                        updatedTrip.updatedAt = Date()
+                        
+                        do {
+                            _ = try await CloudKitTripService().updateTrip(updatedTrip)
+                            await viewModel.loadTrips()
+                        } catch {
+                            print("❌ UpdateTrip Error: \(error)")
+                        }
                     }
                 }
             )

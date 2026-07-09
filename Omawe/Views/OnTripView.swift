@@ -121,16 +121,24 @@ struct OnTripView: View {
                 if isOwner {
                     Button(role: .destructive, action: onEndTrip) {
                         Text("End trip")
+                            .font(.headline.weight(.semibold))
+                            .fontWidth(.expanded)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .buttonStyle(.glassProminent)
                     .disabled(isUpdatingTripStatus)
                 } else {
                     Button(role: .destructive, action: onLeaveTrip) {
                         Text("Leave trip")
+                            .font(.headline.weight(.semibold))
+                            .fontWidth(.expanded)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
-                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .buttonStyle(.glassProminent)
                 }
             }
             .padding(.horizontal, 24)

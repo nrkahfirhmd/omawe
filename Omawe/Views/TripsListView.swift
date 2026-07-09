@@ -18,8 +18,7 @@ struct TripsListView: View {
             _selectedSegment = State(initialValue: initialSegment)
         }
     
-    @State private var trips: [Trip] = []
-    private let tripService = CloudKitTripService()
+    private var trips: [Trip] { homeViewModel.trips }
 
     private var displayedTrips: [Trip] {
         let today = Calendar.current.startOfDay(for: .now)
@@ -112,31 +111,25 @@ struct TripsListView: View {
                         .scaledToFill()
                         .ignoresSafeArea()
 
-                    VStack(spacing: 24) {
-                        Picker("", selection: $selectedSegment) {
-                            ForEach(TripListSegment.allCases) { segment in
-                                Text(segment.title)
-                                    .tag(segment)
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            Picker("", selection: $selectedSegment) {
+                                ForEach(TripListSegment.allCases) { segment in
+                                    Text(segment.title)
+                                        .tag(segment)
+                                }
                             }
+                            .pickerStyle(.segmented)
+                            .padding(.horizontal, 24)
+
+                            tripsMenu
                         }
-                        .pickerStyle(.segmented)
-                        .padding(.horizontal, 24)
                         .padding(.top, 120)
-
-                        tripsMenu
-
-                        Spacer()
+                        .padding(.bottom, 40)
                     }
                     .navigationTitle("Your trips")
                     .navigationBarTitleDisplayMode(.inline)
                     .presentationBackground(.clear)
-                    .task {
-                        do {
-                            trips = try await tripService.fetchOwnedTrips()
-                        } catch {
-                            debugLog("Failed to fetch trips: \(error)")
-                        }
-                    }
                 }
                 .searchable(
                     text: $searchText,
@@ -184,7 +177,7 @@ enum TripListSegment: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .totalTrips:
-            return "All trips"
+            return "All Trips"
         case .nextTrips:
             return "Upcoming Trips"
         }
@@ -287,8 +280,107 @@ extension PlaceholderTrip {
     ]
 }
 
-#Preview {
+#Preview("Many Trips") {
     NavigationStack {
-        TripsListView()
+        TripsListView_ManyTripsPreview()
+    }
+}
+
+/// A thin wrapper that injects many sample trips into the TripsListView's
+/// local state so we can preview scrolling behaviour.
+private struct TripsListView_ManyTripsPreview: View {
+    private static let sampleNames: [String] = [
+        "Kuta Sunset Surf and Chill",
+        "Nusa Dua Beach Day",
+        "Ubud Temple Tour",
+        "Seminyak Night Out",
+        "Mount Batur Sunrise Hike",
+        "Tanah Lot Sunset Visit",
+        "Sanur Snorkeling Trip",
+        "Canggu Brunch Crawl",
+        "Jimbaran Seafood Dinner",
+        "Uluwatu Cliff Adventure",
+        "Lovina Dolphin Watch",
+        "Tegallalang Rice Terraces",
+        "Denpasar Market Walk",
+        "Nusa Penida Day Trip",
+        "Gili Islands Getaway",
+    ]
+
+    private static let dummyOwnerID = CKRecord.ID(recordName: "previewOwner")
+
+    private static func makeSampleTrips() -> [Trip] {
+        sampleNames.enumerated().map { index, name in
+            let dayOffset = Double(index * 3 - 10)
+            let start = Date.now.addingTimeInterval(86400 * dayOffset)
+            return Trip(
+                id: CKRecord.ID(recordName: "trip-\(index)"),
+                title: name,
+                destination: "Bali, Indonesia",
+                startDate: start,
+                endDate: start.addingTimeInterval(86400),
+                ownerID: dummyOwnerID,
+                invitationCode: String(format: "%06X", Int.random(in: 0...0xFFFFFF)),
+                status: .notStarted,
+                createdAt: .now,
+                updatedAt: .now
+            )
+        }
+    }
+
+    @State private var selectedSegment: TripListSegment = .totalTrips
+    @State private var searchText = ""
+    private let trips = makeSampleTrips()
+
+    private var displayedTrips: [Trip] {
+        let today = Calendar.current.startOfDay(for: .now)
+        let segmentTrips: [Trip] = switch selectedSegment {
+        case .totalTrips: trips
+        case .nextTrips: trips.filter { $0.startDate >= today }
+        }
+        guard !searchText.isEmpty else { return segmentTrips }
+        return segmentTrips.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Image(.homeBackground)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    Picker("", selection: $selectedSegment) {
+                        ForEach(TripListSegment.allCases) { segment in
+                            Text(segment.title).tag(segment)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 24)
+
+                    VStack(spacing: 0) {
+                        ForEach(displayedTrips) { trip in
+                            TripMenuRow(trip: trip)
+                                .padding(.horizontal, 20)
+                            if trip.id != displayedTrips.last?.id {
+                                Divider().padding(.leading, 20)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 14)
+                    .frame(width: 362)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                }
+                .padding(.top, 120)
+                .padding(.bottom, 40)
+            }
+            .navigationTitle("Your Trips")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .searchable(text: $searchText, placement: .toolbar, prompt: "Search trips...")
     }
 }

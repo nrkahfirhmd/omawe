@@ -19,14 +19,20 @@ struct TripDetailView: View {
     var members: [TripDetailMember]
     var isOwner: Bool = false
     var tripModel: Trip? = nil
-    var onLeave: (() -> Void)? = nil
+    var onLeave: (() async -> Void)? = nil
     var onRemoveMember: ((TripDetailMember) -> Void)? = nil
-    var onDeleteTrip: (() -> Void)? = nil
+    var onDeleteTrip: (() async -> Void)? = nil
+    var onUpdateTrip: ((TripDraft) -> Void)? = nil
     
     @State private var currentMemberPage = 0
-    @State private var isEditing = false
+    @State private var isEditing = false    
     @State private var editableMembers: [TripDetailMember] = []
     @State private var isShowingInvitation = false
+    @State private var editDraft = TripDraft()
+    @State private var isCalendarPresented = false
+    @State private var isEditingInvitationDetails = false
+    @State private var isLocationSheetPresented = false
+    @State private var isProcessingAction = false
     @Environment(\.dismiss) private var dismiss
     
     private let membersPerPage = 5
@@ -71,6 +77,17 @@ struct TripDetailView: View {
             return components.dropFirst().joined(separator: " • ")
         }
         return trip.subtitle
+    }
+    
+    private var tripOwnerName: String {
+        if let ownerName = tripModel?.ownerDisplayName {
+            return ownerName
+        }
+        if let range = trip.subtitle.range(of: "by @"),
+           let endRange = trip.subtitle.range(of: " •") {
+            return String(trip.subtitle[range.upperBound..<endRange.lowerBound])
+        }
+        return ""
     }
     
     var body: some View {
@@ -141,14 +158,27 @@ struct TripDetailView: View {
                         
                         if isEditing {
                             Button {
-                                onDeleteTrip?()
-                                dismiss()
+                                isProcessingAction = true
+                                Task {
+                                    if let onDeleteTrip {
+                                        await onDeleteTrip()
+                                    }
+                                    isProcessingAction = false
+                                    dismiss()
+                                }
                             } label: {
-                                Image(systemName: "trash.fill")
-                                    .foregroundStyle(.white)
-                                    .padding(10)
-                                    .background(Color.white.opacity(0.12), in: Circle())
+                                if isProcessingAction {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .frame(width: 36, height: 36)
+                                } else {
+                                    Image(systemName: "trash.fill")
+                                        .foregroundStyle(.white)
+                                        .padding(10)
+                                        .background(Color.white.opacity(0.12), in: Circle())
+                                }
                             }
+                            .disabled(isProcessingAction)
                         }
                     }
                     .padding(.horizontal, 24)
@@ -186,7 +216,7 @@ struct TripDetailView: View {
                     pages: memberPages,
                     currentPage: $currentMemberPage,
                     isEditing: isEditing,
-                    ownerName: UserSession.shared.displayName ?? "",
+                    ownerName: tripOwnerName,
                     onRemove: { name in
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             editableMembers.removeAll { $0 == name }
@@ -236,8 +266,14 @@ struct TripDetailView: View {
                             dismiss()
                         },
                         onLeave: {
-                            onLeave?()
-                            dismiss()
+                            isProcessingAction = true
+                            Task {
+                                if let onLeave {
+                                    await onLeave()
+                                }
+                                isProcessingAction = false
+                                dismiss()
+                            }
                         },
                         onEdit: {
                             editableMembers = members
@@ -245,6 +281,18 @@ struct TripDetailView: View {
                                 isEditing = true
                             }
                         }, onSeeInvitation: {
+                            if let tripModel {
+                                editDraft = TripDraft(
+                                    name: tripModel.title,
+                                    arrivalDate: tripModel.startDate,
+                                    locationName: tripModel.destination,
+                                    locationAddress: tripModel.locationAddress ?? "",
+                                    apartmentUnitFloor: tripModel.apartmentUnitFloor ?? "",
+                                    locationNickname: tripModel.locationNickname ?? "",
+                                    coordinate: tripModel.destinationCoordinate,
+                                    invitationCode: tripModel.invitationCode
+                                )
+                            }
                             isShowingInvitation = true
                         }
                     )
@@ -255,25 +303,21 @@ struct TripDetailView: View {
             .ignoresSafeArea(edges: .top)
             .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $isShowingInvitation) {
-                if let tripModel {
-                    JoinInvitationView(
-                        trip: tripModel,
-                        isViewOnly: true,
-                        isOwner: resolvedIsOwner,
-                        onLeave: {
-                            onLeave?()
-                        },
-                        onEdit: {
-                            editableMembers = members
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                isEditing = true
-                            }
-                        },
-                        onDismiss: {
-                            isShowingInvitation = false
-                        }
-                    )
-                }
+                TripInvitationView(
+                    draft: $editDraft,
+                    isViewOnly: true,
+                    isOwner: resolvedIsOwner,
+                    isCalendarPresented: $isCalendarPresented,
+                    isEditingInvitationDetails: $isEditingInvitationDetails,
+                    isLocationSheetPresented: $isLocationSheetPresented,
+                    onUpdateTrip: {
+                        onUpdateTrip?(editDraft)
+                        isShowingInvitation = false
+                    },
+                    onDismiss: {
+                        isShowingInvitation = false
+                    }
+                )
             }
         }
     }

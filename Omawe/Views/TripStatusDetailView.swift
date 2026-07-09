@@ -19,9 +19,10 @@ struct TripStatusDetailView: View {
     var currentUserID: CKRecord.ID? = nil
     var tripActionErrorMessage: String? = nil
     var onEndTrip: (Trip) -> Void = { _ in }
-    var onLeaveTrip: (Trip) -> Void = { _ in }
+    var onLeaveTrip: (Trip) async -> Void = { _ in }
     var onRemoveParticipant: (Participant) -> Void = { _ in }
-    var onDeleteTrip: (Trip) -> Void = { _ in }
+    var onDeleteTrip: (Trip) async -> Void = { _ in }
+    var onUpdateTrip: (Trip, TripDraft) -> Void = { _, _ in }
 
     private var selectedIndex: Int {
         guard !trips.isEmpty else { return 0 }
@@ -69,9 +70,10 @@ struct TripStatusDetailView: View {
                                     tripActionErrorMessage: tripActionErrorMessage,
                                     onStartTrip: { onStartTrip(trip) },
                                     onEndTrip: { onEndTrip(trip) },
-                                    onLeaveTrip: { onLeaveTrip(trip) },
+                                    onLeaveTrip: { await onLeaveTrip(trip) },
                                     onRemoveParticipant: onRemoveParticipant,
-                                    onDeleteTrip: { onDeleteTrip(trip) }
+                                    onDeleteTrip: { await onDeleteTrip(trip) },
+                                    onUpdateTrip: { draft in onUpdateTrip(trip, draft) }
                                 )
                                 .tag(index)
                             }
@@ -182,9 +184,10 @@ private struct TripStatusPageContentView: View {
     var tripActionErrorMessage: String? = nil
     var onStartTrip: () -> Void = {}
     var onEndTrip: () -> Void = {}
-    var onLeaveTrip: () -> Void = {}
+    var onLeaveTrip: () async -> Void = {}
     var onRemoveParticipant: (Participant) -> Void = { _ in }
-    var onDeleteTrip: () -> Void = {}
+    var onDeleteTrip: () async -> Void = {}
+    var onUpdateTrip: (TripDraft) -> Void = { _ in }
 
     private var orbitPeople: [PeopleOrbitPerson] {
         members.map { member in
@@ -276,11 +279,20 @@ private struct TripStatusPageContentView: View {
                         .buttonStyle(.glassProminent)
                         .disabled(isStartingTrip)
                     } else {
-                        Button(role: .destructive, action: onLeaveTrip) {
+                        Button(role: .destructive) {
+                            Task {
+                                await onLeaveTrip()
+                            }
+                        } label: {
                             Text("Leave trip")
+                                .font(.headline.weight(.semibold))
+                                .fontWidth(.expanded)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
                         }
-                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .buttonStyle(.glassProminent)
+                        .disabled(isStartingTrip)
                     }
                 } else {
                     Text("Trip has ended")
@@ -304,7 +316,8 @@ private struct TripStatusPageContentView: View {
                             onRemoveParticipant(participant)
                         }
                     },
-                    onDeleteTrip: onDeleteTrip
+                    onDeleteTrip: onDeleteTrip,
+                    onUpdateTrip: onUpdateTrip
                 )) {
                     Image(systemName: "list.bullet.indent")
                         .font(.title1())

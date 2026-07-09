@@ -14,6 +14,7 @@ struct JoinInvitationView: View {
     @State private var isJoining = false
     @State private var joinErrorMessage: String?
     @State private var participants: [Participant]
+    @State private var isFetchingShareLink = false
     
     init(
         trip: Trip,
@@ -248,13 +249,18 @@ struct JoinInvitationView: View {
                     .accessibilityLabel("Go back")
                     
                     Button {
-                        onDismiss()
+                        shareTripLink()
                     } label: {
                         HStack(spacing: 14) {
-                            Image(systemName: "house.fill")
-                                .font(.button())
+                            if isFetchingShareLink {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "link")
+                                    .font(.button())
+                            }
                             
-                            Text("Back to detail")
+                            Text("Share link")
                                 .font(.button())
                                 .fontWidth(.expanded)
                         }
@@ -267,6 +273,7 @@ struct JoinInvitationView: View {
                         }
                     }
                     .glassEffect(.clear)
+                    .disabled(isFetchingShareLink)
                     
                     if isOwner {
                         Button {
@@ -377,6 +384,52 @@ struct JoinInvitationView: View {
                     joinErrorMessage = ErrorHelper.simplify(error)
                 }
             }
+        }
+    }
+    
+    private func shareTripLink() {
+        guard !trip.invitationCode.isEmpty else { return }
+        isFetchingShareLink = true
+        
+        Task {
+            do {
+                let inviteService = CloudKitInviteService()
+                if let invite = try await inviteService.findInvite(by: trip.invitationCode) {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        shareURL(invite.shareURL)
+                    }
+                } else {
+                    await MainActor.run {
+                        isFetchingShareLink = false
+                        if let url = URL(string: "https://omawe.app/join?code=\(trip.invitationCode)") {
+                            shareURL(url)
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isFetchingShareLink = false
+                    if let url = URL(string: "https://omawe.app/join?code=\(trip.invitationCode)") {
+                        shareURL(url)
+                    }
+                }
+            }
+        }
+    }
+
+    private func shareURL(_ url: URL) {
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            
+            if let popoverController = activityVC.popoverPresentationController {
+                popoverController.sourceView = rootViewController.view
+                popoverController.sourceRect = CGRect(x: rootViewController.view.bounds.midX, y: rootViewController.view.bounds.midY, width: 0, height: 0)
+                popoverController.permittedArrowDirections = []
+            }
+            
+            rootViewController.present(activityVC, animated: true, completion: nil)
         }
     }
 }

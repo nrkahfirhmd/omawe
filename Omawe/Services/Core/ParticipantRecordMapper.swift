@@ -6,6 +6,7 @@
 //
 
 import CloudKit
+import UIKit
 
 struct ParticipantRecordMapper: CloudKitRecordMappable {
     static func makeRecord(
@@ -26,7 +27,8 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
             record[Field.displayName] = displayName as CKRecordValue
         }
         if let avatarImageData = model.avatarImageData {
-            record[Field.avatarImageData] = avatarImageData as CKRecordValue
+            let compressed = compressImage(avatarImageData)
+            record[Field.avatarImageData] = (compressed ?? avatarImageData) as CKRecordValue
         }
 
         // Required for non-owner writes into a shared zone — CloudKit needs
@@ -34,6 +36,26 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
         record.parent = CKRecord.Reference(recordID: model.tripID, action: .none)
 
         return record
+    }
+
+    private static func compressImage(_ data: Data) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        
+        let maxDimension: CGFloat = 200.0
+        let size = image.size
+        
+        let scale = min(maxDimension / size.width, maxDimension / size.height, 1.0)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        
+        let resizedImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        
+        return resizedImage.jpegData(compressionQuality: 0.6)
     }
 
     /// Applies `model`'s mutable fields onto an already-fetched `record` in
