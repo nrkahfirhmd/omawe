@@ -15,6 +15,8 @@ struct LocationView: View {
     let trip: Trip
     var participants: [Participant] = []
     var currentUserID: CKRecord.ID? = nil
+    
+    @Environment(\.openURL) var openURL
 
     @State private var camera: MapCameraPosition = .userLocation(
         fallback: .region(
@@ -31,9 +33,10 @@ struct LocationView: View {
         )
     )
     @State private var isHeaderExpanded = false
-    // Shared with TripHeaderCard's "Gonna be late" toggle — either entry
-    // point sets the same self-reported status for this device's user.
-    @State private var isReportedLate = false
+    private var isReportedLate: Bool {
+        guard let currentUserID else { return false }
+        return tripStatusViewModel.participantStates[currentUserID]?.status == .delayed
+    }
     // Shared with TripHeaderCard's status display — set by the danger
     // button below, distinct from (and more urgent than) `isReportedLate`.
     @State private var needsHelp = false
@@ -47,7 +50,18 @@ struct LocationView: View {
     // stale `recordedAt`) — a plain `[CKRecord.ID: Location]` couldn't
     // distinguish those two cases.
     @State private var participantSamples: [CKRecord.ID: LocationSample] = [:]
-    @State private var staleDebouncers: [CKRecord.ID: StaleDisplayDebouncer] = [:]
+    
+    private final class DebouncerCache {
+        var debouncers: [CKRecord.ID: StaleDisplayDebouncer] = [:]
+        func debouncer(for id: CKRecord.ID) -> StaleDisplayDebouncer {
+            if let existing = debouncers[id] { return existing }
+            let new = StaleDisplayDebouncer()
+            debouncers[id] = new
+            return new
+        }
+    }
+    private let debouncerCache = DebouncerCache()
+
     // NFR-4: auto-fits once when the set of participants with a known
     // location changes (e.g. someone's first fix lands), not on every ~20s
     // poll tick — satisfies the ticket's "don't fight the user's manual
@@ -145,7 +159,7 @@ struct LocationView: View {
                     await refreshParticipantLocations(tripID: tripID)
                     await refreshParticipantStatuses(tripID: tripID)
                     fitRegionIfParticipantsChanged()
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 10_000_000_000)
                 }
             }
 
@@ -157,7 +171,6 @@ struct LocationView: View {
                     participants: participants,
                     participantStates: tripStatusViewModel.participantStates,
                     currentUserID: currentUserID,
-                    isReportedLate: $isReportedLate,
                     needsHelp: $needsHelp
                 )
                     .onTapGesture {
@@ -209,8 +222,8 @@ struct LocationView: View {
 
                         Button {
                             HapticManager.shared.boom()
-                            isReportedLate.toggle()
-                            if isReportedLate {
+                            openURL(URL(string: "omawe://report")!)
+                            if !isReportedLate {
                                 needsHelp = false
                                 showConfirmationBanner("Your report has been recorded")
                             } else {
@@ -241,7 +254,6 @@ struct LocationView: View {
                             HapticManager.shared.boom()
                             needsHelp.toggle()
                             if needsHelp {
-                                isReportedLate = false
                                 showConfirmationBanner("Your help request has been sent")
                             } else {
                                 showConfirmationBanner("Your help request has been cleared")
@@ -298,12 +310,7 @@ struct LocationView: View {
             lastUpdated: lastUpdated
         )
 
-        let debouncer = staleDebouncers[userID] ?? {
-            let debouncer = StaleDisplayDebouncer()
-            staleDebouncers[userID] = debouncer
-            return debouncer
-        }()
-
+        let debouncer = debouncerCache.debouncer(for: userID)
         return debouncer.display(for: raw)
     }
 

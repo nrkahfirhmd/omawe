@@ -14,6 +14,10 @@ final class LocationSharingCoordinator {
     private let syncService: LocationSyncServiceProtocol
     private let queueService: LocationUpdateQueueServiceProtocol
     private var forwardingTask: Task<Void, Never>?
+    private var reportedLateAt: Date?
+    private var currentTripID: CKRecord.ID?
+    private var currentUserID: CKRecord.ID?
+    private var lastLocation: CLLocation?
 
     init(
         locationService: LocationServiceProtocol,
@@ -27,10 +31,13 @@ final class LocationSharingCoordinator {
 
     func startSharing(tripID: CKRecord.ID, userID: CKRecord.ID) {
         stopSharing()
+        
+        currentTripID = tripID
+        currentUserID = userID
 
         locationService.startUpdating()
 
-        forwardingTask = Task { [locationService, syncService, queueService] in
+        forwardingTask = Task { [weak self, locationService, syncService, queueService] in
             // NFR-3: best-effort catch-up before this tick's own saves — a
             // sample queued by an earlier exhausted-retry failure gets
             // another chance as soon as sharing (re)starts, rather than
@@ -38,6 +45,8 @@ final class LocationSharingCoordinator {
             try? await queueService.flush(using: syncService)
 
             for await location in locationService.locationUpdates {
+                self?.lastLocation = location
+                
                 let sample = LocationSample(
                     id: nil,
                     tripID: tripID,
@@ -45,7 +54,8 @@ final class LocationSharingCoordinator {
                     latitude: location.coordinate.latitude,
                     longitude: location.coordinate.longitude,
                     horizontalAccuracy: location.horizontalAccuracy,
-                    recordedAt: location.timestamp
+                    recordedAt: location.timestamp,
+                    reportedLateAt: self?.reportedLateAt
                 )
 
                 // `saveLocation` already retries transient failures
@@ -66,6 +76,41 @@ final class LocationSharingCoordinator {
     func stopSharing() {
         forwardingTask?.cancel()
         forwardingTask = nil
+        reportedLateAt = nil
+        currentTripID = nil
+        currentUserID = nil
+        lastLocation = nil
         locationService.stopUpdating()
+    }
+    
+    func reportLate() {
+        reportedLateAt = Date()
+        
+        guard let tripID = currentTripID,
+              let userID = currentUserID,
+              let location = lastLocation else { return }
+              
+        // Use Date() (not location.timestamp) so this record's recordedAt is
+        // guaranteed to be newer than any prior GPS-driven record — otherwise
+        // latestByUser could pick the next regular GPS save (which arrives
+        // with a newer timestamp) and discard this report.
+        let sample = LocationSample(
+            id: nil,
+            tripID: tripID,
+            userID: userID,
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            horizontalAccuracy: location.horizontalAccuracy,
+            recordedAt: Date(),
+            reportedLateAt: reportedLateAt
+        )
+        
+        Task { [syncService, queueService] in
+            do {
+                try await syncService.saveLocation(sample)
+            } catch {
+                try? queueService.enqueue(sample)
+            }
+        }
     }
 }

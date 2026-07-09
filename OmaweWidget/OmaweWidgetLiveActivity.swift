@@ -8,6 +8,7 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Live Activity Config
 struct OmaweWidgetLiveActivity: Widget {
@@ -108,22 +109,43 @@ struct OmaweWidgetLiveActivity: Widget {
                                 }
                                 .frame(width: 44, height: 44)
                                 
-                                Link(destination: URL(string: "omawe://report")!) {
-                                    HStack(spacing: 7) {
-                                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.white)
-                                        Text("Report")
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .fontWidth(.expanded)
-                                            .foregroundStyle(.white)
+                                if #available(iOS 17.0, *) {
+                                    Button(intent: ReportLateIntent()) {
+                                        HStack(spacing: 7) {
+                                            Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.white)
+                                            Text("Report")
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .fontWidth(.expanded)
+                                                .foregroundStyle(.white)
+                                        }
+                                        .foregroundStyle(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(.orange)
+                                        .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
                                     }
-                                    .foregroundStyle(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                                    .background(.orange)
-                                    .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                                    .buttonStyle(.plain)
+                                } else {
+                                    Link(destination: URL(string: "omawe://report")!) {
+                                        HStack(spacing: 7) {
+                                            Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.white)
+                                            Text("Report")
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .fontWidth(.expanded)
+                                                .foregroundStyle(.white)
+                                        }
+                                        .foregroundStyle(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(.orange)
+                                        .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                                    }
                                 }
                             }
                         }

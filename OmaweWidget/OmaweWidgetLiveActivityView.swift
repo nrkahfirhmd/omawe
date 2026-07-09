@@ -8,6 +8,7 @@
 import SwiftUI
 import ActivityKit
 import WidgetKit
+import AppIntents
 
 // MARK: - Theme Colors
 private enum LATheme {
@@ -124,22 +125,43 @@ struct LiveActivityLockScreenView: View {
                 .frame(width: 44, height: 44)
                 
                 // Report button
-                Link(destination: URL(string: "omawe://report")!) {
-                    HStack(spacing: 7) {
-                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
-                            .font(.subheadline)
-                            .foregroundStyle(.white)
-                        Text("Report")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .fontWidth(.expanded)
-                            .foregroundStyle(.white)
+                if #available(iOS 17.0, *) {
+                    Button(intent: ReportLateIntent()) {
+                        HStack(spacing: 7) {
+                            Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                                .font(.subheadline)
+                                .foregroundStyle(.white)
+                            Text("Report")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .fontWidth(.expanded)
+                                .foregroundStyle(.white)
+                        }
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
                     }
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(.orange)
-                    .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                    .buttonStyle(.plain)
+                } else {
+                    Link(destination: URL(string: "omawe://report")!) {
+                        HStack(spacing: 7) {
+                            Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                                .font(.subheadline)
+                                .foregroundStyle(.white)
+                            Text("Report")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .fontWidth(.expanded)
+                                .foregroundStyle(.white)
+                        }
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
+                    }
                 }
             }
         }
@@ -170,25 +192,30 @@ struct LiveActivityLockScreenView: View {
 struct RouteProgressView: View {
     let mates: [OmaweWidgetAttributes.MateProgress]
     
-    private var markers: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] {
+    private var markers: [(position: CGFloat, label: String, isMe: Bool, distanceKm: Double, isLate: Bool)] {
         // Sort by progress from lowest (left) to highest (right)
         let sorted = mates.sorted { $0.progress < $1.progress }
         
-        var clusters: [(position: CGFloat, label: String, isMe: Bool, clusterText: String?, distanceKm: Double)] = []
+        var placed: [(position: CGFloat, label: String, isMe: Bool, distanceKm: Double, isLate: Bool)] = []
         
         for mate in sorted {
-            let pos = CGFloat(mate.progress)
-            let clampedPos = max(0.05, min(0.95, pos)) // Keep within bounds
+            var pos = CGFloat(mate.progress)
+            let clampedPos = max(0.05, min(0.95, pos))
+            pos = clampedPos
             
-            if let lastIndex = clusters.indices.last, abs(clusters[lastIndex].position - clampedPos) < 0.05 {
-                let existing = clusters[lastIndex]
-                let currentExtra = existing.clusterText == nil ? 0 : (Int(existing.clusterText!.dropFirst()) ?? 0)
-                clusters[lastIndex] = (existing.position, existing.label, existing.isMe || mate.isMe, "+\(currentExtra + 1)", existing.distanceKm)
-            } else {
-                clusters.append((clampedPos, mate.label, mate.isMe, nil, mate.distanceKm))
+            // Shift slightly if there is a collision
+            var shiftCount = 0
+            while placed.contains(where: { abs($0.position - pos) < 0.07 }) && shiftCount < 5 {
+                pos += 0.07
+                if pos > 0.95 { 
+                    pos = clampedPos - (0.07 * CGFloat(shiftCount + 1)) 
+                }
+                shiftCount += 1
             }
+            
+            placed.append((pos, mate.label, mate.isMe, mate.distanceKm, mate.isLate))
         }
-        return clusters
+        return placed
     }
     
     private func curveY(t: CGFloat, midY: CGFloat) -> CGFloat {
@@ -256,8 +283,8 @@ struct RouteProgressView: View {
                 MateMarkerView(
                     label: marker.label,
                     isMe: marker.isMe,
-                    clusterText: marker.clusterText,
-                    distanceKm: marker.distanceKm
+                    distanceKm: marker.distanceKm,
+                    isLate: marker.isLate
                 )
                 .position(
                     x: w * marker.position,
@@ -275,12 +302,15 @@ struct RouteProgressView: View {
 struct MateMarkerView: View {
     let label: String
     let isMe: Bool
-    let clusterText: String?
     let distanceKm: Double
+    let isLate: Bool
     
     private var bgColor: Color {
+        if isLate {
+            return .yellow
+        }
         // Green if arrived or very close (<= 0.5km), otherwise native Orange (on the way)
-        distanceKm <= 0.5 ? LATheme.green : Color.orange
+        return distanceKm <= 0.5 ? LATheme.green : Color.orange
     }
     
     @ViewBuilder
@@ -310,21 +340,7 @@ struct MateMarkerView: View {
     }
     
     var body: some View {
-        if let clusterText = clusterText {
-            ZStack(alignment: .topTrailing) {
-                markerView
-                
-                Text(clusterText)
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .foregroundStyle(.black)
-                    .frame(width: 18, height: 18)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .offset(x: 8, y: -4) // Overlaps the capsule slightly
-            }
-        } else {
-            markerView
-        }
+        markerView
     }
 }
 

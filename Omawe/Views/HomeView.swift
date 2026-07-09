@@ -77,6 +77,9 @@ struct HomeView: View {
                 // matching this handler's pre-existing behavior.
                 if url.scheme == "omawe" {
                     AnalyticsService.shared.log(.liveActivityInteraction(kind: url.host ?? "unknown"))
+                    if url.host == "report" {
+                        viewModel.reportLate()
+                    }
                     return
                 }
                 Task { await viewModel.acceptShare(from: url) }
@@ -477,7 +480,7 @@ struct HomeView: View {
                 // gap), so this is the interim data-driven-ish substitute.
                 while !Task.isCancelled {
                     await viewModel.refreshTripStatus(for: activeTrip)
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 10_000_000_000)
                 }
             }
         } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {

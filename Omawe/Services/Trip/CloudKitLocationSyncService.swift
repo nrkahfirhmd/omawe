@@ -72,6 +72,7 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
     func fetchLatestLocations(for tripID: CKRecord.ID) async throws -> [CKRecord.ID: LocationSample] {
         let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
         let query = CKQuery(recordType: LocationRecordMapper.recordType, predicate: predicate)
+        query.sortDescriptors = [NSSortDescriptor(key: LocationRecordMapper.Field.recordedAt, ascending: false)]
 
         do {
             let targetDatabase = try await databaseForZone(tripID.zoneID)
@@ -147,9 +148,27 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
     }
 
     /// Pure reduction: one sample per user, keeping the most recently
-    /// recorded one. Pulled out of `fetchLatestLocations` so the tie-break
-    /// logic is unit-testable without live CloudKit.
+    /// recorded one. If an older sample has `reportedLateAt` but the newest
+    /// does not, the late timestamp is carried forward — without this,
+    /// pressing "Report" is immediately overwritten by the next regular
+    /// GPS save that lands a fraction of a second later with a newer
+    /// `recordedAt` but no `reportedLateAt`.
     static func latestByUser(from samples: [LocationSample]) -> [CKRecord.ID: LocationSample] {
+        // First pass: find the most recent reportedLateAt per user across ALL samples
+        var latestReportedLate: [CKRecord.ID: Date] = [:]
+        for sample in samples {
+            if let reportedAt = sample.reportedLateAt {
+                if let existing = latestReportedLate[sample.userID] {
+                    if reportedAt > existing {
+                        latestReportedLate[sample.userID] = reportedAt
+                    }
+                } else {
+                    latestReportedLate[sample.userID] = reportedAt
+                }
+            }
+        }
+
+        // Second pass: pick the latest sample per user by recordedAt
         var latest: [CKRecord.ID: LocationSample] = [:]
         for sample in samples {
             if let existing = latest[sample.userID], existing.recordedAt >= sample.recordedAt {
@@ -157,6 +176,15 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
             }
             latest[sample.userID] = sample
         }
+
+        // Third pass: carry forward reportedLateAt if the winning sample doesn't have it
+        for (userID, reportedAt) in latestReportedLate {
+            if var sample = latest[userID], sample.reportedLateAt == nil {
+                sample.reportedLateAt = reportedAt
+                latest[userID] = sample
+            }
+        }
+
         return latest
     }
 

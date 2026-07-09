@@ -41,8 +41,15 @@ final class TripStore {
             }
             lastLoadErrorMessage = nil
 
-            await loadParticipants()
+            // Save trips to cache immediately so UI can display them
             saveToCache()
+
+            // Load participants in background so we don't block the trip list render
+            Task {
+                await loadParticipants()
+                // Save again once participants are loaded
+                saveToCache()
+            }
         } catch {
             print("[TripStore] Failed to load trips: \(error.localizedDescription)")
             lastLoadErrorMessage = ErrorHelper.simplify(error)
@@ -50,19 +57,30 @@ final class TripStore {
     }
     
     func loadParticipants() async {
-        do {
-            var loadedParticipants: [Participant] = []
-            
-            for trip in trips {
+        let currentTrips = self.trips
+        var loadedParticipants: [Participant] = []
+        
+        await withTaskGroup(of: [Participant]?.self) { group in
+            for trip in currentTrips {
                 guard let tripID = trip.id else { continue }
-                let members = try await participantService.fetchParticipants(for: tripID)
-                loadedParticipants.append(contentsOf: members)
+                group.addTask {
+                    do {
+                        return try await self.participantService.fetchParticipants(for: tripID)
+                    } catch {
+                        debugLog("[TripStore] Failed to fetch participants for trip \(tripID.recordName): \(error)")
+                        return nil
+                    }
+                }
             }
             
-            self.participants = loadedParticipants
-        } catch {
-            debugLog("[TripStore] Failed to load participants: \(error.localizedDescription)")
+            for await result in group {
+                if let members = result {
+                    loadedParticipants.append(contentsOf: members)
+                }
+            }
         }
+        
+        self.participants = loadedParticipants
     }
     
     // MARK: - Caching

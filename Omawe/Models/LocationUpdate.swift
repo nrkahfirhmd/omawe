@@ -35,6 +35,7 @@ final class LocationUpdate {
     var horizontalAccuracy: Double?
     var recordedAt: Date = Date()
     var createdAt: Date = Date()
+    var reportedLateAt: Date?
 
     /// False until `LocationUpdateQueueService.flush` confirms the CloudKit
     /// save succeeded. Lets a relaunch resume draining the queue without
@@ -50,6 +51,7 @@ final class LocationUpdate {
         horizontalAccuracy: Double? = nil,
         recordedAt: Date = .now,
         createdAt: Date = .now,
+        reportedLateAt: Date? = nil,
         isSynced: Bool = false
     ) {
         self.id = id
@@ -62,6 +64,7 @@ final class LocationUpdate {
         self.horizontalAccuracy = horizontalAccuracy
         self.recordedAt = recordedAt
         self.createdAt = createdAt
+        self.reportedLateAt = reportedLateAt
         self.isSynced = isSynced
     }
 
@@ -84,7 +87,8 @@ final class LocationUpdate {
             latitude: latitude,
             longitude: longitude,
             horizontalAccuracy: horizontalAccuracy,
-            recordedAt: recordedAt
+            recordedAt: recordedAt,
+            reportedLateAt: reportedLateAt
         )
     }
 }

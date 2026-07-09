@@ -17,4 +17,5 @@ struct LocationSample: Identifiable, Hashable {
     var longitude: Double
     var horizontalAccuracy: Double?
     var recordedAt: Date
+    var reportedLateAt: Date?
 }

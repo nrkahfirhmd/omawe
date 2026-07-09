@@ -98,38 +98,42 @@ final class CloudKitSharingService: SharingServiceProtocol {
         do {
             let zones = try await sharedDatabase.allRecordZones()
 
-            var trips: [Trip] = []
+            return try await withThrowingTaskGroup(of: [Trip].self) { group in
+                for zone in zones {
+                    group.addTask {
+                        let query = CKQuery(
+                            recordType: TripRecordMapper.recordType,
+                            predicate: NSPredicate(value: true)
+                        )
 
-            for zone in zones {
-                let query = CKQuery(
-                    recordType: TripRecordMapper.recordType,
-                    predicate: NSPredicate(value: true)
-                )
+                        let result = try await self.sharedDatabase.records(
+                            matching: query,
+                            inZoneWith: zone.zoneID
+                        )
 
-                let result = try await sharedDatabase.records(
-                    matching: query,
-                    inZoneWith: zone.zoneID
-                )
-
-                let zoneTrips = result.matchResults.compactMap { _, matchResult -> Trip? in
-                    switch matchResult {
-                    case .success(let record):
-                        do {
-                            return try TripRecordMapper.makeModel(from: record)
-                        } catch {
-                            debugLog("[CloudKitSharingService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
-                            return nil
+                        return result.matchResults.compactMap { _, matchResult -> Trip? in
+                            switch matchResult {
+                            case .success(let record):
+                                do {
+                                    return try TripRecordMapper.makeModel(from: record)
+                                } catch {
+                                    debugLog("[CloudKitSharingService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                                    return nil
+                                }
+                            case .failure(let error):
+                                debugLog("[CloudKitSharingService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
+                                return nil
+                            }
                         }
-                    case .failure(let error):
-                        debugLog("[CloudKitSharingService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
-                        return nil
                     }
                 }
 
-                trips.append(contentsOf: zoneTrips)
+                var trips: [Trip] = []
+                for try await zoneTrips in group {
+                    trips.append(contentsOf: zoneTrips)
+                }
+                return trips
             }
-
-            return trips
         } catch {
             throw CloudKitError.unknown(error)
         }

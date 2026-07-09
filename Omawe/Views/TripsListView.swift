@@ -102,7 +102,7 @@ struct TripsListView: View {
                     // recompute path.
                     while !Task.isCancelled {
                         await homeViewModel.refreshTripStatus(for: activeTrip)
-                        try? await Task.sleep(nanoseconds: 20_000_000_000)
+                        try? await Task.sleep(nanoseconds: 10_000_000_000)
                     }
                 }
             } else {

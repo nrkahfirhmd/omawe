@@ -50,7 +50,8 @@ enum WidgetContentStateAggregator {
                 label: initial,
                 distanceKm: distanceKm,
                 progress: progress,
-                isMe: isMe
+                isMe: isMe,
+                isLate: state?.status == .delayed
             )
         }
         

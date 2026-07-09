@@ -14,10 +14,6 @@ struct TripHeaderCard: View {
     var participants: [Participant] = []
     var participantStates: [CKRecord.ID: ParticipantTripState] = [:]
     var currentUserID: CKRecord.ID? = nil
-    /// Set by LocationView's "Report" button (something is holding this
-    /// device's user up) — surfaced here as the "Gonna be late" state so
-    /// both entry points show/toggle the same self-reported status.
-    @Binding var isReportedLate: Bool
     /// Set by LocationView's danger button — more urgent than
     /// `isReportedLate`, takes priority in the status display below.
     @Binding var needsHelp: Bool
@@ -48,7 +44,6 @@ struct TripHeaderCard: View {
                     participants: participants,
                     participantStates: participantStates,
                     currentUserID: currentUserID,
-                    isReportedLate: $isReportedLate,
                     needsHelp: $needsHelp
                 )
                 .transition(
@@ -144,8 +139,8 @@ private struct ExpandedContent: View {
     let participants: [Participant]
     let participantStates: [CKRecord.ID: ParticipantTripState]
     let currentUserID: CKRecord.ID?
-    @Binding var isReportedLate: Bool
     @Binding var needsHelp: Bool
+    @Environment(\.openURL) var openURL
 
     @State private var selectedIndex = 0
 
@@ -175,10 +170,12 @@ private struct ExpandedContent: View {
     }
 
     var body: some View {
+        let isReportedLate = currentUserID.flatMap { participantStates[$0]?.status == .delayed } ?? false
+        
         VStack(spacing: 28) {
             Button {
-                isReportedLate.toggle()
-                if isReportedLate {
+                openURL(URL(string: "omawe://report")!)
+                if !isReportedLate {
                     needsHelp = false
                 }
             } label: {
@@ -208,26 +205,27 @@ private struct ExpandedContent: View {
                 Spacer()
 
                 VStack(spacing: 4) {
-                    Text(displayName)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text(displayName)
+                            .font(.headline)
+                            .foregroundStyle(.white)
 
-                    if current?.userID == currentUserID && needsHelp {
-                        Text("Needs help")
-                            .font(.caption1())
-                            .fontWeight(.bold)
-                            .foregroundStyle(.red)
-                    } else if current?.userID == currentUserID && isReportedLate {
-                        Text("Gonna be late")
-                            .font(.caption1())
-                            .foregroundStyle(.red)
-                    } else if let currentState {
-                        Text(currentState.status.label)
-                            .font(.caption1())
-                            .foregroundStyle(currentState.status.tint)
+                        let isCurrentReportedLate = currentState?.status == .delayed
+                        if current?.userID == currentUserID && needsHelp {
+                            Text("Needs help")
+                                .font(.caption1())
+                                .fontWeight(.bold)
+                                .foregroundStyle(.red)
+                        } else if current?.userID == currentUserID && isCurrentReportedLate {
+                            Text("Gonna be late")
+                                .font(.caption1())
+                                .foregroundStyle(.red)
+                        } else if let currentState {
+                            Text(currentState.status.label)
+                                .font(.caption1())
+                                .foregroundStyle(currentState.status.tint)
+                        }
                     }
-
                     if let currentState {
                         Text([
                             currentState.etaMinutes.map { "\($0)m" },
@@ -292,22 +290,29 @@ private extension ParticipantTripStatus {
 }
 
 #Preview {
+    let trip = Trip(
+        id: CKRecord.ID(recordName: "dummy-trip"),
+        title: "Ex-Boyfriends Celebration!",
+        destination: "Toko Kopi Jaya, Kuta",
+        startDate: .now,
+        endDate: .now,
+        ownerID: CKRecord.ID(recordName: "Bintang"),
+        ownerDisplayName: "Bintang",
+        invitationCode: "1A6B7K",
+        status: .active,
+        createdAt: .now,
+        updatedAt: .now
+    )
+    
     TripHeaderCard(
         isExpanded: .constant(true),
-        trip: Trip(
-            id: CKRecord.ID(recordName: "dummy-trip"),
-            title: "Ex-Boyfriends Celebration!",
-            destination: "Toko Kopi Jaya, Kuta",
-            startDate: .now,
-            endDate: .now,
-            ownerID: CKRecord.ID(recordName: "Bintang"),
-            ownerDisplayName: "Bintang",
-            invitationCode: "1A6B7K",
-            status: .active,
-            createdAt: .now,
-            updatedAt: .now
-        ),
-        isReportedLate: .constant(false),
+        trip: trip,
+        participants: [
+            Participant(id: CKRecord.ID(recordName: "p1"), tripID: trip.id!, userID: CKRecord.ID(recordName: "1"), displayName: "Bintang", role: .owner, joinedAt: .now),
+            Participant(id: CKRecord.ID(recordName: "p2"), tripID: trip.id!, userID: CKRecord.ID(recordName: "2"), displayName: "Gleen", role: .member, joinedAt: .now)
+        ],
+        participantStates: [:],
+        currentUserID: CKRecord.ID(recordName: "1"),
         needsHelp: .constant(false)
     )
 }

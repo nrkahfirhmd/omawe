@@ -23,6 +23,7 @@ struct ParticipantStatusInput {
     let etaMinutes: Int?
     let lastUpdate: Date
     let isBackgrounded: Bool
+    let reportedLateAt: Date?
     /// Nil only before the first-ever reading for a participant (see
     /// `ParticipantStatusTracker`, which owns and updates this across calls).
     let etaAtLastOnTheWay: TimeInterval?
@@ -45,6 +46,10 @@ enum ParticipantStatusEngine {
     static func status(for input: ParticipantStatusInput) -> ParticipantTripStatus {
         if LocationCore.isOffline(lastUpdate: input.lastUpdate, isBackgrounded: input.isBackgrounded, now: input.now) {
             return .offline
+        }
+
+        if let reportedLateAt = input.reportedLateAt, input.now.timeIntervalSince(reportedLateAt) < 300 {
+            return .delayed
         }
 
         if input.distanceMeters <= arrivedDistanceMeters {
@@ -82,6 +87,7 @@ final class ParticipantStatusTracker {
         etaMinutes: Int?,
         lastUpdate: Date,
         isBackgrounded: Bool,
+        reportedLateAt: Date? = nil,
         now: Date = Date()
     ) -> ParticipantTripStatus {
         if isFirstUpdate {
@@ -97,6 +103,7 @@ final class ParticipantStatusTracker {
             etaMinutes: etaMinutes,
             lastUpdate: lastUpdate,
             isBackgrounded: isBackgrounded,
+            reportedLateAt: reportedLateAt,
             etaAtLastOnTheWay: etaAtLastOnTheWay,
             now: now
         ))

@@ -29,12 +29,12 @@ final class TripNotificationService {
     private let cooldown: TimeInterval
     private let now: () -> Date
 
-    /// `cooldown` default (5 min) guards against AD-6's near-destination
+    /// `cooldown` default (30s) guards against AD-6's near-destination
     /// boundary flapping (1km/3min) re-firing the same notification on every
     /// poll tick while a participant hovers right at the threshold.
     init(
         center: NotificationScheduling = UNUserNotificationCenter.current(),
-        cooldown: TimeInterval = 300,
+        cooldown: TimeInterval = 30,
         now: @escaping () -> Date = { Date() }
     ) {
         self.center = center
@@ -52,7 +52,7 @@ final class TripNotificationService {
         displayNames: [CKRecord.ID: String],
         currentUserID: CKRecord.ID
     ) {
-        for (userID, state) in updated where userID != currentUserID {
+        for (userID, state) in updated {
             guard let transition = NotifiableTransition(status: state.status) else { continue }
             guard previous[userID]?.status != state.status else { continue }
 

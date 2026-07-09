@@ -17,6 +17,7 @@ struct LocationRecordMapper: CloudKitRecordMappable {
         static let longitude = "longitude"
         static let horizontalAccuracy = "horizontalAccuracy"
         static let recordedAt = "recordedAt"
+        static let reportedLateAt = "reportedLateAt"
     }
 
     static func makeRecord(
@@ -36,6 +37,9 @@ struct LocationRecordMapper: CloudKitRecordMappable {
         record[Field.recordedAt] = model.recordedAt as CKRecordValue
         if let horizontalAccuracy = model.horizontalAccuracy {
             record[Field.horizontalAccuracy] = horizontalAccuracy as CKRecordValue
+        }
+        if let reportedLateAt = model.reportedLateAt {
+            record[Field.reportedLateAt] = reportedLateAt as CKRecordValue
         }
 
         // Required for non-owner writes into a shared zone — CloudKit needs
@@ -65,7 +69,8 @@ struct LocationRecordMapper: CloudKitRecordMappable {
             latitude: latitude,
             longitude: longitude,
             horizontalAccuracy: record[Field.horizontalAccuracy] as? Double,
-            recordedAt: recordedAt
+            recordedAt: recordedAt,
+            reportedLateAt: record[Field.reportedLateAt] as? Date
         )
     }
 }
