@@ -74,87 +74,78 @@ struct TripDateTimeDraftPicker: View {
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 24) {
-                VStack {
-                    Text("Event Date")
-                        .font(.headline().weight(.semibold))
-                        .foregroundStyle(color)
-                    
-                    Button {
-                        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-                            isCalendarPresented = true
-                        }
-                    } label: {
-                        Text(arrivalDate
-                            .formatted(
-                                .dateTime
-                                    .locale(Locale(identifier: "en_US"))
-                                    .month(.abbreviated)
-                                    .day()
-                                    .year()
-                            )
-                        )
-                        .font(.bodyText())
-                        .foregroundStyle(color)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(color.opacity(0.18), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Text("Event Date")
+                    .font(.headline().weight(.semibold))
+                    .foregroundStyle(color)
                 
-
-                VStack(spacing: 18) {
-                    Text("Meet Time")
-                        .font(.headline().weight(.semibold))
-                        .foregroundStyle(color)
-
-                    HStack(spacing: 18) {
-                        CustomWheelPicker(
-                            values: Array(0...23),
-                            selection: selectedHour,
-                            itemHeight: 42,
-                            visibleRowCount: 5
-                        )
-
-                        Text(":")
-                            .font(.title3())
-
-                        CustomWheelPicker(
-                            values: Array(0...59),
-                            selection: selectedMinute,
-                            itemHeight: 42,
-                            visibleRowCount: 5
-                        )
+                Button {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+                        isCalendarPresented.toggle()
                     }
+                } label: {
+                    Text(arrivalDate
+                        .formatted(
+                            .dateTime
+                                .locale(Locale(identifier: "en_US"))
+                                .month(.abbreviated)
+                                .day()
+                                .year()
+                        )
+                    )
+                    .font(.bodyText())
+                    .foregroundStyle(color)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(color.opacity(0.18), in: Capsule())
                 }
-            }
-
-            if isCalendarPresented {
-                VStack(spacing: 0) {
+                .buttonStyle(.plain)
+                
+                if isCalendarPresented {
                     DatePicker(
                         "Arrival date",
                         selection: $arrivalDate,
+                        in: Calendar.current.startOfDay(for: Date())...,
                         displayedComponents: .date
                     )
                     .datePickerStyle(.graphical)
                     .labelsHidden()
                     .tint(.cyan)
                     .colorScheme(.dark)
-                }
-                .frame(width: 300)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(.white.opacity(0.5), lineWidth: 1)
-                }
-                .shadow(color: .black.opacity(0.22), radius: 24, x: 0, y: 12)
-                .transition(.scale(scale: 0.92).combined(with: .opacity))
-                .onChange(of: arrivalDate) { _, _ in
-                    withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-                        isCalendarPresented = false
+                    .frame(height: 320)
+                    .transition(.scale.combined(with: .opacity))
+                    .onChange(of: arrivalDate) { _, _ in
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+                            isCalendarPresented = false
+                        }
                     }
+                }
+            }
+            
+
+            VStack(spacing: 18) {
+                Text("Meet Time")
+                    .font(.headline().weight(.semibold))
+                    .foregroundStyle(color)
+
+                HStack(spacing: 18) {
+                    CustomWheelPicker(
+                        values: Array(0...23),
+                        selection: selectedHour,
+                        itemHeight: 42,
+                        visibleRowCount: 5
+                    )
+
+                    Text(":")
+                        .font(.title3())
+
+                    CustomWheelPicker(
+                        values: Array(0...59),
+                        selection: selectedMinute,
+                        itemHeight: 42,
+                        visibleRowCount: 5
+                    )
                 }
             }
         }

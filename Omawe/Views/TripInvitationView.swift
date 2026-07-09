@@ -7,9 +7,34 @@
 
 import SwiftUI
 import UIKit
+import SwiftData
+import CloudKit
 
 struct TripInvitationView: View {
     @Environment(\.dismiss) private var dismiss
+    
+    @Query(sort: \UserProfile.createdAt, order: .forward) private var userProfiles: [UserProfile]
+    
+    private var currentUserDisplayName: String {
+        let profile = ProfileHelper.currentUserProfile(from: userProfiles)
+        return ProfileHelper.displayName(for: profile) ?? UserSession.shared.displayName ?? "Anonymous"
+    }
+    
+    private var previewParticipants: [Participant] {
+        let profile = ProfileHelper.currentUserProfile(from: userProfiles)
+        let displayName = ProfileHelper.displayName(for: profile) ?? UserSession.shared.displayName ?? "Anonymous"
+        return [
+            Participant(
+                id: nil,
+                tripID: CKRecord.ID(recordName: "preview-trip"),
+                userID: CKRecord.ID(recordName: "current-user"),
+                displayName: displayName,
+                role: .owner,
+                joinedAt: .now,
+                avatarImageData: profile?.avatarImageData
+            )
+        ]
+    }
     @Binding var draft: TripDraft
     let creationErrorMessage: String?
     let shareErrorMessage: String?
@@ -89,7 +114,7 @@ struct TripInvitationView: View {
     var body: some View {
         ZStack {
             
-            invitationStageBackground
+            InvitationStageBackground()
             
             CustomDynamicIsland(
                 color: .black,
@@ -154,38 +179,6 @@ struct TripInvitationView: View {
         .preferredColorScheme(.dark)
     }
     
-    private var invitationStageBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: [.black, Theme.primaryBox],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            
-            PlusPattern()
-                .mask(
-                    LinearGradient(
-                        colors: [.clear, .white],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            
-            SpotlightShape()
-                .fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.26), .white.opacity(0.02), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .blur(radius: 14)
-                .padding(.horizontal, 76)
-                .offset(y: 64)
-        }
-        .ignoresSafeArea()
-    }
-    
     private var header: some View {
         VStack(spacing: 7) {
             Image(systemName: hasCreatedTrip ? "figure.walk.suitcase.rolling" : "eyes")
@@ -207,155 +200,70 @@ struct TripInvitationView: View {
                 editingTicketContent
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else {
-                previewTicketContent
+                let previewTrip = Trip(
+                    id: nil,
+                    title: draft.name,
+                    destination: draft.locationName,
+                    startDate: draft.arrivalDate,
+                    endDate: draft.arrivalDate,
+                    ownerID: CKRecord.ID(recordName: "owner"),
+                    ownerDisplayName: currentUserDisplayName,
+                    invitationCode: draft.invitationCode,
+                    locationAddress: draft.locationAddress,
+                    apartmentUnitFloor: draft.apartmentUnitFloor,
+                    locationNickname: draft.locationNickname,
+                    createdAt: .now,
+                    updatedAt: .now
+                )
+                PreviewTicketContent(trip: previewTrip, participants: previewParticipants)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
     }
     
-    private var previewTicketContent: some View {
-        VStack(spacing: 0) {
-            VStack {
-                VStack {
-                    Text(displayTripName)
-                        .font(.title1().weight(.semibold))
-                        .fontWidth(.expanded)
-                        .foregroundStyle(Color(red: 0.0, green: 0.19, blue: 0.22))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .padding(.bottom, 4)
-                        .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
-                    
-                    Text("by @\(UserSession.shared.displayName ?? "Anonymous")")
-                        .font(.caption1())
-                        .foregroundStyle(Theme.primaryBox.opacity(0.72))
-                        .padding(.bottom, 24)
-                    
-                    HStack(spacing: -7) {
-                        let initials = UserSession.shared.displayName?.trimmingCharacters(in: .whitespacesAndNewlines).first.map { String($0).uppercased() } ?? "A"
-                        invitationAvatar(initials: initials, tint: .orange)
-                    }
-                }
-                .padding(.bottom, 24)
-                
-                VStack(spacing: 18) {
-                    ticketDetail(
-                        label: "Event Date",
-                        value: draft.arrivalDate.formatted(.dateTime.weekday(.wide).day().month(.wide))
-                    )
-                    
-                    ticketDetail(
-                        label: "Meet Time",
-                        value: draft.arrivalDate.formatted(date: .omitted, time: .shortened)
-                    )
-                }
-                
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 72)
-            
-            VStack {
-                Text("Location")
-                    .font(.headline())
-                    .foregroundStyle(.white.opacity(0.48))
-                    .padding(.bottom, 4)
-                
-                VStack(spacing: 4) {
-                    Text(displayLocationName)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                    
-                    if !draft.locationAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text(draft.locationAddress)
-                            .font(.caption2())
-                            .foregroundStyle(.white.opacity(0.86))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(3)
-                            .lineLimit(3)
-                    }
-                }
-                .padding(.bottom, 12)
-                
-                let unit = draft.apartmentUnitFloor.trimmingCharacters(in: .whitespacesAndNewlines)
-                let nickname = draft.locationNickname.trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if !unit.isEmpty || !nickname.isEmpty {
-                    TripLocationNotePill(
-                        apartmentUnitFloor: unit,
-                        locationNickname: nickname
-                    )
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .top)
-            
-            
-            Spacer()
-            
-            HStack {
-                Text("#Code")
-                    .font(.button().width(.expanded))
-                    .foregroundStyle(.white.opacity(0.28))
-                
-                Spacer()
-                
-                Text(draft.invitationCode)
-                    .font(.button().width(.expanded))
-                    .foregroundStyle(.white)
-            }
-            
-            
-        }
-        .frame(maxWidth: 320, maxHeight: .infinity, alignment: .top)
-        .padding(24)
-    }
+
     
     private var editingTicketContent: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 32) {
-                Spacer()
-                ZStack {
-                    Text(displayTripName)
-                        .font(.title1().weight(.semibold))
-                        .fontWidth(.expanded)
-                        .foregroundStyle(Color(red: 0.0, green: 0.19, blue: 0.22))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .opacity(isEditTitle ? 0 : 1)
+        GeometryReader { geo in
+            let totalHeight = geo.size.height
+            let bottomRatio: CGFloat = 0.30
+            let topHeight = totalHeight * (1.0 - bottomRatio)
+            let bottomHeight = totalHeight * bottomRatio
+            
+            VStack(spacing: 0) {
+                // Top Section (Title edit, Date picker)
+                VStack(spacing: 0) {
+                    Spacer()
                     
-                    TextField("", text: $draft.name)
-                        .font(.title1().weight(.semibold))
-                        .fontWidth(.expanded)
-                        .foregroundStyle(Color(red: 0.0, green: 0.19, blue: 0.22))
-                        .multilineTextAlignment(.center)
-                        .opacity(isEditTitle ? 1 : 0)
-                        .focused($isTripNameFocused)
-                        .disabled(!isEditTitle)
-                        .onAppear {
-                            if isEditTitle {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                                    isTripNameFocused = true
+                    ZStack {
+                        Text(displayTripName)
+                            .font(.title1().weight(.semibold))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(Color(red: 0.0, green: 0.19, blue: 0.22))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .opacity(isEditTitle ? 0 : 1)
+                        
+                        TextField("", text: $draft.name)
+                            .font(.title1().weight(.semibold))
+                            .fontWidth(.expanded)
+                            .foregroundStyle(Color(red: 0.0, green: 0.19, blue: 0.22))
+                            .multilineTextAlignment(.center)
+                            .opacity(isEditTitle ? 1 : 0)
+                            .focused($isTripNameFocused)
+                            .disabled(!isEditTitle)
+                            .onAppear {
+                                if isEditTitle {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                        isTripNameFocused = true
+                                    }
                                 }
                             }
-                        }
-                        .onSubmit {
-                            isTripNameFocused = false
-                            isEditTitle = false
-                        }
-                }
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .onTapGesture {
-                        guard !isEditTitle else { return }
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
-                            isEditTitle = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            isTripNameFocused = true
-                        }
+                            .onSubmit {
+                                isTripNameFocused = false
+                                isEditTitle = false
+                            }
                     }
-                    .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background {
@@ -369,44 +277,53 @@ struct TripInvitationView: View {
                                 lineWidth: isEditTitle ? 2 : 1
                             )
                     }
+                    .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .onTapGesture {
+                        guard !isEditTitle else { return }
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
+                            isEditTitle = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            isTripNameFocused = true
+                        }
+                    }
+                    .matchedGeometryEffect(id: "tripTitle", in: invitationNamespace)
                     .animation(.spring(response: 0.4, dampingFraction: 0.88), value: isEditTitle)
-                
-                TripDateTimeDraftPicker(
-                    arrivalDate: $draft.arrivalDate,
-                    isCalendarPresented: $isCalendarPresented,
-                    color: .black
-                )
-                Spacer()
-                VStack(spacing: 20) {
-                    Text("Location")
-                        .font(.headline())
-                    TripDestinationDraftSection(
-                        draft: $draft,
-                        isLocationSheetPresented: $isLocationSheetPresented
+                    
+                    Spacer(minLength: 24)
+                    
+                    TripDateTimeDraftPicker(
+                        arrivalDate: $draft.arrivalDate,
+                        isCalendarPresented: $isCalendarPresented,
+                        color: .black
                     )
+                    
+                    Spacer()
                 }
+                .frame(height: topHeight)
+                
+                // Bottom Section (Location edit)
+                VStack(spacing: 0) {
+                    VStack(spacing: 20) {
+                        Text("Location")
+                            .font(.headline())
+                            .foregroundStyle(.white)
+                        TripDestinationDraftSection(
+                            draft: $draft,
+                            isLocationSheetPresented: $isLocationSheetPresented
+                        )
+                    }
+                    .padding(.top, 16)
+                    
+                    Spacer()
+                }
+                .frame(height: bottomHeight)
             }
         }
-        
         .padding(24)
-        
     }
     
-    private func ticketDetail(label: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.headline())
-                .foregroundStyle(.black.opacity(0.46))
-            
-            Text(value)
-                .font(.title3())
-                .fontWidth(.expanded)
-                .foregroundStyle(.black.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.65)
-        }
-    }
+
     
     private var bottomControls: some View {
         VStack(spacing: 12) {
@@ -437,10 +354,6 @@ struct TripInvitationView: View {
                             } else {
                                 dismiss()
                                 onDismissAndReset()
-                            }
-                        } else {
-                            Task {
-                                let code = try await onCreateTrip()
                             }
                         }
                     } label: {
@@ -586,7 +499,7 @@ struct TripInvitationView: View {
 
 #Preview {
     @Previewable @State var draft = TripDraft(
-        name: "Bali Summer Splash",
+        name: "Bali",
         arrivalDate: Date(),
         locationName: "Canggu Beach Club",
         locationAddress: "Jl. Pantai Batu Bolong, Canggu",
