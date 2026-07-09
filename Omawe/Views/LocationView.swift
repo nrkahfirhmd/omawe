@@ -213,7 +213,9 @@ struct LocationView: View {
                 }
             }
             .padding(.horizontal, 18)
-            .padding(.vertical)
+            .padding(.top, 12)
+            .padding(.bottom, 18)
+            .ignoresSafeArea()
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)

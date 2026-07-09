@@ -150,9 +150,17 @@ private struct ExpandedContent: View {
     private var displayName: String {
         guard let current else { return "No one on this trip yet" }
         if current.userID == currentUserID {
-            return "\(current.displayName ?? "You") (You)"
+            return "You"
         }
         return current.displayName ?? "Member \(String(current.userID.recordName.suffix(6)))"
+    }
+
+    private var mates: [OmaweWidgetAttributes.MateProgress] {
+        OmaweWidgetAttributes.MateProgress.markers(
+            participants: participants,
+            participantStates: participantStates,
+            currentUserID: currentUserID
+        )
     }
 
     var body: some View {
@@ -220,11 +228,8 @@ private struct ExpandedContent: View {
                 .disabled(participants.count < 2)
             }
 
-            HStack(spacing: 16) {
-                Image(systemName: "location.fill")
-                Capsule().fill(currentState?.status.tint.opacity(0.6) ?? .white.opacity(0.35)).frame(height: 6)
-                Image(systemName: "flag.fill")
-            }
+            // MARK: - Route Progress View
+            RouteProgressView(mates: mates)
         }
         .padding(.top, 8)
         .onChange(of: participants.count) { _, newCount in

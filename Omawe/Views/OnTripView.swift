@@ -12,6 +12,7 @@ struct OnTripView: View {
     let trip: Trip
     var participantCount: Int = 1
     var participants: [Participant] = []
+    var participantStates: [CKRecord.ID: ParticipantTripState] = [:]
     var currentUserID: CKRecord.ID? = nil
     var etaMinutes: Int? = nil
     var distanceKm: Double? = nil
@@ -23,6 +24,14 @@ struct OnTripView: View {
 
     private var shortOwnerID: String {
         String(trip.ownerID.recordName.suffix(6))
+    }
+
+    private var mates: [OmaweWidgetAttributes.MateProgress] {
+        OmaweWidgetAttributes.MateProgress.markers(
+            participants: participants,
+            participantStates: participantStates,
+            currentUserID: currentUserID
+        )
     }
 
     private var subtitle: String {
@@ -73,11 +82,8 @@ struct OnTripView: View {
 //            }
             
             VStack(spacing: 14) {
-                HStack(spacing: 16) {
-                    Image(systemName: "location.fill")
-                    Capsule().fill(.white.opacity(0.35)).frame(height: 6)
-                    Image(systemName: "flag.fill")
-                }
+                // MARK: - Route Progress View
+                RouteProgressView(mates: mates)
                 
                 VStack(spacing: 12) {
                     Label(trip.destination.isEmpty ? "Location unavailable" : trip.destination, systemImage: "location")

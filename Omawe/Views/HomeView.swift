@@ -453,6 +453,7 @@ struct HomeView: View {
                     1
                 ),
                 participants: viewModel.participants.filter { $0.tripID == activeTrip.id },
+                participantStates: viewModel.allParticipantTripStates,
                 currentUserID: currentUserID,
                 etaMinutes: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.etaMinutes },
                 distanceKm: currentUserID.flatMap { viewModel.currentUserTripState(for: activeTrip, userID: $0)?.distanceKm },
