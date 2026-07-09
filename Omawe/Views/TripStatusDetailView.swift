@@ -264,6 +264,12 @@ private struct TripStatusPageContentView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, totalTripCount > 1 ? 0 : 18)
+            .task(id: trip.id) {
+                while trip.status == .notStarted && !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    await TripStore.shared.loadTrips()
+                }
+            }
         }
     }
 
