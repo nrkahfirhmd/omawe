@@ -97,7 +97,8 @@ struct OnTripView: View {
                         ZStack {
                             Capsule()
                                 .foregroundStyle(.ultraThinMaterial)
-                                .frame(width: .infinity, height: 50)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
 
                             Label("View on Map", systemImage: "map")
                                 .font(.button())

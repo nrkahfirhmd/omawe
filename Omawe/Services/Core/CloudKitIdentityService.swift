@@ -19,7 +19,13 @@ final class CloudKitIdentityService {
         }
     }
     
+    private static var cachedUserID: CKRecord.ID?
+    
     func currentUserRecordID() async throws -> CKRecord.ID {
+        if let cached = Self.cachedUserID {
+            return cached
+        }
+        
         let status = try await accountStatus()
         
         guard status == .available else {
@@ -34,7 +40,9 @@ final class CloudKitIdentityService {
         }
         
         do {
-            return try await container.userRecordID()
+            let userID = try await container.userRecordID()
+            Self.cachedUserID = userID
+            return userID
         } catch {
             throw CloudKitError.unknown(error)
         }

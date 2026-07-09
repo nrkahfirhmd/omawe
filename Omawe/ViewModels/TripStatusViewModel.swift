@@ -46,6 +46,7 @@ final class TripStatusViewModel {
     /// reuses the cached route instead of re-requesting one every tick.
     private var routeCache: [CKRecord.ID: (coordinate: CLLocationCoordinate2D, result: RouteResult)] = [:]
     private var statusTrackers: [CKRecord.ID: ParticipantStatusTracker] = [:]
+    private var optimisticLateTimestamps: [CKRecord.ID: Date] = [:]
 
     init(
         locationSyncService: LocationSyncServiceProtocol,
@@ -88,6 +89,17 @@ final class TripStatusViewModel {
         }
     }
 
+    /// Optimistically marks a participant as delayed locally, so the UI and
+    /// Live Activity can update instantly without waiting for the next
+    /// CloudKit polling cycle (which may be delayed by indexing).
+    func markParticipantLate(userID: CKRecord.ID) {
+        optimisticLateTimestamps[userID] = now()
+        if var state = participantStates[userID] {
+            state.status = .delayed
+            participantStates[userID] = state
+        }
+    }
+
     /// NFR-4: exposes the already-computed route for `userID` so a map view
     /// can draw it directly, instead of issuing its own separate
     /// `MKDirections` request for the same origin/destination this view
@@ -116,13 +128,18 @@ final class TripStatusViewModel {
             from: Location(coordinate: origin),
             to: Location(coordinate: destination)
         )
+        let isBackgrounded = isBackgrounded || UIApplication.shared.applicationState != .active
+
+        let effectiveReportedLateAt = [sample.reportedLateAt, optimisticLateTimestamps[userID]]
+            .compactMap { $0 }
+            .max()
 
         let status = tracker.update(
             distanceMeters: distanceMeters,
             etaMinutes: etaMinutes,
             lastUpdate: sample.recordedAt,
             isBackgrounded: isBackgrounded,
-            reportedLateAt: sample.reportedLateAt,
+            reportedLateAt: effectiveReportedLateAt,
             now: now()
         )
 

@@ -42,6 +42,32 @@ class HomeViewModel {
             syncService: locationSyncService
         )
         tripStatusViewModel = TripStatusViewModel(locationSyncService: locationSyncService)
+        
+        let nameString = "com.exboyfriends.omawe.reportLate" as CFString
+        let ptr = Unmanaged.passUnretained(self).toOpaque()
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), ptr, { center, observer, name, object, userInfo in
+            guard let observer = observer else { return }
+            let viewModel = Unmanaged<HomeViewModel>.fromOpaque(observer).takeUnretainedValue()
+            // Jump to main actor
+            Task { @MainActor in
+                viewModel.reportLate()
+            }
+        }, nameString, nil, .deliverImmediately)
+        
+        NotificationCenter.default.addObserver(forName: LocationUpdateNotificationBridge.notificationName, object: nil, queue: .main) { [weak self] notification in
+            guard let self = self,
+                  let zoneID = notification.object as? CKRecordZone.ID,
+                  let activeTrip = self.trips.first(where: { $0.status == .active }),
+                  activeTrip.id?.zoneID == zoneID else { return }
+            
+            Task {
+                await self.refreshTripStatus(for: activeTrip, isBackgrounded: UIApplication.shared.applicationState == .background)
+            }
+        }
+    }
+
+    deinit {
+        CFNotificationCenterRemoveEveryObserver(CFNotificationCenterGetDarwinNotifyCenter(), Unmanaged.passUnretained(self).toOpaque())
     }
 
     // MARK: - Trip Draft
@@ -510,9 +536,42 @@ class HomeViewModel {
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)
     }
 
-    /// Triggers the "Report Late" functionality via the coordinator.
     func reportLate() {
         locationSharingCoordinator.reportLate()
+        
+        Task { @MainActor in
+            let userID = try? await currentUserID()
+            
+            if let userID {
+                tripStatusViewModel.markParticipantLate(userID: userID)
+            }
+            
+            if let activeTrip = trips.first(where: { $0.status == .active }) {
+                // Update live activity right now using the optimistic local state
+                let states = Array(tripStatusViewModel.participantStates.values)
+                let displayNames = Dictionary(
+                    uniqueKeysWithValues: participants
+                        .filter { $0.tripID == activeTrip.id }
+                        .compactMap { participant -> (CKRecord.ID, String)? in
+                            let displayName = participant.displayName ?? "Unknown"
+                            return (participant.userID, displayName)
+                        }
+                )
+                
+                let content = WidgetContentStateAggregator.aggregate(
+                    participantStates: states,
+                    displayNames: displayNames,
+                    trackScaleKm: tripStatusViewModel.maxDistanceEverSeen,
+                    currentUserID: userID
+                )
+                
+                await liveActivityManager.update(content)
+                
+                // Still do the cloud fetch later to ensure backend sync
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                await refreshTripStatus(for: activeTrip)
+            }
+        }
     }
 
     /// Orchestrates TRIP-3's "End Trip" flow, in order: stop location sharing

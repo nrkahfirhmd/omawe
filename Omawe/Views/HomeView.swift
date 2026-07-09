@@ -477,7 +477,7 @@ struct HomeView: View {
                 // gap), so this is the interim data-driven-ish substitute.
                 while !Task.isCancelled {
                     await viewModel.refreshTripStatus(for: activeTrip)
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 10_000_000_000)
                 }
             }
         } else if isTripStatusPresented && !viewModel.trips.isEmpty && selectedTripAction == nil {

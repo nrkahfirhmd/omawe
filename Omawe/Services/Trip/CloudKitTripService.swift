@@ -84,41 +84,45 @@ final class CloudKitTripService: TripServiceProtocol {
         do {
             let zones = try await database.allRecordZones()
 
-            var trips: [Trip] = []
+            return try await withThrowingTaskGroup(of: [Trip].self) { group in
+                for zone in zones {
+                    group.addTask {
+                        let query = CKQuery(
+                            recordType: TripRecordMapper.recordType,
+                            predicate: NSPredicate(value: true)
+                        )
 
-            for zone in zones {
-                let query = CKQuery(
-                    recordType: TripRecordMapper.recordType,
-                    predicate: NSPredicate(value: true)
-                )
+                        let result = try await self.database.records(
+                            matching: query,
+                            inZoneWith: zone.zoneID
+                        )
 
-                let result = try await database.records(
-                    matching: query,
-                    inZoneWith: zone.zoneID
-                )
-
-                // A single unreadable record must not blank out every other
-                // trip in every other zone — decode failures are skipped,
-                // not propagated, so one bad/legacy record can't hide the rest.
-                let zoneTrips = result.matchResults.compactMap { _, matchResult -> Trip? in
-                    switch matchResult {
-                    case .success(let record):
-                        do {
-                            return try TripRecordMapper.makeModel(from: record)
-                        } catch {
-                            debugLog("[CloudKitTripService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
-                            return nil
+                        // A single unreadable record must not blank out every other
+                        // trip in every other zone — decode failures are skipped,
+                        // not propagated, so one bad/legacy record can't hide the rest.
+                        return result.matchResults.compactMap { _, matchResult -> Trip? in
+                            switch matchResult {
+                            case .success(let record):
+                                do {
+                                    return try TripRecordMapper.makeModel(from: record)
+                                } catch {
+                                    debugLog("[CloudKitTripService] Skipping unreadable Trip record \(record.recordID.recordName): \(error)")
+                                    return nil
+                                }
+                            case .failure(let error):
+                                debugLog("[CloudKitTripService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
+                                return nil
+                            }
                         }
-                    case .failure(let error):
-                        debugLog("[CloudKitTripService] Match failure in zone \(zone.zoneID.zoneName): \(error)")
-                        return nil
                     }
                 }
 
-                trips.append(contentsOf: zoneTrips)
+                var trips: [Trip] = []
+                for try await zoneTrips in group {
+                    trips.append(contentsOf: zoneTrips)
+                }
+                return trips
             }
-
-            return trips
         } catch {
             throw CloudKitError.unknown(error)
         }

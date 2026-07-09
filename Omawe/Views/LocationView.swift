@@ -50,7 +50,18 @@ struct LocationView: View {
     // stale `recordedAt`) — a plain `[CKRecord.ID: Location]` couldn't
     // distinguish those two cases.
     @State private var participantSamples: [CKRecord.ID: LocationSample] = [:]
-    @State private var staleDebouncers: [CKRecord.ID: StaleDisplayDebouncer] = [:]
+    
+    private final class DebouncerCache {
+        var debouncers: [CKRecord.ID: StaleDisplayDebouncer] = [:]
+        func debouncer(for id: CKRecord.ID) -> StaleDisplayDebouncer {
+            if let existing = debouncers[id] { return existing }
+            let new = StaleDisplayDebouncer()
+            debouncers[id] = new
+            return new
+        }
+    }
+    private let debouncerCache = DebouncerCache()
+
     // NFR-4: auto-fits once when the set of participants with a known
     // location changes (e.g. someone's first fix lands), not on every ~20s
     // poll tick — satisfies the ticket's "don't fight the user's manual
@@ -148,7 +159,7 @@ struct LocationView: View {
                     await refreshParticipantLocations(tripID: tripID)
                     await refreshParticipantStatuses(tripID: tripID)
                     fitRegionIfParticipantsChanged()
-                    try? await Task.sleep(nanoseconds: 20_000_000_000)
+                    try? await Task.sleep(nanoseconds: 10_000_000_000)
                 }
             }
 
@@ -299,12 +310,7 @@ struct LocationView: View {
             lastUpdated: lastUpdated
         )
 
-        let debouncer = staleDebouncers[userID] ?? {
-            let debouncer = StaleDisplayDebouncer()
-            staleDebouncers[userID] = debouncer
-            return debouncer
-        }()
-
+        let debouncer = debouncerCache.debouncer(for: userID)
         return debouncer.display(for: raw)
     }
 
