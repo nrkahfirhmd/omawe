@@ -185,7 +185,7 @@ enum TripListSegment: String, CaseIterable, Identifiable {
         case .totalTrips:
             return "All trips"
         case .nextTrips:
-            return "Upcoming trips"
+            return "Upcoming Trips"
         }
     }
 }

@@ -7,13 +7,21 @@ struct InvitationTicketContainer<Content: View>: View {
     @ViewBuilder var content: () -> Content
     
     var body: some View {
-        ZStack {
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: isEditing ? 0 : 48,
+            bottomLeadingRadius: 48,
+            bottomTrailingRadius: 48,
+            topTrailingRadius: isEditing ? 0 : 48,
+            style: .continuous
+        )
+        
+        return ZStack {
             InvitationTicketBackground(isEditing: isEditing, isJoined: isJoined)
             content()
         }
-        .clipShape(RoundedRectangle(cornerRadius: isEditing ? 0 : 48, style: .continuous))
+        .clipShape(shape)
         .overlay {
-            RoundedRectangle(cornerRadius: 48, style: .continuous)
+            shape
                 .stroke(
                     LinearGradient(
                         stops: [
@@ -38,7 +46,7 @@ struct InvitationTicketBackground: View {
     @AppStorage("selectedAvatarFrame") private var selectedAvatarFrame: AvatarFrameStyle = .dark
     private var cardHeight: CGFloat {
         if isEditing {
-            return 0.3
+            return 0.35
         } else if isJoined {
             return 0.80
         } else {

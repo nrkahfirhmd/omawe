@@ -32,6 +32,7 @@ struct HomeView: View {
     @State private var isKeyboardVisible = false
     @State private var currentUserID: CKRecord.ID?
     @AppStorage("selectedAvatarFrame") private var selectedAvatarFrame: AvatarFrameStyle = .dark
+    @AppStorage("hasCreatedFirstTrip") private var hasCreatedFirstTrip: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -83,6 +84,9 @@ struct HomeView: View {
             .task {
                 await viewModel.loadTrips()
                 currentUserID = try? await viewModel.currentUserID()
+                if !viewModel.trips.isEmpty {
+                    hasCreatedFirstTrip = true
+                }
 
                 for metadata in CloudKitShareAcceptanceBridge.drainPendingMetadata() {
                     await viewModel.acceptShare(metadata)
@@ -211,10 +215,7 @@ struct HomeView: View {
     private var greetingAndHintView: some View {
         VStack {
             Spacer()
-            AvatarView(
-                profile: ProfileHelper.currentUserProfile(from: userProfiles),
-                selectedAvatarFrame: selectedAvatarFrame
-            )
+            avatarView
             greetingTextView
             Spacer()
             swipeHintView
@@ -251,9 +252,11 @@ struct HomeView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.cyan)
             
-            Text("Let's make your\nfirst Omawe")
-                .font(.bodyText())
-                .multilineTextAlignment(.center)
+            if viewModel.trips.isEmpty && !hasCreatedFirstTrip {
+                Text("Let's make your\nfirst Omawe")
+                    .font(.bodyText())
+                    .multilineTextAlignment(.center)
+            }
         }
     }
     
@@ -530,6 +533,9 @@ struct HomeView: View {
             selectedTripIndex = 0
         } else if selectedTripIndex >= count {
             selectedTripIndex = max(0, count - 1)
+        }
+        if count > 0 {
+            hasCreatedFirstTrip = true
         }
     }
     

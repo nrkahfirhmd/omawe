@@ -11,101 +11,92 @@ import CloudKit
 
 struct ProfileTripDetailsView: View {
     @Environment(\.dismiss) private var dismiss
-
+    
     let trip: Trip
+    @State private var participants: [Participant]
+    
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
+    @State private var deleteErrorMessage: String?
+    @State private var showDeleteErrorAlert = false
+    
+    init(
+        trip: Trip,
+        participants: [Participant] = [],
+    ) {
+        self.trip = trip
+        self._participants = State(initialValue: participants)
+    }
     
     var body: some View {
         NavigationStack{
-            ZStack {
             
-                Image(backgroundImage)
-                    .resizable()
-                    .scaledToFill()
+            ZStack {
+                backgroundImage
                     .ignoresSafeArea()
                 
                 VStack {
                     tripDateCapsule
-                        .padding(.top, 60)
+                        .padding(.top, 24)
                     
-                    Text(trip.title)
-                        .font(.title1())
-                        .fontWidth(.expanded)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .frame(height: 68, alignment: .center)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 40)
-
-                    Text("by @\(trip.ownerID.recordName)")
-                        .font(.caption1())
-                        .padding(.top, 5)
-                    
-                    ParticipantAvatarsView(
-                        avatars: [
-                            .avatar,
-                            .avatar,
-                            .avatar,
-                            .avatar,
-                            .avatar
-                        ]
-                    )
-                    .padding(.top, 5)
-                    
-                    //Spacer()
-                    
-                    Text("Event Date")
-                        .font(.headline())
-                        .padding(.top, 40)
-                        .foregroundStyle(.gray)
-                    Text(formattedTripDate)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        
-
-                        //.padding(.top, 5)
-
-                    Text("Location")
-                        .font(.headline())
-                        .padding(.top, 110)
-                        .foregroundStyle(.gray)
-                    Text(trip.destination)
-                        .font(.title3())
-                        .fontWidth(.expanded)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: 270)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 3)
-
-                    locationNoteCapsule
-                        .padding(.top, 20)
-
-                    HStack {
-                        Text("#Code")
-                            .font(.button())
-                            .fontWidth(.expanded)
-                            .foregroundStyle(.white)
-
-                        Spacer()
-                        Text(trip.invitationCode)
-                            .font(.button())
-                            .fontWidth(.expanded)
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
-                    .padding(.bottom, 40)
-                    
-                    //Spacer()
+                    PreviewTicketContent(trip: trip, participants: participants, bottomRatio: 0.55)
                 }
                 
-                
-
-                
-                
-                
+                if isDeleting {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                    ProgressView("Deleting...")
+                        .tint(.white)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
+                }
             }
+            .task {
+                if let tripID = trip.id {
+                    do {
+                        let fetched = try await CloudKitParticipantService().fetchParticipants(for: tripID)
+                        await MainActor.run {
+                            self.participants = fetched
+                        }
+                    } catch {
+                        print("Failed to fetch participants: \(error)")
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        if trip.id != nil {
+                            showDeleteConfirmation = true
+                        }
+                    }) {
+                        Image(systemName: "trash")
+                    }
+                    .disabled(isDeleting)
+                }
+            }
+            .confirmationDialog(
+                "Delete Trip",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    deleteTrip()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to delete this trip? This action cannot be undone.")
+            }
+            .alert("Error Deleting Trip", isPresented: $showDeleteErrorAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let deleteErrorMessage {
+                    Text(deleteErrorMessage)
+                }
+            }
+            .navigationTitle("Trip Detail")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -144,7 +135,7 @@ struct ProfileTripDetailsView: View {
     private var hasTripPassed: Bool {
         trip.startDate < Calendar.current.startOfDay(for: .now)
     }
-
+    
     private var tripDateCapsuleText: String {
         if hasTripPassed {
             return "This trip took place on \(formattedTripDate)"
@@ -152,13 +143,19 @@ struct ProfileTripDetailsView: View {
             return "This trip is scheduled for \(formattedTripDate)"
         }
     }
-
+    
     private var tripDateCapsuleBackground: Color {
         hasTripPassed
         ? .black.opacity(0.05)
         : .green
     }
-
+    
+    private var backgroundWaveColor: Color {
+        hasTripPassed
+        ? Theme.primaryBox
+        : Theme.secondaryBox
+    }
+    
     private var tripDateCapsuleTextColor: Color {
         hasTripPassed
         ? .secondary
@@ -167,48 +164,61 @@ struct ProfileTripDetailsView: View {
     // DATE CAPSULE LOGIC END
     
     // IMAGE CHANGE LOGIC
-    private var backgroundImage: ImageResource {
-        hasTripPassed ? .tripDetailsSheetBG : .upcomingTripDetailsSheetBG
-    }
-}
-
-struct ParticipantAvatarsView: View {
-    let avatars: [ImageResource]
-
-    private let avatarSize: CGFloat = 38
-    private let overlap: CGFloat = 12
-
-    var body: some View {
-        HStack(spacing: -overlap) {
-            ForEach(Array(avatars.prefix(3).enumerated()), id: \.offset) { _, avatar in
-                Image(avatar)
+    private var backgroundImage: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                Image(.moire)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 30, height: avatarSize)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(.black, lineWidth: 2)
-                    }
+                    .frame(width: geo.size.width, height: geo.size.height)
+                
+                ZStack {
+                    LinearGradient(
+                        colors: [
+                            .black,
+                            backgroundWaveColor,
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    
+                    PlusPattern()
+                        .mask(
+                            LinearGradient(
+                                colors: [.clear, .white],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                }
+                .clipShape(BottomWave())
+                .frame(height: geo.size.height * 0.40)
             }
-
-            if avatars.count > 3 {
-                Text("+\(avatars.count - 3)")
-                    .font(.caption1())
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 15)
+        }
+    }
+    
+    private func deleteTrip() {
+        guard let tripID = trip.id else { return }
+        isDeleting = true
+        deleteErrorMessage = nil
+        
+        Task {
+            do {
+                try await CloudKitTripService().deleteTrip(id: tripID)
+                await MainActor.run {
+                    isDeleting = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isDeleting = false
+                    deleteErrorMessage = error.localizedDescription
+                    showDeleteErrorAlert = true
+                }
             }
         }
     }
 }
-
-struct TripParticipant: Identifiable {
-    let id = UUID()
-    let name: String
-    let avatar: ImageResource
-}
-
 
 
 #Preview {
@@ -228,7 +238,60 @@ struct TripParticipant: Identifiable {
                 invitationCode: "1A6B7K",
                 createdAt: .now,
                 updatedAt: .now
-            )
+            ),
+            participants: [
+                Participant(
+                    id: CKRecord.ID(recordName: "p1"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u1"),
+                    displayName: "Asep",
+                    role: .owner,
+                    joinedAt: .now,
+                    avatarImageData: UIImage(named: "avatar")?.pngData()
+                ),
+                Participant(
+                    id: CKRecord.ID(recordName: "p2"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u2"),
+                    displayName: "Budi",
+                    role: .member,
+                    joinedAt: .now,
+                    avatarImageData: UIImage(named: "avatar")?.pngData()
+                ),
+                Participant(
+                    id: CKRecord.ID(recordName: "p3"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u3"),
+                    displayName: "Cici",
+                    role: .member,
+                    joinedAt: .now,
+                    avatarImageData: UIImage(named: "avatar")?.pngData()
+                ),
+                Participant(
+                    id: CKRecord.ID(recordName: "p4"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u4"),
+                    displayName: "Deni",
+                    role: .member,
+                    joinedAt: .now
+                ),
+                Participant(
+                    id: CKRecord.ID(recordName: "p5"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u5"),
+                    displayName: "Eka",
+                    role: .member,
+                    joinedAt: .now
+                ),
+                Participant(
+                    id: CKRecord.ID(recordName: "p6"),
+                    tripID: CKRecord.ID(recordName: "dummy-trip"),
+                    userID: CKRecord.ID(recordName: "u6"),
+                    displayName: "Fani",
+                    role: .member,
+                    joinedAt: .now
+                )
+            ],
         )
     }
 }
