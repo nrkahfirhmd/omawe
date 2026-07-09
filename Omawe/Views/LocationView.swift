@@ -15,6 +15,8 @@ struct LocationView: View {
     let trip: Trip
     var participants: [Participant] = []
     var currentUserID: CKRecord.ID? = nil
+    
+    @Environment(\.openURL) var openURL
 
     @State private var camera: MapCameraPosition = .userLocation(
         fallback: .region(
@@ -31,9 +33,10 @@ struct LocationView: View {
         )
     )
     @State private var isHeaderExpanded = false
-    // Shared with TripHeaderCard's "Gonna be late" toggle — either entry
-    // point sets the same self-reported status for this device's user.
-    @State private var isReportedLate = false
+    private var isReportedLate: Bool {
+        guard let currentUserID else { return false }
+        return tripStatusViewModel.participantStates[currentUserID]?.status == .delayed
+    }
     // Shared with TripHeaderCard's status display — set by the danger
     // button below, distinct from (and more urgent than) `isReportedLate`.
     @State private var needsHelp = false
@@ -157,7 +160,6 @@ struct LocationView: View {
                     participants: participants,
                     participantStates: tripStatusViewModel.participantStates,
                     currentUserID: currentUserID,
-                    isReportedLate: $isReportedLate,
                     needsHelp: $needsHelp
                 )
                     .onTapGesture {
@@ -209,8 +211,8 @@ struct LocationView: View {
 
                         Button {
                             HapticManager.shared.boom()
-                            isReportedLate.toggle()
-                            if isReportedLate {
+                            openURL(URL(string: "omawe://report")!)
+                            if !isReportedLate {
                                 needsHelp = false
                                 showConfirmationBanner("Your report has been recorded")
                             } else {
@@ -241,7 +243,6 @@ struct LocationView: View {
                             HapticManager.shared.boom()
                             needsHelp.toggle()
                             if needsHelp {
-                                isReportedLate = false
                                 showConfirmationBanner("Your help request has been sent")
                             } else {
                                 showConfirmationBanner("Your help request has been cleared")

@@ -122,6 +122,7 @@ final class TripStatusViewModel {
             etaMinutes: etaMinutes,
             lastUpdate: sample.recordedAt,
             isBackgrounded: isBackgrounded,
+            reportedLateAt: sample.reportedLateAt,
             now: now()
         )
 

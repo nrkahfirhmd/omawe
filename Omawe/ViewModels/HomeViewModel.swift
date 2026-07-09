@@ -389,7 +389,7 @@ class HomeViewModel {
             uniqueKeysWithValues: participants
                 .filter { $0.tripID == tripID }
                 .compactMap { participant -> (CKRecord.ID, String)? in
-                    guard let displayName = participant.displayName else { return nil }
+                    let displayName = participant.displayName ?? "Unknown"
                     return (participant.userID, displayName)
                 }
         )
@@ -483,7 +483,7 @@ class HomeViewModel {
         let totalMates = max(1, tripParticipants.count)
         
         let mates = tripParticipants.compactMap { participant -> OmaweWidgetAttributes.MateProgress? in
-            guard let name = participant.displayName else { return nil }
+            let name = participant.displayName ?? "Unknown"
             let initial = String(name.prefix(1)).uppercased()
             let isMe = participant.userID == cachedUserID
             return OmaweWidgetAttributes.MateProgress(
@@ -508,6 +508,11 @@ class HomeViewModel {
         )
 
         liveActivityManager.start(attributes: attributes, initialContent: initialContent)
+    }
+
+    /// Triggers the "Report Late" functionality via the coordinator.
+    func reportLate() {
+        locationSharingCoordinator.reportLate()
     }
 
     /// Orchestrates TRIP-3's "End Trip" flow, in order: stop location sharing
@@ -583,7 +588,9 @@ class HomeViewModel {
             do {
                 try await zoneService.deleteZone(with: zoneID)
             } catch {
-                debugLog("[HomeViewModel] Zone cleanup failed for trip \(tripID.recordName): \(error.localizedDescription)")
+                await MainActor.run {
+                    debugLog("[HomeViewModel] Zone cleanup failed for trip \(tripID.recordName): \(error.localizedDescription)")
+                }
             }
         }
     }

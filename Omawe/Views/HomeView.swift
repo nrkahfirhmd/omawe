@@ -76,6 +76,9 @@ struct HomeView: View {
                 // matching this handler's pre-existing behavior.
                 if url.scheme == "omawe" {
                     AnalyticsService.shared.log(.liveActivityInteraction(kind: url.host ?? "unknown"))
+                    if url.host == "report" {
+                        viewModel.reportLate()
+                    }
                     return
                 }
                 Task { await viewModel.acceptShare(from: url) }

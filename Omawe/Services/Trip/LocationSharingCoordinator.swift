@@ -14,6 +14,7 @@ final class LocationSharingCoordinator {
     private let syncService: LocationSyncServiceProtocol
     private let queueService: LocationUpdateQueueServiceProtocol
     private var forwardingTask: Task<Void, Never>?
+    private var reportedLateAt: Date?
 
     init(
         locationService: LocationServiceProtocol,
@@ -30,7 +31,7 @@ final class LocationSharingCoordinator {
 
         locationService.startUpdating()
 
-        forwardingTask = Task { [locationService, syncService, queueService] in
+        forwardingTask = Task { [weak self, locationService, syncService, queueService] in
             // NFR-3: best-effort catch-up before this tick's own saves — a
             // sample queued by an earlier exhausted-retry failure gets
             // another chance as soon as sharing (re)starts, rather than
@@ -45,7 +46,8 @@ final class LocationSharingCoordinator {
                     latitude: location.coordinate.latitude,
                     longitude: location.coordinate.longitude,
                     horizontalAccuracy: location.horizontalAccuracy,
-                    recordedAt: location.timestamp
+                    recordedAt: location.timestamp,
+                    reportedLateAt: self?.reportedLateAt
                 )
 
                 // `saveLocation` already retries transient failures
@@ -66,6 +68,11 @@ final class LocationSharingCoordinator {
     func stopSharing() {
         forwardingTask?.cancel()
         forwardingTask = nil
+        reportedLateAt = nil
         locationService.stopUpdating()
+    }
+    
+    func reportLate() {
+        reportedLateAt = Date()
     }
 }

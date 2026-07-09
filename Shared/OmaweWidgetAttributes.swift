@@ -17,6 +17,7 @@ struct OmaweWidgetAttributes: ActivityAttributes {
         var distanceKm: Double
         var progress: Double = 0.0 // 0.0 to 1.0
         var isMe: Bool
+        var isLate: Bool = false
     }
 
     public struct ContentState: Codable, Hashable {
