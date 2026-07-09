@@ -14,6 +14,10 @@ struct TripHeaderCard: View {
     var participants: [Participant] = []
     var participantStates: [CKRecord.ID: ParticipantTripState] = [:]
     var currentUserID: CKRecord.ID? = nil
+    /// Set by LocationView's "Report" button (something is holding this
+    /// device's user up) — surfaced here as the "Gonna be late" state so
+    /// both entry points show/toggle the same self-reported status.
+    @Binding var isReportedLate: Bool
 
     private var ownEtaMinutes: Int? {
         currentUserID.flatMap { participantStates[$0]?.etaMinutes }
@@ -40,7 +44,8 @@ struct TripHeaderCard: View {
                 ExpandedContent(
                     participants: participants,
                     participantStates: participantStates,
-                    currentUserID: currentUserID
+                    currentUserID: currentUserID,
+                    isReportedLate: $isReportedLate
                 )
                 .transition(
                     .asymmetric(
@@ -135,6 +140,7 @@ private struct ExpandedContent: View {
     let participants: [Participant]
     let participantStates: [CKRecord.ID: ParticipantTripState]
     let currentUserID: CKRecord.ID?
+    @Binding var isReportedLate: Bool
 
     @State private var selectedIndex = 0
 
@@ -166,13 +172,17 @@ private struct ExpandedContent: View {
     var body: some View {
         VStack(spacing: 28) {
             Button {
+                isReportedLate.toggle()
             } label: {
-                Label("Gonna be late", systemImage: "message.badge")
-                    .padding(.horizontal)
-                    .font(.caption1())
+                Label(
+                    isReportedLate ? "Reported — gonna be late" : "Arriving On-time",
+                    systemImage: isReportedLate ? "checkmark.message.fill" : "message.badge"
+                )
+                .padding(.horizontal)
+                .font(.caption1())
             }
             .buttonStyle(.borderedProminent)
-            .tint(.brown.opacity(0.8))
+            .tint(isReportedLate ? .red.opacity(0.85) : .green.opacity(0.8))
 
             HStack {
                 Button {
@@ -195,11 +205,17 @@ private struct ExpandedContent: View {
                         .fontWidth(.expanded)
                         .multilineTextAlignment(.center)
 
-                    if let currentState {
+                    if current?.userID == currentUserID && isReportedLate {
+                        Text("Gonna be late")
+                            .font(.caption1())
+                            .foregroundStyle(.red)
+                    } else if let currentState {
                         Text(currentState.status.label)
                             .font(.caption1())
                             .foregroundStyle(currentState.status.tint)
+                    }
 
+                    if let currentState {
                         Text([
                             currentState.etaMinutes.map { "\($0)m" },
                             String(format: "%.1fkm", currentState.distanceKm)
@@ -264,7 +280,7 @@ private extension ParticipantTripStatus {
 
 #Preview {
     TripHeaderCard(
-        isExpanded: .constant(false),
+        isExpanded: .constant(true),
         trip: Trip(
             id: CKRecord.ID(recordName: "dummy-trip"),
             title: "Ex-Boyfriends Celebration!",
@@ -277,6 +293,7 @@ private extension ParticipantTripStatus {
             status: .active,
             createdAt: .now,
             updatedAt: .now
-        )
+        ),
+        isReportedLate: .constant(false)
     )
 }

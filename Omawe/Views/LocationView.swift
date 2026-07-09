@@ -31,6 +31,9 @@ struct LocationView: View {
         )
     )
     @State private var isHeaderExpanded = false
+    // Shared with TripHeaderCard's "Gonna be late" toggle — either entry
+    // point sets the same self-reported status for this device's user.
+    @State private var isReportedLate = false
     // Full samples (not just coordinates) so NFR-1 can tell "never received"
     // (absent from this dict) apart from "received, but old" (present with a
     // stale `recordedAt`) — a plain `[CKRecord.ID: Location]` couldn't
@@ -132,7 +135,8 @@ struct LocationView: View {
                     trip: trip,
                     participants: participants,
                     participantStates: tripStatusViewModel.participantStates,
-                    currentUserID: currentUserID
+                    currentUserID: currentUserID,
+                    isReportedLate: $isReportedLate
                 )
                     .onTapGesture {
                         HapticManager.shared.boom()
@@ -150,17 +154,19 @@ struct LocationView: View {
                 Spacer()
 
                 VStack(spacing: 18) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
+                    if isReportedLate {
+                        HStack(spacing: 10) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
 
-                        Text("Your report has been recorded")
-                            .foregroundStyle(.red)
+                            Text("Your report has been recorded")
+                                .foregroundStyle(.red)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.white.opacity(0.9))
+                        .clipShape(Capsule())
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(.white.opacity(0.9))
-                    .clipShape(Capsule())
 
                     HStack(alignment: .bottom) {
                         Button {
@@ -179,8 +185,10 @@ struct LocationView: View {
                         Spacer()
 
                         Button {
+                            HapticManager.shared.boom()
+                            isReportedLate = true
                         } label: {
-                            Text("Report")
+                            Text(isReportedLate ? "Reported" : "Report")
                                 .font(.headline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -189,7 +197,7 @@ struct LocationView: View {
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 28)
                                         .stroke(
-                                            Color.cyan,
+                                            isReportedLate ? Color.red : Color.cyan,
                                             lineWidth: 2
                                         )
                                 }
@@ -197,6 +205,7 @@ struct LocationView: View {
                                     Capsule()
                                 )
                         }
+                        .disabled(isReportedLate)
 
                         Spacer()
 
