@@ -1,10 +1,3 @@
-//
-//  TripDetailView.swift
-//  Omawe
-//
-//  Created by Gleenryan on 01/07/26.
-//
-
 import SwiftUI
 
 // MARK: - Trip Data
@@ -93,7 +86,6 @@ struct TripNotStarted: View {
                 )
             }
         }
-//        .statusBarHidden(true)
         .ignoresSafeArea(edges: .top)
     }
 }

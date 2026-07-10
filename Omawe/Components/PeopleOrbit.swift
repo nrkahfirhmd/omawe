@@ -162,9 +162,7 @@ struct PeopleOrbit: View{
             
         }
         .frame(maxHeight: 162)
-//                    .border(.red, width: 1)
-        
-        
+
     }
     
 }
@@ -188,7 +186,7 @@ struct PeopleOrbit: View{
                     theme: Theme.themeSecondary,
                     title: "Ex-Boyfriends\nCelebration!",
                     subtitle: "by @\(UserSession.shared.displayName ?? "Anonymous") • 27/06/2026 • 11:30",
-                    helperText: "Swipe to see other trips",//curently this is missing symbol
+                    helperText: "Swipe to see other trips",
                     footerTitle: "Trip is not starting yet"
                 ) {
                     
@@ -216,15 +214,11 @@ struct PeopleOrbit: View{
                         
                     }
                     .frame(maxHeight: 162)
-//                    .border(.red, width: 1)
-                    
-                    
                 }
-                   
+                
             }
         }
     }
-//        .statusBarHidden(true)
     .ignoresSafeArea(edges: .top)
 
 }

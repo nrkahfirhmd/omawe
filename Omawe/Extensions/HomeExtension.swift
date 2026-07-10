@@ -1,14 +1,6 @@
-//
-//  HomeExtension.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 05/07/26.
-//
-
 import SwiftUI
 
 // MARK: - Layout
-
 enum HomeLayout {
     static let collapsedIslandWidth: CGFloat = 125
     static let expandedIslandWidth: CGFloat = 360
@@ -28,7 +20,6 @@ enum HomeLayout {
 }
 
 // MARK: - Animation
-
 extension HomeView {
     var topPanelScale: CGFloat {
         // TripStatus uses presented and expanded states for animation, CreateTrip uses dynamicBox
@@ -69,7 +60,6 @@ extension HomeView {
 }
 
 // MARK: - Gesture
-
 extension HomeView {
     var tripStatusOpenGesture: some Gesture {
         DragGesture(minimumDistance: 18)
@@ -103,7 +93,6 @@ extension HomeView {
 }
 
 // MARK: - Dynamic Box
-
 extension HomeView {
     var dynamicBoxExpansionProgress: CGFloat {
         selectedTripAction == .create ? 1 : createSlideProgress
@@ -128,5 +117,4 @@ extension HomeView {
         dynamicBoxCollapsedScaleY
         + ((1 - dynamicBoxCollapsedScaleY) * dynamicBoxExpansionProgress)
     }
-
 }

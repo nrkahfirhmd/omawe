@@ -1,15 +1,6 @@
-//
-//  ParticipantStatusEngine.swift
-//  Omawe
-//
-
 import CoreLocation
 
-/// The four states the UI/widget consume (AD-6), plus `.arrived` — a
-/// terminal state distinct from `.nearDestination` that the widget's
-/// `arrivedCount` needs but AD-6 doesn't explicitly define. `arrivedDistanceMeters`
-/// below is this ticket's own engineering default pending product confirmation
-/// (see ETA-2's "Risks / open questions").
+/// The four states the UI/widget consume, plus `.arrived`
 enum ParticipantTripStatus: String, Codable, Equatable {
     case onTheWay
     case nearDestination
@@ -24,25 +15,15 @@ struct ParticipantStatusInput {
     let lastUpdate: Date
     let isBackgrounded: Bool
     let reportedLateAt: Date?
-    /// Nil only before the first-ever reading for a participant (see
-    /// `ParticipantStatusTracker`, which owns and updates this across calls).
     let etaAtLastOnTheWay: TimeInterval?
     let now: Date
 }
 
-/// Pure derivation of `ParticipantTripStatus` from ETA-1's raw numbers via
-/// `LocationCore`'s already-tested AD-6 predicates — this type never
-/// reimplements a threshold value, only precedence between them.
 enum ParticipantStatusEngine {
-
     static let arrivedDistanceMeters: CLLocationDistance = 100
 
-    /// Precedence when multiple conditions could apply (highest to lowest):
-    /// offline > arrived > delayed > nearDestination > onTheWay. Offline wins
-    /// over everything else because a stale "arrived"/"near destination"
-    /// reading is misleading if the device hasn't reported in over the
-    /// offline threshold — AD-6 doesn't state this ordering explicitly, so
-    /// it's a recommendation to confirm with product (see ETA-2 ticket).
+    /// Precedence: offline > arrived > delayed > nearDestination > onTheWay.
+    /// Offline wins because a stale "arrived"/"near" reading is misleading.
     static func status(for input: ParticipantStatusInput) -> ParticipantTripStatus {
         if LocationCore.isOffline(lastUpdate: input.lastUpdate, isBackgrounded: input.isBackgrounded, now: input.now) {
             return .offline
@@ -71,12 +52,9 @@ enum ParticipantStatusEngine {
     }
 }
 
-/// Owns the "ETA at last on-the-way" baseline for a single participant
-/// (ETA-2 step 2) — this is state that has to persist and mutate across
-/// successive readings, not something derivable from one point-in-time
-/// sample. Also owns the first-update edge case: with no baseline yet,
-/// default to `.onTheWay` using the first ETA as the baseline, rather than
-/// risking a false "delayed" reading on the very first sample.
+/// Owns the "ETA at last on-the-way" baseline. First update seeds the
+/// baseline and defaults to `.onTheWay` rather than risking a false
+/// "delayed" reading with nothing to compare against yet.
 final class ParticipantStatusTracker {
     private var etaAtLastOnTheWay: TimeInterval?
     private var isFirstUpdate = true

@@ -1,12 +1,9 @@
-//
-//  CloudKitContainer.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 
+// MARK: - Backend integration point
+// Single choke point for the CloudKit backend — every `CloudKit*Service`
+// threads through `.shared`. Swapping backends means replacing this plus
+// the `*ServiceProtocol` conformances call sites already depend on.
 final class CloudKitContainer {
     static let shared = CloudKitContainer()
     let container: CKContainer

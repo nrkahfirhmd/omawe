@@ -1,11 +1,4 @@
 
-//
-//  CloudKitParticipantService.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 
 struct UserProfileDetails {
@@ -91,14 +84,7 @@ final class CloudKitParticipantService: ParticipantServiceProtocol {
         }
     }
 
-    /// Fetches the current server record before saving rather than
-    /// blind-constructing a fresh `CKRecord`: a freshly-constructed record
-    /// carries no `recordChangeTag`, so CloudKit has nothing to compare
-    /// against and a save silently overwrites whatever's on the server —
-    /// last-write-wins with no guard. Fetching first gives the record a real
-    /// change tag, so the explicit `.ifServerRecordUnchanged` save below
-    /// actually rejects a concurrent write (`CKError.serverRecordChanged`)
-    /// instead of racing it silently. This is TRIP-2's concurrent-leave guard.
+    /// Fetches the current server record before saving 
     func updateParticipant(_ participant: Participant) async throws -> Participant {
         guard let recordID = participant.id else { throw CloudKitError.invalidRecord }
 

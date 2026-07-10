@@ -1,15 +1,12 @@
-//
-//  TripStore.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 07/07/26.
-//
-
 import SwiftUI
 import CloudKit
 import SwiftData
 import Foundation
 
+/// Bridges CloudKit to the UI: fetches trips, mirrors them into
+/// `cacheFileName` for instant cold-start reads, and merges in the local
+/// `leftTripIDs` blocklist. A backend swap only touches the `*Service`
+/// dependencies below (already behind `*ServiceProtocol`).
 @Observable
 @MainActor
 final class TripStore {
@@ -37,7 +34,6 @@ final class TripStore {
     }
 
     // MARK: - Left-trip blocklist persistence
-
     private static let leftTripIDsKey = "OmaweLeftTripIDs"
 
     private static func loadLeftTripIDs() -> Set<String> {
@@ -118,8 +114,7 @@ final class TripStore {
         
         self.participants = loadedParticipants
         
-        // Discover any shared trips where the user is no longer a participant
-        // and add them to the persistent blocklist so they stay hidden.
+        // Blocklist shared trips where the user is no longer a participant.
         let identityService = CloudKitIdentityService()
         if let currentUserID = try? await identityService.currentUserRecordID() {
             var didFilter = false
@@ -144,7 +139,6 @@ final class TripStore {
     }
     
     // MARK: - Caching
-    
     private func saveToCache() {
         let cachedTrips = trips.map { CachedTrip(from: $0) }
         let cachedParticipants = participants.map { CachedParticipant(from: $0) }
@@ -180,7 +174,6 @@ final class TripStore {
 }
 
 // MARK: - Cache Models
-
 fileprivate struct CacheData: Codable {
     let trips: [CachedTrip]
     let participants: [CachedParticipant]

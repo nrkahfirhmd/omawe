@@ -1,11 +1,3 @@
-//
-//  AppTheme.swift
-//  Omawe
-//
-//  Created by Gleenryan on 01/07/26.
-//
-
-
 import SwiftUI
 
 struct AppTheme {
@@ -15,7 +7,6 @@ struct AppTheme {
 }
 
 enum Theme {
-    
     private static func make(_ colors: [Color]) -> LinearGradient {
         LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
     }

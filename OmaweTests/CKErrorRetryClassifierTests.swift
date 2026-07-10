@@ -1,8 +1,3 @@
-//
-//  CKErrorRetryClassifierTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import CloudKit
 @testable import Omawe
@@ -63,12 +58,8 @@ final class CKErrorRetryClassifierTests: XCTestCase {
         }
     }
 
-    /// Every case declared on `CKError.Code` must land in exactly one of the
-    /// two lists above — this is the actual regression guard: if Apple adds
-    /// a new case (or this test's lists drift from the classifier), a code
-    /// silently defaults to "not retryable" in the classifier, which is the
-    /// safe direction to fail in, but should still be a deliberate decision
-    /// reflected in one of these lists, not an oversight.
+    /// Regression guard: every `CKError.Code` must land in exactly one list,
+    /// so a new Apple case can't silently default to "not retryable" unnoticed.
     func testEveryKnownCode_isCoveredByExactlyOneList() {
         let allCases = Set(retryableCodes).union(nonRetryableCodes)
         XCTAssertEqual(retryableCodes.count + nonRetryableCodes.count, allCases.count, "A code appears in both lists")

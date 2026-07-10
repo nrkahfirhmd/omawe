@@ -1,13 +1,5 @@
-//
-//  OmaweWidgetAttributes.swift
-//  Shared
-//
-//  Shared between the "Omawe" app target (which starts/updates/ends the
-//  Activity, ETA-4) and "OmaweWidgetExtension" (which renders it) — an
-//  ActivityAttributes type must be visible to both sides of the Live
-//  Activity, so this file lives in a folder synchronized into both targets
-//  rather than under either Omawe/ or OmaweWidget/ alone.
-//
+// Lives in Shared/, not Omawe/ or OmaweWidget/, because ActivityAttributes
+// must be visible to both the app (starts/ends the Activity) and the widget extension (renders it).
 
 import ActivityKit
 

@@ -1,10 +1,3 @@
-//
-//  PermissionView.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 08/07/26.
-//
-
 import SwiftUI
 import Lottie
 import CoreLocation

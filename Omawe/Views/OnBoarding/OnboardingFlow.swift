@@ -1,10 +1,3 @@
-//
-//  OnboardingFlow.swift
-//  Omawe
-//
-//  Created by Nguyen Minh Luat on 7/7/26.
-//
-
 import SwiftUI
 
 struct OnboardingFlow: View {
@@ -42,10 +35,6 @@ struct OnboardingFlow: View {
             }
         }
         .onAppear {
-            // Wire the VM's success callback to finishOnboarding().
-            // When Apple Sign In succeeds, the VM saves the session and then
-            // calls this closure, which sets hasCompletedOnboarding = true.
-            // ContentView reacts to that @AppStorage change and navigates to HomeView.
             authViewModel.onSignInCompleted = {
                 finishOnboarding()
             }
@@ -58,9 +47,7 @@ struct OnboardingFlow: View {
         }
     }
 
-    /// Marks onboarding as completed.
-    /// Called by the AuthenticationViewModel after a successful Apple Sign In.
-    /// This triggers ContentView to swap from OnboardingFlow to HomeView.
+    /// Triggers ContentView to swap from OnboardingFlow to HomeView.
     private func finishOnboarding() {
         hasCompletedOnboarding = true
     }

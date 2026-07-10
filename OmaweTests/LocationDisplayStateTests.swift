@@ -1,8 +1,3 @@
-//
-//  LocationDisplayStateTests.swift
-//  OmaweTests
-//
-
 import XCTest
 @testable import Omawe
 

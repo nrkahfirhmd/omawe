@@ -1,10 +1,3 @@
-//
-//  OmaweApp.swift
-//  Omawe
-//
-//  Created by Gleenryan on 29/06/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -12,11 +5,9 @@ import SwiftData
 struct OmaweApp: App {
     @UIApplicationDelegateAdaptor(OmaweAppDelegate.self) private var appDelegate
 
-    // LOC-4 decision: `LocationUpdate` is local-only (no CloudKit mirroring) —
-    // LOC-1's manual CKRecord save is the sync transport, this model is
-    // purely an on-disk offline write queue for it. `UserProfile` keeps
-    // SwiftData's automatic CloudKit mirroring since nothing about it
-    // requires the trip-scoped custom zone that ruled that out for location.
+    // LOC-4: `LocationUpdate` is local-only (LOC-1's manual CKRecord save is
+    // the real sync transport); `UserProfile` keeps SwiftData's automatic
+    // CloudKit mirroring since it has no trip-scoped zone requirement.
     private let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             LocationUpdate.self,

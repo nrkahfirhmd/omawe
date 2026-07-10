@@ -1,10 +1,3 @@
-//
-//  HomeView.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 30/06/26.
-//
-
 import SwiftUI
 import SwiftData
 import CloudKit
@@ -69,12 +62,8 @@ struct HomeView: View {
                 }
             }
             .onOpenURL { url in
-                // NFR-2: the widget's Live Activity taps and the "Report"
-                // link (`OmaweWidgetLiveActivity.swift`) use the app's own
-                // `omawe://` scheme — route and log those here rather than
-                // treating them as a CKShare acceptance URL. Anything else
-                // opening the app is assumed to be a share-invitation URL,
-                // matching this handler's pre-existing behavior.
+                // NFR-2: Live Activity taps use the app's own `omawe://`
+                // scheme; anything else is assumed a share-invitation URL.
                 if url.scheme == "omawe" {
                     AnalyticsService.shared.log(.liveActivityInteraction(kind: url.host ?? "unknown"))
                     if url.host == "report" {
@@ -431,12 +420,9 @@ struct HomeView: View {
     
     // MARK: - Top panel
     
-    /// A trip in progress takes over the panel entirely — no point paging
-    /// through not-started trips while one is already active. Requires the
-    /// current user to still be a participant: after `leaveTrip`, the trip
-    /// can still appear in `trips` (CKShare access isn't revoked on leave),
-    /// so without this check a departed member would stay stuck on
-    /// OnTripView until the owner ends the trip for everyone.
+    /// Requires the current user to still be a participant — `leaveTrip`
+    /// doesn't revoke CKShare access, so a departed member would otherwise
+    /// stay stuck on OnTripView until the owner ends the trip.
     private var activeTrip: Trip? {
         guard let currentUserID else { return nil }
         let myTripIDs: Set<CKRecord.ID> = Set(
@@ -475,10 +461,7 @@ struct HomeView: View {
                 }
             )
             .task(id: activeTrip.id) {
-                // Polls at roughly LOC-1's location-propagation budget rather
-                // than a single one-shot refresh — there's no push-triggered
-                // recompute path yet (that's LOC-1/ETA-4's shared push-token
-                // gap), so this is the interim data-driven-ish substitute.
+                // Polls at ~LOC-1's propagation budget pending a real push-triggered recompute path.
                 while !Task.isCancelled {
                     await viewModel.refreshTripStatus(for: activeTrip)
                     try? await Task.sleep(nanoseconds: 10_000_000_000)

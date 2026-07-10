@@ -1,10 +1,3 @@
-//
-//  CloudKitShareAcceptanceBridge.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 import UIKit
 
@@ -28,9 +21,8 @@ enum CloudKitShareAcceptanceBridge {
     }
 }
 
-/// Posted when a silent push delivers a CloudKit zone-change notification
-/// for location updates, so any active trip screen can refresh without this
-/// bridge needing a direct reference to LOC-2/ETA-1's view models.
+/// Posted on a silent push zone-change so any active trip screen can
+/// refresh without a direct reference to LOC-2/ETA-1's view models.
 enum LocationUpdateNotificationBridge {
     static let notificationName = Notification.Name("LocationUpdateNotificationBridge.didReceiveNotification")
 

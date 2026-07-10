@@ -1,8 +1,3 @@
-//
-//  TripNotificationServiceTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import CloudKit
 import UserNotifications

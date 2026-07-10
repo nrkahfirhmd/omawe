@@ -1,10 +1,3 @@
-//
-//  AppTheme.swift
-//  Omawe
-//
-//  Created by Gleenryan on 01/07/26.
-//
-
 
 import SwiftUI
 

@@ -1,19 +1,7 @@
-//
-//  ETAAccuracySampler.swift
-//  Omawe
-//
-
 import CloudKit
 
-/// NFR-2's "ETA accuracy sampling" metric: compares the most recent ETA
-/// predicted while a participant was still en route against how long arrival
+/// compares the most recent ETA predicted while a participant was still en route against how long arrival
 /// actually took, logging the delta via `AnalyticsLogging`.
-///
-/// Keeps its own baseline rather than reaching into
-/// `ParticipantStatusTracker`'s private `etaAtLastOnTheWay` (ETA-2, already
-/// shipped/tested) — same "last known ETA before arrival" concept, kept as a
-/// separate, independently testable sampler instead of modifying ETA-2's
-/// internals for this ticket's sake.
 final class ETAAccuracySampler {
     private struct Baseline {
         let etaSeconds: TimeInterval
@@ -30,9 +18,7 @@ final class ETAAccuracySampler {
     }
 
     /// Call once per `TripStatusViewModel.refresh()` tick with the states
-    /// from before and after that refresh. Logs one sample per participant
-    /// the instant they transition into `.arrived`, using whatever ETA
-    /// prediction was most recently captured for them while en route.
+    /// from before and after that refresh.
     func recordTransitions(
         previous: [CKRecord.ID: ParticipantTripState],
         updated: [CKRecord.ID: ParticipantTripState]

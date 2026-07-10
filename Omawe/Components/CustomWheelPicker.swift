@@ -1,10 +1,3 @@
-//
-//  CustomWheelPicker.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 04/07/26.
-//
-
 
 import SwiftUI
 import UIKit

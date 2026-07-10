@@ -1,10 +1,3 @@
-//
-//  CloudKitInviteService.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 import Foundation
 
@@ -15,7 +8,6 @@ protocol InviteServiceProtocol {
 }
 
 final class CloudKitInviteService: InviteServiceProtocol {
-
     private let database = CloudKitContainer.shared.publicDatabase
 
     func generateInvitationCode() -> String {

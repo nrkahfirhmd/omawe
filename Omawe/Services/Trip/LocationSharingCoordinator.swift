@@ -1,14 +1,5 @@
-//
-//  LocationSharingCoordinator.swift
-//  Omawe
-//
-
 import CloudKit
 
-/// The seam between "device has a location" (LOC-2's `LocationService`) and
-/// "location is synced" (LOC-1's `CloudKitLocationSyncService`). Keeps
-/// `LocationService` itself free of CloudKit knowledge (AD-3 service-per-
-/// concern layout).
 final class LocationSharingCoordinator {
     private let locationService: LocationServiceProtocol
     private let syncService: LocationSyncServiceProtocol
@@ -38,10 +29,7 @@ final class LocationSharingCoordinator {
         locationService.startUpdating()
 
         forwardingTask = Task { [weak self, locationService, syncService, queueService] in
-            // NFR-3: best-effort catch-up before this tick's own saves — a
-            // sample queued by an earlier exhausted-retry failure gets
-            // another chance as soon as sharing (re)starts, rather than
-            // waiting on a manual retry path that doesn't exist.
+            // best-effort catch-up before this tick's own saves
             try? await queueService.flush(using: syncService)
 
             for await location in locationService.locationUpdates {
@@ -58,12 +46,6 @@ final class LocationSharingCoordinator {
                     reportedLateAt: self?.reportedLateAt
                 )
 
-                // `saveLocation` already retries transient failures
-                // internally (NFR-3/`RetryExecutor`) before ever throwing —
-                // reaching this catch means retries are exhausted, so queue
-                // the sample into LOC-4's durable offline queue instead of
-                // silently dropping it. Surfacing this failure to the UI is
-                // NFR-1's concern, not this seam's.
                 do {
                     try await syncService.saveLocation(sample)
                 } catch {
@@ -90,10 +72,7 @@ final class LocationSharingCoordinator {
               let userID = currentUserID,
               let location = lastLocation else { return }
               
-        // Use Date() (not location.timestamp) so this record's recordedAt is
-        // guaranteed to be newer than any prior GPS-driven record — otherwise
-        // latestByUser could pick the next regular GPS save (which arrives
-        // with a newer timestamp) and discard this report.
+        // Use Date() so this record's recordedAt is guaranteed to be newer than any prior GPS-driven record
         let sample = LocationSample(
             id: nil,
             tripID: tripID,

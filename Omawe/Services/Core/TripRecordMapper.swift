@@ -1,10 +1,3 @@
-//
-//  TripRecordMapper.swift.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 
 struct TripRecordMapper: CloudKitRecordMappable {
@@ -41,9 +34,8 @@ struct TripRecordMapper: CloudKitRecordMappable {
         return record
     }
 
-    /// Writes `model`'s fields onto an existing `CKRecord` in place, preserving
-    /// that record's system metadata (change tag) so CloudKit treats the save
-    /// as an update rather than a conflicting insert of an already-existing record.
+    /// Writes onto an existing `CKRecord` in place, preserving its change tag
+    /// so CloudKit treats the save as an update, not a conflicting insert.
     static func apply(_ model: Trip, to record: CKRecord) {
         record[Field.title] = model.title as CKRecordValue
         record[Field.destination] = model.destination as CKRecordValue

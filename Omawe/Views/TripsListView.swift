@@ -1,10 +1,3 @@
-//
-//  TripsListView.swift
-//  Omawe
-//
-//  Created by Syed Israruddin on 06/07/26.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -37,27 +30,7 @@ struct TripsListView: View {
         }
     }
 
-//    private var displayedTrips: [PlaceholderTrip] {
-//        let today = Calendar.current.startOfDay(for: .now)
-//
-//        let segmentTrips: [PlaceholderTrip] = switch selectedSegment {
-//        case .totalTrips:
-//            trips
-//        case .nextTrips:
-//            trips.filter { $0.date >= today }
-//        }
-//
-//        guard !searchText.isEmpty else { return segmentTrips }
-//
-//        return segmentTrips.filter {
-//            $0.title.localizedCaseInsensitiveContains(searchText)
-//        }
-//    }
-
-    /// A trip in progress takes over this screen entirely — no point browsing
-    /// the full trip list while one is already active. Requires the current
-    /// user to still be a participant — see HomeView's equivalent property
-    /// for why (leaving doesn't revoke the trip's CKShare access).
+    /// See HomeView's equivalent `activeTrip` for why the participant check matters.
     private var activeTrip: Trip? {
         guard let currentUserID else { return nil }
         let myTripIDs: Set<CKRecord.ID> = Set(
@@ -96,9 +69,7 @@ struct TripsListView: View {
                     }
                 )
                 .task(id: activeTrip.id) {
-                    // See HomeView's equivalent .task — polls at roughly
-                    // LOC-1's propagation budget pending a real push-triggered
-                    // recompute path.
+                    // See HomeView's equivalent .task.
                     while !Task.isCancelled {
                         await homeViewModel.refreshTripStatus(for: activeTrip)
                         try? await Task.sleep(nanoseconds: 10_000_000_000)

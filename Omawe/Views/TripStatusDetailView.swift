@@ -1,10 +1,3 @@
-//
-//  TripStatusDetailView.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 03/07/26.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -101,10 +94,7 @@ struct TripStatusDetailView: View {
         )
     }
 
-    /// Checks `Participant.role` only, matching `HomeViewModel.isOwner` — see
-    /// its doc comment for why the `trip.ownerID` branch was dropped
-    /// (TRIP-2's audit: `ownerID` is CloudKit-immutable and disagrees with
-    /// `role` once ownership is reassigned).
+    /// Matches `HomeViewModel.isOwner` — see its doc comment for why `role`, not `trip.ownerID`.
     private func isOwner(of trip: Trip) -> Bool {
         guard let currentUserID else { return false }
         return members.contains { $0.tripID == trip.id && $0.userID == currentUserID && $0.role == .owner }

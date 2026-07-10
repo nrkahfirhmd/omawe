@@ -1,19 +1,10 @@
-//
-//  WidgetContentStateAggregator.swift
-//  Omawe
-//
-
 import CloudKit
 
-/// Reshapes ETA-2's per-participant states into the widget's single-string
-/// rollup. `ContentState` has exactly one `statusMessage`/`etaMinutes`/
-/// `distanceKm` for a trip that can have many participants — there's no
-/// product-confirmed selection policy for which participant "wins" (see
-/// ETA-3's "Confirmed ambiguity"). Pending real product sign-off, this picks
-/// whoever is currently furthest from arrival — i.e. most likely to need
-/// attention/a nudge — since that's the participant a Live Activity viewer
-/// would plausibly care about most. This is an engineering default, not a
-/// confirmed decision — flag for product review before shipping.
+/// Reshapes per-participant ETA-2 states into the widget's single
+/// `statusMessage`. No product-confirmed policy exists for which
+/// participant "wins" (ETA-3's "Confirmed ambiguity") — this picks whoever
+/// is furthest from arrival as an engineering default; flag for product
+/// review before shipping.
 enum WidgetContentStateAggregator {
 
     /// - Parameters:

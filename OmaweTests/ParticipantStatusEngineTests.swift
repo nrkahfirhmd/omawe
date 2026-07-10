@@ -1,8 +1,3 @@
-//
-//  ParticipantStatusEngineTests.swift
-//  OmaweTests
-//
-
 import XCTest
 @testable import Omawe
 

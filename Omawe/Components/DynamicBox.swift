@@ -1,9 +1,3 @@
-//
-//  DynamicBox.swift
-//  Omawe
-//
-//  Created by Gleenryan on 01/07/26.
-//
 import SwiftUI
 
 struct DynamicBox<Content: View>: View {
@@ -159,7 +153,6 @@ struct GridGradientBackground: View {
                     )
                 )
         }
-//        .clipShape(RoundedRectangle(cornerRadius: 54, style: .continuous))
     }
 }
 
@@ -215,7 +208,6 @@ struct PlusPattern: View {
                 }
             }
         }
-//        .statusBarHidden(true)
         .ignoresSafeArea(edges: .top)
-    
+
 }

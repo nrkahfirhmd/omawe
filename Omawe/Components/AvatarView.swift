@@ -1,10 +1,3 @@
-//
-//  AvatarView.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 09/07/26.
-//
-
 import SwiftUI
 
 struct AvatarView: View {

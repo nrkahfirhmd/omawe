@@ -1,14 +1,6 @@
-//
-//  CloudKitIdentityService.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 
 final class CloudKitIdentityService {
-    
     private let container = CloudKitContainer.shared.container
     
     func accountStatus() async throws -> CKAccountStatus {

@@ -1,11 +1,4 @@
 
-    //
-    //  OnBoardingView.swift
-    //  Omawe
-    //
-    //  Created by Nguyen Minh Luat on 6/7/26.
-    //
-
     import SwiftUI
     import Lottie
 
@@ -58,20 +51,6 @@
                         Spacer ()
                         
                         VStack{
-    //                        HStack {
-    //                            Rectangle ()
-    //                                .fill(Color.cyan.opacity(1))
-    //                                .frame(width: 30, height: 8)
-    //                                .cornerRadius(12)
-    //
-    //                            Circle ()
-    //                                .fill(Color.gray.opacity(0.4))
-    //                                .frame(width: 8, height: 8)
-    //
-    //                            Circle ()
-    //                                .fill(Color.gray.opacity(0.4))
-    //                                .frame(width: 8, height: 8)
-    //                        }
                             Text("Never wonder who's “nearly” there.")
                                 .font(.title)
                                 .fontWidth(.expanded)

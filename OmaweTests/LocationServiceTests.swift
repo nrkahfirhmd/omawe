@@ -1,8 +1,3 @@
-//
-//  LocationServiceTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import CoreLocation
 @testable import Omawe

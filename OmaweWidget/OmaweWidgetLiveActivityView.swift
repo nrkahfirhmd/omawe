@@ -1,10 +1,3 @@
-//
-//  OmaweWidgetLiveActivityView.swift
-//  OmaweWidgetExtension
-//
-//  Created by Muhammad Bintang Al-Fath on 07/07/26.
-//
-
 import SwiftUI
 import ActivityKit
 import WidgetKit
@@ -47,8 +40,6 @@ struct LiveActivityLockScreenView: View {
     }
     
     var body: some View {
-//            .padding(.horizontal,10)
-            
             // ── Route Progress with Mate Markers ──
         VStack() {
             ZStack{
@@ -109,9 +100,6 @@ struct LiveActivityLockScreenView: View {
                     
                 }
             }
-//            .padding(.horizontal,10)
-//            .padding(.vertical, 10)
-            
             // ── Bottom Row: Alert Icon + Report Button ──
             HStack(spacing: 10) {
                 // Alert / Warning icon
@@ -166,7 +154,6 @@ struct LiveActivityLockScreenView: View {
             }
         }
         .padding(.horizontal,14)
-//        .padding(.top,10)
         .padding(.bottom,14)
         .background(
             ZStack {

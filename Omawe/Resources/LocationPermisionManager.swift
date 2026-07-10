@@ -1,10 +1,3 @@
-//
-//  LocationPermisionManager.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 08/07/26.
-//
-
 import CoreLocation
 import SwiftUI
 import Combine

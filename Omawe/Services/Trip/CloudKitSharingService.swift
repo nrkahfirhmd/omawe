@@ -1,10 +1,3 @@
-//
-//  CloudKitSharingService.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 
 import CloudKit
 import Foundation
@@ -17,7 +10,6 @@ protocol SharingServiceProtocol {
 }
 
 final class CloudKitSharingService: SharingServiceProtocol {
-
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
 

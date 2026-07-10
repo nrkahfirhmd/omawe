@@ -1,10 +1,3 @@
-//
-//  ParticipantRecordMapper.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 import UIKit
 
@@ -59,9 +52,7 @@ struct ParticipantRecordMapper: CloudKitRecordMappable {
     }
 
     /// Applies `model`'s mutable fields onto an already-fetched `record` in
-    /// place, preserving its `recordChangeTag` — used by conflict-safe update
-    /// paths (TRIP-2) instead of `makeRecord`, which always builds a fresh
-    /// record with no change tag and would bypass CloudKit's conflict check.
+    /// place, preserving its `recordChangeTag`
     static func apply(_ model: Participant, to record: CKRecord) {
         record[Field.role] = model.role.rawValue as CKRecordValue
     }

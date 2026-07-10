@@ -1,10 +1,3 @@
-//
-//  Location.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 30/06/26.
-//
-
 import CoreLocation
 
 struct Location: Codable {

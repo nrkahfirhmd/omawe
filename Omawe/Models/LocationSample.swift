@@ -1,14 +1,6 @@
-//
-//  LocationSample.swift
-//  Omawe
-//
-
 import CloudKit
 
-/// CloudKit-facing shape for a single location sample, written into the
-/// trip's shared custom zone (see LocationRecordMapper). Distinct from
-/// `LocationUpdate` (SwiftData's local/auto-mirrored model, owned by LOC-4)
-/// and from `Location` (the plain lat/lng value type used by LocationCore).
+/// CloudKit-facing shape for a single location sample, written into the trip's shared custom zone 
 struct LocationSample: Identifiable, Hashable {
     let id: CKRecord.ID?
     let tripID: CKRecord.ID

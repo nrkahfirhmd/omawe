@@ -1,17 +1,8 @@
-//
-//  RouteProgressView.swift
-//  Omawe
-//
-//  In-app port of OmaweWidget's Live Activity route visualization
-//  (`OmaweWidgetLiveActivityView.RouteProgressView`) — same curved path,
-//  distance-based marker placement, and clustering logic, so the trip
-//  screens match what's shown on the lock screen / Dynamic Island.
-//
-
 import SwiftUI
 import CloudKit
 
-// MARK: - Route Progress View
+/// In-app port of `OmaweWidgetLiveActivityView.RouteProgressView` so trip
+/// screens match the lock screen / Dynamic Island.
 struct RouteProgressView: View {
     let mates: [OmaweWidgetAttributes.MateProgress]
 

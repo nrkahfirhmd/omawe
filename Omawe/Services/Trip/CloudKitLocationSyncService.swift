@@ -1,8 +1,3 @@
-//
-//  CloudKitLocationSyncService.swift
-//  Omawe
-//
-
 import CloudKit
 
 protocol LocationSyncServiceProtocol {
@@ -11,17 +6,9 @@ protocol LocationSyncServiceProtocol {
     func subscribeToLocationUpdates(for tripID: CKRecord.ID) async throws
 }
 
-/// Manual CKRecord sync path for location updates. Named to avoid colliding
-/// with LOC-2's CoreLocation-facing service — this type only talks to
+/// Manual CKRecord sync path for location updates. this type only talks to
 /// CloudKit, never CLLocationManager.
-///
-/// SwiftData's automatic CloudKit mirroring on `LocationUpdate` (configured
-/// in OmaweApp.swift) writes into the record owner's default private zone,
-/// which is a different zone from the trip's custom `CKRecordZone` that
-/// `CKShare` grants access to. That auto-mirror therefore cannot reach other
-/// participants, so this service saves directly into the trip's zone instead.
 final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
-
     private let privateDatabase = CloudKitContainer.shared.privateDatabase
     private let sharedDatabase = CloudKitContainer.shared.sharedDatabase
     private let identityService = CloudKitIdentityService()
@@ -31,15 +18,6 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
         self.analytics = analytics
     }
 
-    /// NFR-3: retries the actual CloudKit write through `RetryExecutor`
-    /// before this method ever throws — a single transient failure (network
-    /// blip, momentary throttling) used to be a dead end here; now it's
-    /// retried with backoff, classified against real `CKError.Code` values,
-    /// while the error is still a `CKError` (retrying has to happen before
-    /// `mapCKError` below converts it to the caller-facing `CloudKitError`,
-    /// which doesn't carry enough information to reclassify). Reports the
-    /// success/failure-with-attempt-count metric NFR-3 requires to actually
-    /// verify the 99% sync-success target, not just assume it.
     func saveLocation(_ location: LocationSample) async throws {
         let recordID = CKRecord.ID(
             recordName: UUID().uuidString,
@@ -106,10 +84,7 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
     }
 
     /// Zone-scoped subscription so other participants' devices learn about
-    /// new location records via silent push. Per the plan, treat delivery as
-    /// best-effort — not guaranteed real-time under Low Power Mode/background
-    /// throttling — and complement with polling if manual testing shows the
-    /// 30s budget is missed.
+    /// new location records via silent push. 
     func subscribeToLocationUpdates(for tripID: CKRecord.ID) async throws {
         let subscriptionID = "location-updates-\(tripID.zoneID.zoneName)"
         let predicate = NSPredicate(format: "tripID == %@", tripID.recordName)
@@ -147,14 +122,10 @@ final class CloudKitLocationSyncService: LocationSyncServiceProtocol {
         }
     }
 
-    /// Pure reduction: one sample per user, keeping the most recently
-    /// recorded one. If an older sample has `reportedLateAt` but the newest
-    /// does not, the late timestamp is carried forward — without this,
-    /// pressing "Report" is immediately overwritten by the next regular
-    /// GPS save that lands a fraction of a second later with a newer
-    /// `recordedAt` but no `reportedLateAt`.
+    /// One sample per user, keeping the most recent — but an older
+    /// `reportedLateAt` still carries forward if the newest sample lacks one.
     static func latestByUser(from samples: [LocationSample]) -> [CKRecord.ID: LocationSample] {
-        // First pass: find the most recent reportedLateAt per user across ALL samples
+        // Most recent reportedLateAt per user across all samples.
         var latestReportedLate: [CKRecord.ID: Date] = [:]
         for sample in samples {
             if let reportedAt = sample.reportedLateAt {

@@ -1,9 +1,3 @@
-//
-//  ThirdView.swift
-//  Omawe
-//
-//  Created by Nguyen Minh Luat on 6/7/26.
-//
 import UIKit
 import SwiftUI
 import Lottie
@@ -54,18 +48,6 @@ struct SecondView: View {
                     Spacer()
 
                     VStack {
-//                        HStack {
-//                            Circle()
-//                                .fill(Color.gray.opacity(0.4))
-//                                .frame(width: 8, height: 8)
-//                            Circle()
-//                                .fill(Color.gray.opacity(0.4))
-//                                .frame(width: 8, height: 8)
-//                            Rectangle()
-//                                .fill(Color.cyan.opacity(1))
-//                                .frame(width: 30, height: 8)
-//                                .cornerRadius(12)
-//                        }
                         Text("The journey, at a glance.")
                             .font(.title)
                             .fontWidth(.expanded)

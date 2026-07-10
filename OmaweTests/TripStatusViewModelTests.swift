@@ -1,8 +1,3 @@
-//
-//  TripStatusViewModelTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import CoreLocation
 import CloudKit

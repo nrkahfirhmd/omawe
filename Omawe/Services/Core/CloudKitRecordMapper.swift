@@ -1,10 +1,3 @@
-//
-//  CloudKitRecordMapper.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 06/07/26.
-//
-
 import CloudKit
 
 protocol CloudKitRecordMappable {

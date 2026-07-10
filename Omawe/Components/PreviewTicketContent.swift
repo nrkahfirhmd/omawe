@@ -1,10 +1,3 @@
-//
-//  PreviewTicketContent.swift
-//  Omawe
-//
-//  Created by Antigravity on 09/07/26.
-//
-
 import SwiftUI
 import CloudKit
 

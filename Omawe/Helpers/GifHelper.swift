@@ -1,10 +1,3 @@
-//
-//  GifHelper.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 07/07/26.
-//
-
 import SwiftUI
 import WebKit
 

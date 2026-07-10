@@ -1,18 +1,9 @@
-//
-//  LocationCore.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 30/06/26.
-//
-
 import CoreLocation
 
-/// Pure, synchronous AD-6 distance/ETA threshold math.
+/// Pure, synchronous distance/ETA threshold math.
 /// No CloudKit, no CLLocationManager, no MapKit — keep it dependency-free and testable without mocks.
 enum LocationCore {
-
-    // MARK: - AD-6 thresholds
-
+    // MARK: - thresholds
     static let nearDestinationDistanceMeters: CLLocationDistance = 1_000
     static let nearDestinationETAMinutes: Int = 3
     static let delayedETAThresholdSeconds: TimeInterval = 10 * 60
@@ -20,7 +11,6 @@ enum LocationCore {
     static let offlineForegroundedThresholdSeconds: TimeInterval = 30
 
     // MARK: - Distance
-
     static func straightLineDistance(from: Location, to: Location) -> CLLocationDistance {
         let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
         let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
@@ -28,9 +18,7 @@ enum LocationCore {
     }
 
     // MARK: - Predicates
-
-    /// `etaMinutes` may be `nil` (e.g. `MKDirections` failed upstream) — the AD-6 `OR`
-    /// means distance alone must still resolve this correctly in that case.
+    /// Falls back to distance alone when `etaMinutes` is nil (e.g. `MKDirections` failed).
     static func isNearDestination(distance: CLLocationDistance, etaMinutes: Int?) -> Bool {
         if distance <= nearDestinationDistanceMeters {
             return true

@@ -1,10 +1,3 @@
-//
-//  LocationView.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 30/06/26.
-//
-
 import SwiftUI
 import MapKit
 import CloudKit
@@ -40,15 +33,10 @@ struct LocationView: View {
     // Shared with TripHeaderCard's status display — set by the danger
     // button below, distinct from (and more urgent than) `isReportedLate`.
     @State private var needsHelp = false
-    // Transient confirmation toast — separate from the persistent
-    // `isReportedLate`/`needsHelp` status so it can auto-dismiss without
-    // clearing the underlying report.
+    // Transient toast, separate from persistent isReportedLate/needsHelp so it can auto-dismiss.
     @State private var confirmationMessage: String? = nil
     @State private var bannerDismissTask: Task<Void, Never>?
-    // Full samples (not just coordinates) so NFR-1 can tell "never received"
-    // (absent from this dict) apart from "received, but old" (present with a
-    // stale `recordedAt`) — a plain `[CKRecord.ID: Location]` couldn't
-    // distinguish those two cases.
+    // Full samples, not just coordinates, so NFR-1 can tell "never received" apart from "received, but stale".
     @State private var participantSamples: [CKRecord.ID: LocationSample] = [:]
     
     private final class DebouncerCache {
@@ -62,18 +50,12 @@ struct LocationView: View {
     }
     private let debouncerCache = DebouncerCache()
 
-    // NFR-4: auto-fits once when the set of participants with a known
-    // location changes (e.g. someone's first fix lands), not on every ~20s
-    // poll tick — satisfies the ticket's "don't fight the user's manual
-    // navigation on every location update" by only re-fitting on structural
-    // changes, rather than attempting to distinguish a manual gesture from a
-    // programmatic camera move (SwiftUI's `Map` has no reliable seam for
-    // that distinction today).
+    // NFR-4: re-fits only when the set of participants with a known location
+    // changes, not every poll tick — avoids fighting the user's manual pan/zoom.
     @State private var lastFittedParticipantIDs: Set<CKRecord.ID> = []
     private let locationService = LocationService()
     private let locationSyncService = CloudKitLocationSyncService()
-    // Drives TripHeaderCard's per-participant status (ETA-2) — separate
-    // instance from HomeViewModel's, since this view has no reference to it.
+    // Drives TripHeaderCard's status — a separate instance since this view has no reference to HomeViewModel's.
     @State private var tripStatusViewModel: TripStatusViewModel
 
     init(trip: Trip, participants: [Participant] = [], currentUserID: CKRecord.ID? = nil) {
@@ -145,16 +127,12 @@ struct LocationView: View {
             }
             .ignoresSafeArea()
             .task {
-                // Map's built-in user-location dot/tracking needs authorization
-                // requested at least once — reuses the same LocationService
-                // wrapper LOC-2/HomeViewModel use, not a bare CLLocationManager call.
+                // Map's built-in user-location dot needs authorization requested at least once.
                 locationService.requestWhenInUseAuthorization()
             }
             .task(id: trip.id) {
                 guard let tripID = trip.id else { return }
-                // Polls at roughly LOC-1's propagation budget, same cadence
-                // as HomeView's ETA refresh — there's no push-triggered
-                // recompute path yet.
+                // Polls at ~LOC-1's propagation budget, same cadence as HomeView's ETA refresh.
                 while !Task.isCancelled {
                     await refreshParticipantLocations(tripID: tripID)
                     await refreshParticipantStatuses(tripID: tripID)
@@ -276,10 +254,8 @@ struct LocationView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    /// Fetches every participant's latest location for annotations. Route
-    /// computation is no longer this view's job (NFR-4) — `refreshParticipantStatuses`
-    /// below drives `TripStatusViewModel`, which already resolves and caches
-    /// the current user's route for ETA purposes; the map just reads it.
+    /// Route computation isn't this view's job (NFR-4) — `refreshParticipantStatuses`
+    /// drives `TripStatusViewModel`, which already resolves the route; the map just reads it.
     private func refreshParticipantLocations(tripID: CKRecord.ID) async {
         do {
             let samples = try await locationSyncService.fetchLatestLocations(for: tripID)
@@ -297,10 +273,8 @@ struct LocationView: View {
         await tripStatusViewModel.refresh(tripID: tripID, destination: destination)
     }
 
-    /// NFR-1: derives this participant's display state (normal/stale/
-    /// unavailable) from LOC-1's `recordedAt` (via `hasEverReceivedLocation`)
-    /// and ETA-2's `isStale` signal, run through a per-participant debouncer
-    /// so a reading right at the 30s staleness boundary doesn't flicker.
+    /// NFR-1: run through a per-participant debouncer so a reading right at
+    /// the staleness boundary doesn't flicker.
     private func displayState(for userID: CKRecord.ID, lastUpdated: Date) -> ParticipantLocationDisplayState {
         let raw = ParticipantLocationDisplayState.from(
             hasEverReceivedLocation: true,
@@ -312,10 +286,8 @@ struct LocationView: View {
         return debouncer.display(for: raw)
     }
 
-    /// NFR-4: auto-fit/zoom to show every participant with a known location
-    /// plus the destination — only re-runs when the *set* of participants
-    /// with a location changes, so it doesn't re-center on every routine
-    /// poll tick (see the `lastFittedParticipantIDs` doc comment above).
+    /// NFR-4: only re-runs when the *set* of located participants changes —
+    /// see `lastFittedParticipantIDs`.
     private func fitRegionIfParticipantsChanged() {
         let currentIDs = Set(participantSamples.keys)
         guard currentIDs != lastFittedParticipantIDs else { return }
@@ -392,10 +364,8 @@ private struct ParticipantPin: View {
         return initials.isEmpty ? "?" : initials.uppercased()
     }
 
-    /// NFR-1/NFR-4: a stale pin is dimmed and annotated with how long ago it
-    /// was last updated, rather than rendering identically to a fresh one —
-    /// showing a precise-looking position for out-of-date data would be
-    /// misleading.
+    /// NFR-1/NFR-4: dimmed + age-annotated rather than rendering identically
+    /// to a fresh pin — a precise-looking stale position would mislead.
     private var isStale: Bool {
         if case .stale = displayState { return true }
         return false

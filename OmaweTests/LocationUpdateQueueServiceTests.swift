@@ -1,8 +1,3 @@
-//
-//  LocationUpdateQueueServiceTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import SwiftData
 import CloudKit

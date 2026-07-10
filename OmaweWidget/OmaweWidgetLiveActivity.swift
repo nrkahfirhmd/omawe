@@ -1,10 +1,3 @@
-//
-//  OmaweWidgetLiveActivity.swift
-//  OmaweWidget
-//
-//  Created by Muhammad Bintang Al-Fath on 07/07/26.
-//
-
 import ActivityKit
 import WidgetKit
 import SwiftUI
@@ -42,7 +35,6 @@ struct OmaweWidgetLiveActivity: Widget {
                         .fontWeight(.semibold)
                         .foregroundStyle(.yellow)
                     }
-//                    .padding(.top,20)
                     .padding(.leading, 10)
                 }
                 
@@ -87,8 +79,6 @@ struct OmaweWidgetLiveActivity: Widget {
                                 .scaleEffect(x: 1, y: 0.35)
                                 .offset(y: -30)
                         }
-                        
-//                        .padding(.bottom, 40)
                         .frame(maxWidth: .infinity, maxHeight: 100)
                         
                         VStack(spacing: 8) {
@@ -181,9 +171,7 @@ struct OmaweWidgetLiveActivity: Widget {
                     .font(.system(size: 10))
                     .foregroundStyle(Theme.tertiary)
             }
-            // NFR-2: real, trackable deep link (was a placeholder pointing at
-            // apple.com) — routed and logged in `HomeView.onOpenURL` as the
-            // "Live Activity interaction rate" PRD §9 metric.
+            // NFR-2: routed and logged in `HomeView.onOpenURL` for the PRD §9 interaction-rate metric.
             .widgetURL(URL(string: "omawe://liveactivity"))
             .keylineTint(context.state.myDistanceKm <= 0.5 ? Theme.tertiaryBox : .orange)
         }

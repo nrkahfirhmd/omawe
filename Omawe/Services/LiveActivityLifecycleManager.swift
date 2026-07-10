@@ -1,16 +1,8 @@
-//
-//  LiveActivityLifecycleManager.swift
-//  Omawe
-//
-
 import ActivityKit
 import Foundation
 
-/// Seam around `Activity<OmaweWidgetAttributes>` so ETA-4's lifecycle
-/// transition logic (start/update/end triggers, throttling) can be
-/// unit-tested against a fake — the real ActivityKit behavior (push-token
-/// delivery, system budget limits, real device rendering) is explicitly not
-/// Simulator-testable and needs the mandatory on-device manual test.
+/// Seam around `Activity<OmaweWidgetAttributes>` so ETA-4's lifecycle logic
+/// can be unit-tested against a fake — real ActivityKit needs the mandatory on-device manual test.
 protocol LiveActivityControlling {
     func start(attributes: OmaweWidgetAttributes, content: OmaweWidgetAttributes.ContentState) throws
     func update(content: OmaweWidgetAttributes.ContentState) async
@@ -39,12 +31,9 @@ final class ActivityKitLiveActivityController: LiveActivityControlling {
     }
 }
 
-/// Orchestrates the Live Activity's lifecycle: start on trip-start, update
-/// on meaningful `ContentState` changes (not every refresh tick), end on
-/// trip-end. `Activity.request` failures (Live Activities disabled in
-/// Settings, concurrent-activity limit reached) are handled as soft
-/// failures — in-app trip status must keep working even if the Live
-/// Activity never starts.
+/// Start on trip-start, update on meaningful `ContentState` changes (not
+/// every refresh tick), end on trip-end. `Activity.request` failures are
+/// soft — in-app trip status keeps working even if the Live Activity never starts.
 @Observable
 final class LiveActivityLifecycleManager {
     private let controller: LiveActivityControlling

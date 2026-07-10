@@ -1,8 +1,3 @@
-//
-//  MapRegionFittingTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import MapKit
 @testable import Omawe

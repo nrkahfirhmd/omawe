@@ -1,10 +1,3 @@
-//
-//  CloudKitZoneService.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 07/07/26.
-//
-
 import CloudKit
 
 protocol ZoneServiceProtocol {
@@ -15,7 +8,6 @@ protocol ZoneServiceProtocol {
 }
 
 final class CloudKitZoneService: ZoneServiceProtocol {
-
     let database = CloudKitContainer.shared.privateDatabase
 
     func createZone(named name: String) async throws -> CKRecordZone {

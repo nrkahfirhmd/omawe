@@ -1,10 +1,3 @@
-//
-//  AppFont.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 03/07/26.
-//
-
 import SwiftUI
 
 enum AppFont {

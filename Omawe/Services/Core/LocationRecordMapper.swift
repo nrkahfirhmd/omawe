@@ -1,8 +1,3 @@
-//
-//  LocationRecordMapper.swift
-//  Omawe
-//
-
 import CloudKit
 
 struct LocationRecordMapper: CloudKitRecordMappable {

@@ -1,10 +1,3 @@
-//
-//  OmaweWidget.swift
-//  OmaweWidget
-//
-//  Created by Muhammad Bintang Al-Fath on 07/07/26.
-//
-
 import WidgetKit
 import SwiftUI
 
@@ -30,10 +23,6 @@ struct Provider: AppIntentTimelineProvider {
 
         return Timeline(entries: entries, policy: .atEnd)
     }
-
-//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
 }
 
 struct SimpleEntry: TimelineEntry {

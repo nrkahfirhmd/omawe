@@ -1,10 +1,3 @@
-//
-//  TripStatusViewModel.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 05/07/26.
-//
-
 import CoreLocation
 import CloudKit
 import MapKit
@@ -60,10 +53,7 @@ final class TripStatusViewModel {
         self.now = now
     }
 
-    /// Fetches latest per-participant locations for `tripID` and recomputes
-    /// ETA/distance/status against `destination`. Call this whenever new
-    /// location data is expected (LOC-1 sync tick/subscription fire) — not
-    /// from an independent fixed timer.
+    /// Call on each LOC-1 sync tick/subscription fire, not from a fixed timer.
     func refresh(tripID: CKRecord.ID, destination: CLLocationCoordinate2D, isBackgrounded: Bool = false) async {
         do {
             let locations = try await locationSyncService.fetchLatestLocations(for: tripID)
@@ -100,10 +90,8 @@ final class TripStatusViewModel {
         }
     }
 
-    /// NFR-4: exposes the already-computed route for `userID` so a map view
-    /// can draw it directly, instead of issuing its own separate
-    /// `MKDirections` request for the same origin/destination this view
-    /// model already resolved during `refresh`.
+    /// NFR-4: exposes the route already resolved during `refresh` so a map
+    /// view can draw it without its own redundant `MKDirections` request.
     func route(for userID: CKRecord.ID) -> MKRoute? {
         routeCache[userID]?.result.route
     }

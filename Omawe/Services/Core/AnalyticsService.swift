@@ -1,21 +1,8 @@
-//
-//  AnalyticsService.swift
-//  Omawe
-//
-
 import Foundation
 import os
 
-/// NFR-2's production instrumentation for the PRD §9 success metrics —
-/// distinct from `debugLog`'s dev-only console output. Backed by `os.Logger`
-/// rather than a third-party analytics SDK: none is chosen anywhere else in
-/// this project (confirmed by audit — no Firebase/Mixpanel/Amplitude/etc. in
-/// `Package.resolved` or the pbxproj), and adopting one requires an account/
-/// backend this ticket has no way to provision. `os.Logger` is dependency-
-/// free, ships in Release builds, and is queryable via Console.app/`log show`
+/// `os.Logger` is dependency-free, ships in Release builds, and is queryable via Console.app/`log show`
 /// — enough to give each metric "a concrete, firing instrumentation point"
-/// per this ticket's actual acceptance criteria, without this ticket making
-/// a vendor choice that isn't its call to make.
 enum AnalyticsEvent: Equatable {
     case tripCreateSucceeded(setupSeconds: TimeInterval)
     case tripCreateFailed(reason: String)
@@ -37,8 +24,7 @@ enum AnalyticsEvent: Equatable {
         }
     }
 
-    /// Status-derived / numeric only — never raw coordinates, per LOC-1's
-    /// guidance and this ticket's own security note.
+    /// Status-derived / numeric only — never raw coordinates
     var payload: String {
         switch self {
         case .tripCreateSucceeded(let seconds), .shareAcceptSucceeded(let seconds):
@@ -60,8 +46,7 @@ protocol AnalyticsLogging {
 }
 
 /// Never throws, never blocks — an instrumentation failure must not be able
-/// to fail the trip-creation/sync flow it's measuring (NFR-2's error-handling
-/// requirement).
+/// to fail the trip-creation/sync flow it's measuring
 final class AnalyticsService: AnalyticsLogging {
     static let shared = AnalyticsService()
 

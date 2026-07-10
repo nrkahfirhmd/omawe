@@ -1,10 +1,3 @@
-//
-//  OnTripView.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 07/07/26.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -51,38 +44,7 @@ struct OnTripView: View {
             helperText: "",
             footerTitle: "You're on this trip"
         ) {
-//            ZStack {
-//                GIFView(name: "on_trip")
-//                    .ignoresSafeArea()
-//                    .frame(width: .infinity)
-//                    .frame(height: 220)
-//                    .mask(
-//                        LinearGradient(
-//                            stops: [
-//                                .init(color: .clear, location: 0),
-//                                .init(color: .white, location: 0.25),
-//                                .init(color: .white, location: 0.85),
-//                                .init(color: .clear, location: 1)
-//                            ],
-//                            startPoint: .top,
-//                            endPoint: .bottom
-//                        )
-//                    )
-//
-//                LinearGradient(
-//                    colors: [
-//                        .black.opacity(0.7),
-//                        .clear,
-//                        .black.opacity(0.95)
-//                    ],
-//                    startPoint: .top,
-//                    endPoint: .bottom
-//                )
-//                .ignoresSafeArea()
-//            }
-            
             VStack(spacing: 14) {
-                // MARK: - Route Progress View
                 RouteProgressView(mates: mates)
                 
                 VStack(spacing: 12) {

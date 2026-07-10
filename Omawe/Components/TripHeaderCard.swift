@@ -1,10 +1,3 @@
-//
-//  TripHeaderCard.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 06/07/26.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -133,8 +126,7 @@ private struct HeaderStats: View {
 }
 
 /// Pages through every participant on the trip one at a time, showing
-/// their live status (ETA-2) — not just the current device's own state,
-/// which `HeaderStats` above already covers.
+/// their live status — not just the current device's own state
 private struct ExpandedContent: View {
     let participants: [Participant]
     let participantStates: [CKRecord.ID: ParticipantTripState]
@@ -255,7 +247,6 @@ private struct ExpandedContent: View {
                 .disabled(participants.count < 2)
             }
 
-            // MARK: - Route Progress View
             RouteProgressView(mates: mates)
         }
         .padding(.top, 8)

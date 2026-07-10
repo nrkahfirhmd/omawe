@@ -1,8 +1,3 @@
-//
-//  LocationRecordMapperTests.swift
-//  OmaweTests
-//
-
 import XCTest
 import CloudKit
 @testable import Omawe

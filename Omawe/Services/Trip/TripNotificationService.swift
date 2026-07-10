@@ -1,21 +1,6 @@
-//
-//  TripNotificationService.swift
-//  Omawe
-//
-
 import UserNotifications
 import CloudKit
 
-/// TRIP-4: derives arrival/delay/nearby notifications from ETA-2's already-
-/// computed `ParticipantTripStatus` transitions rather than a separate
-/// CloudKit subscription or threshold check — keeping `ParticipantStatusEngine`
-/// (AD-6) the single source of truth for what counts as "delayed"/"near", per
-/// the ticket's recommendation. The underlying data still arrives via LOC-1's
-/// existing silent-push → `TripStatusViewModel.refresh()` path; this service
-/// only reacts to the result, it doesn't add a second push pipeline.
-/// Thin seam around `UNUserNotificationCenter.add(_:withCompletionHandler:)`
-/// so `TripNotificationService`'s trigger-derivation/hysteresis logic can be
-/// unit-tested against a fake, without touching the real notification center.
 protocol NotificationScheduling {
     func add(_ request: UNNotificationRequest, withCompletionHandler completionHandler: ((Error?) -> Void)?)
 }
@@ -29,9 +14,8 @@ final class TripNotificationService {
     private let cooldown: TimeInterval
     private let now: () -> Date
 
-    /// `cooldown` default (30s) guards against AD-6's near-destination
-    /// boundary flapping (1km/3min) re-firing the same notification on every
-    /// poll tick while a participant hovers right at the threshold.
+    /// `cooldown` default (30s) guards against near-destination boundary
+    /// flapping re-firing the same notification every poll tick.
     init(
         center: NotificationScheduling = UNUserNotificationCenter.current(),
         cooldown: TimeInterval = 30,
@@ -42,10 +26,8 @@ final class TripNotificationService {
         self.now = now
     }
 
-    /// Diffs `previous` against `updated` per participant and schedules a
-    /// local notification for any *other* participant's transition into
-    /// `.arrived`/`.delayed`/`.nearDestination` — never for `currentUserID`'s
-    /// own status, since a device doesn't need to be told about itself.
+    /// Notifies on any *other* participant's transition into arrived/delayed/
+    /// nearDestination — never for `currentUserID`'s own status.
     func notifyTransitions(
         previous: [CKRecord.ID: ParticipantTripState],
         updated: [CKRecord.ID: ParticipantTripState],
@@ -82,17 +64,11 @@ final class TripNotificationService {
         )
 
         // Silently does nothing if the user denied permission — no branching
-        // on authorization status here by design (TRIP-4: denial degrades
-        // silently, not an error state).
+        // on authorization status here by design
         center.add(request, withCompletionHandler: nil)
     }
 }
 
-/// The subset of `ParticipantTripStatus` this ticket notifies on. `.onTheWay`
-/// and `.offline` are not user-facing notification triggers per TRIP-4's
-/// objective (arrival/delay/nearby only). Copy is confirmed-pending-product
-/// per the ticket's own note ("confirm copy with whoever owns product copy")
-/// — these strings are this engineering pass's placeholder, not final UX copy.
 private enum NotifiableTransition: String {
     case arrived
     case delayed
@@ -115,7 +91,7 @@ private enum NotifiableTransition: String {
         }
     }
 
-    // Status-derived copy only — no raw coordinates, consistent with LOC-1's
+    // Status-derived copy only — no raw coordinates, consistent with
     // guidance on not exposing precise location outside the sync path.
     func body(name: String) -> String {
         switch self {

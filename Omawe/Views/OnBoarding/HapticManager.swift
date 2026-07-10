@@ -1,10 +1,3 @@
-//
-//  HapticManager.swift
-//  Omawe
-//
-//  Created by Nguyen Minh Luat on 7/7/26.
-//
-
 
 import CoreHaptics
 import UIKit

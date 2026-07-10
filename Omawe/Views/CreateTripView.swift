@@ -1,10 +1,3 @@
-//
-//  CreateTripView.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 02/07/26.
-//
-
 
 import SwiftUI
 

@@ -1,10 +1,3 @@
-//
-//  ProfileView.swift
-//  Omawe
-//
-//  Created by Syed Israruddin on 06/07/26.
-//
-
 
 import SwiftUI
 import PhotosUI

@@ -1,13 +1,7 @@
-//
-//  LocationService.swift
-//  Omawe
-//
-
 import CoreLocation
 
-/// Narrow surface of `CLLocationManager` this service depends on, so tests
-/// can inject a fake instead of subclassing `CLLocationManager` (which
-/// isn't designed for that).
+/// Narrow surface of `CLLocationManager` so tests can inject a fake instead
+/// of subclassing it (which isn't designed for that).
 protocol CLLocationManagerRepresentable: AnyObject {
     var delegate: CLLocationManagerDelegate? { get set }
     var desiredAccuracy: CLLocationAccuracy { get set }
@@ -47,10 +41,8 @@ protocol LocationServiceProtocol: AnyObject {
     func stopUpdating()
 }
 
-/// Captures device location via CoreLocation and exposes it as an async
-/// stream. Deliberately has no CloudKit knowledge — LOC-1's
-/// `CloudKitLocationSyncService` is the sync transport; something else
-/// (`LocationSharingCoordinator`) bridges the two.
+/// Deliberately has no CloudKit knowledge — `LocationSharingCoordinator`
+/// bridges this to LOC-1's `CloudKitLocationSyncService`.
 @Observable
 final class LocationService: NSObject, LocationServiceProtocol {
     private let manager: CLLocationManagerRepresentable

@@ -1,10 +1,3 @@
-//
-//  OnBoardingView.swift
-//  Omawe
-//
-//  Created by Nguyen Minh Luat on 6/7/26.
-//
-
 import UIKit
 import SwiftUI
 import Lottie
@@ -151,12 +144,8 @@ struct ThirdView: View {
                                     .shadow(color: Color(red: 0.4, green: 0.85, blue: 0.9).opacity(0.6), radius: 8)
                             )
                             .clipShape(Capsule())
-                        // Dim the button text when loading to indicate the button is busy.
                             .opacity(viewModel.isLoading ? 0.5 : 1.0)
-                        
-                        // MARK: - Loading Indicator
-                        // Shown on top of the button while the Apple Sign In sheet
-                        // is being presented or the auth request is in progress.
+
                         if viewModel.isLoading {
                             ProgressView()
                                 .tint(.white)

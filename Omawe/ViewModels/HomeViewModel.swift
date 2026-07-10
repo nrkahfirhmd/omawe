@@ -1,10 +1,3 @@
-//
-//  HomeViewModel.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 05/07/26.
-//
-
 import SwiftUI
 import SwiftData
 import CloudKit
@@ -136,10 +129,8 @@ class HomeViewModel {
         shareErrorMessage = nil
     }
 
-    /// NFR-2: instruments the PRD §9 "creation success rate" and "setup time"
-    /// metrics over this already-shipped flow — measured from this call's
-    /// entry (the user's "confirm" tap) to the point every CloudKit write it
-    /// depends on (trip, owner participant, share, invite) has succeeded.
+    /// NFR-2: instruments PRD §9's "creation success rate"/"setup time" —
+    /// measured from the confirm tap to every dependent CloudKit write succeeding.
     func confirmTripCreation(using modelContext: ModelContext) async throws -> String {
         guard canConfirmTripCreation else {
             throw CloudKitError.operationFailed
@@ -157,19 +148,15 @@ class HomeViewModel {
         let startedAt = Date()
 
         do {
-            // MARK: - Current User
             let ownerID = try await identityService.currentUserRecordID()
 
-            // MARK: - Invitation Code
             let invitationCode = inviteService.generateInvitationCode()
             createTripDraft.invitationCode = invitationCode
 
-            // MARK: - Query Local Profile
             let descriptor = FetchDescriptor<UserProfile>()
             let localProfile = try? modelContext.fetch(descriptor).first(where: { $0.userID == UserSession.shared.userIdentifier })
             let ownerName = localProfile?.displayName.isEmpty == false ? localProfile?.displayName : UserSession.shared.displayName
 
-            // MARK: - Create Trip
             let trip = Trip(
                 id: nil,
                 title: createTripDraft.name,
@@ -193,7 +180,6 @@ class HomeViewModel {
             let tripID = savedTrip.id
             lastCreatedTripID = tripID
 
-            // MARK: - Create Owner Participant
             let ownerParticipant = Participant(
                 id: nil,
                 tripID: tripID!,
@@ -215,7 +201,6 @@ class HomeViewModel {
             
             self.shareURL = generatedShareURL.absoluteString
 
-            // MARK: - Refresh Home Data
             await TripStore.shared.loadTrips()
 
             hasCreatedTrip = true
@@ -319,9 +304,8 @@ class HomeViewModel {
         await TripStore.shared.loadTrips()
     }
 
-    /// NFR-2: instruments the PRD §9 "join success rate" and "setup time"
-    /// metrics — measured from share-acceptance start to the point
-    /// `CloudKitSharingService.acceptShare` actually succeeds.
+    /// NFR-2: instruments PRD §9's "join success rate"/"setup time" — measured
+    /// from share-acceptance start to `CloudKitSharingService.acceptShare` succeeding.
     func joinSharedTrip(from url: URL) async throws -> CKRecord.ID {
         shareAcceptanceErrorMessage = nil
         let startedAt = Date()
@@ -363,15 +347,9 @@ class HomeViewModel {
         return userID
     }
 
-    /// Checks `Participant.role` only — TRIP-2's audit found this used to
-    /// also check `trip.ownerID == userID`, but `ownerID` is a CloudKit-level
-    /// fact that can never change (see `CloudKitZoneService`/AD-2's
-    /// zone-per-owner constraint) while `role` is the actual, reassignable
-    /// app-level "owner" concept `reassignOwnershipIfNeeded` promotes into.
-    /// Keeping the `ownerID` check would make the original owner permanently
-    /// re-qualify as "owner" here even after leaving and being replaced,
-    /// disagreeing with every other owner-gated path. Resolved by dropping
-    /// the `ownerID` branch entirely; `role` is now the single source of truth.
+    /// Checks `Participant.role` only, not `trip.ownerID` — ownerID is a fixed
+    /// CloudKit zone-owner fact (AD-2) that can't follow `reassignOwnershipIfNeeded`,
+    /// so it would keep the original owner permanently "owner" even after leaving.
     func isOwner(of trip: Trip, userID: CKRecord.ID) -> Bool {
         participants.contains {
             $0.tripID == trip.id && $0.userID == userID && $0.role == .owner
@@ -380,25 +358,18 @@ class HomeViewModel {
 
     // MARK: - ETA / Live Activity (Sprint 2)
 
-    /// This device's own computed ETA/distance/status for `trip`, once
-    /// available — nil until `refreshTripStatus` has run at least once with
-    /// a fresh location for the current user.
+    /// nil until `refreshTripStatus` has run at least once for the current user.
     func currentUserTripState(for trip: Trip, userID: CKRecord.ID) -> ParticipantTripState? {
         tripStatusViewModel.participantStates[userID]
     }
 
-    /// Every participant's live ETA/distance/status (ETA-1/ETA-2) for the
-    /// active trip, keyed by user — feeds the in-app route progress markers
-    /// so they match the Live Activity's mate markers.
+    /// Feeds in-app route markers so they match the Live Activity's mate markers.
     var allParticipantTripStates: [CKRecord.ID: ParticipantTripState] {
         tripStatusViewModel.participantStates
     }
 
-    /// Recomputes every participant's ETA/distance/status (ETA-1/ETA-2) for
-    /// `trip` and pushes the aggregated result into the Live Activity
-    /// (ETA-3/ETA-4). Call this whenever new location data is expected —
-    /// LOC-1's sync tick/subscription fire — not from an independent fixed
-    /// timer.
+    /// Recomputes every participant's ETA/status and pushes it to the Live
+    /// Activity. Call on each LOC-1 sync tick, not from a fixed timer.
     func refreshTripStatus(for trip: Trip, isBackgrounded: Bool = false) async {
         guard trip.status == .active,
               let tripID = trip.id,
@@ -444,44 +415,34 @@ class HomeViewModel {
 
     // MARK: - Trip Lifecycle
 
-    /// Any participant's device — not just whoever tapped "Start Trip" — has
-    /// to publish its own location once the trip is active, or that
-    /// participant never has data for ETA-1 to compute an ETA/distance from.
-    /// The "Start Trip" button only transitions `trip.status`; every device
-    /// that subsequently observes the trip is active calls this itself.
-    /// Idempotent per trip via `sharingTripID`.
+    /// Every device on an active trip publishes its own location — "Start
+    /// Trip" only flips `trip.status`; each device calls this once it
+    /// observes that. Idempotent per trip via `sharingTripID`.
     func ensureLocationSharing(for trip: Trip) async {
         guard trip.status == .active, let tripID = trip.id, sharingTripID != tripID else { return }
 
         do {
             let userID = try await currentUserID()
 
-            // Only implies background sharing once the user is actually on
-            // an active trip — never requested upfront.
+            // Location permission is only requested once the user is on an
+            // active trip, never upfront.
             locationService.requestWhenInUseAuthorization()
             locationService.requestAlwaysAuthorization()
 
-            // TRIP-4: notification permission requested here, separately from
-            // the location prompts above — its own iOS permission with its
-            // own rationale (arrival/delay/nearby alerts), not bundled into
-            // LOC-2's location-permission flow.
+            // TRIP-4: separate iOS permission from the location prompts above —
+            // its own rationale (arrival/delay/nearby alerts).
             notificationPermissionManager.requestPermissions()
 
             locationSharingCoordinator.startSharing(tripID: tripID, userID: userID)
             try? await locationSyncService.subscribeToLocationUpdates(for: tripID)
 
             sharingTripID = tripID
-            
-            // Starts the Live Activity on the device for whoever enters the active trip state
             startLiveActivity(for: trip)
         } catch {
             // Best-effort — this device's ETA/location just won't populate.
         }
     }
 
-    /// Transitions a trip to `.active`. Location sharing for this device is
-    /// started via `ensureLocationSharing`, the same path every other
-    /// participant's device uses once it observes the trip is active.
     func startTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
         isUpdatingTripStatus = true
@@ -501,10 +462,8 @@ class HomeViewModel {
         }
     }
 
-    /// `Activity.request` failure (Live Activities disabled in Settings, or
-    /// the app is at ActivityKit's concurrent-activity limit) is a soft
-    /// failure — trip start must succeed regardless of whether the Live
-    /// Activity does.
+    /// `Activity.request` failure (Live Activities disabled, or at
+    /// ActivityKit's concurrency limit) is soft — trip start must succeed regardless.
     private func startLiveActivity(for trip: Trip) {
         guard let tripID = trip.id else { return }
 
@@ -577,20 +536,13 @@ class HomeViewModel {
         }
     }
 
-    /// Orchestrates TRIP-3's "End Trip" flow, in order: stop location sharing
-    /// → end the Live Activity → mark the trip `.ended` — matching the
-    /// ticket's required sequence, since deleting the zone first (or out of
-    /// order) could leave an in-flight location save or Live Activity update
-    /// racing a now-nonexistent zone (`CKError.zoneNotFound`). Zone deletion
-    /// itself runs afterward, delayed and best-effort — see
-    /// `scheduleZoneCleanup`.
+    /// TRIP-3 order matters: stop sharing → end Live Activity → mark `.ended`,
+    /// before zone deletion (`scheduleZoneCleanup`) so nothing races a
+    /// now-nonexistent zone (`CKError.zoneNotFound`).
     ///
-    /// Owner-only is enforced only client-side (`isOwner` check below) —
-    /// `CKShare.publicPermission = .readWrite` (`CloudKitSharingService`)
-    /// already grants every participant write access at the CloudKit layer,
-    /// so a malicious/buggy client could call this regardless. No
-    /// server-side-equivalent enforcement exists; this is a known limitation
-    /// of AD-2, tracked rather than silently assumed sufficient (TRIP-3 AC4).
+    /// Owner-only is enforced client-side only — `CKShare.publicPermission =
+    /// .readWrite` grants every participant CloudKit write access regardless,
+    /// a known AD-2 limitation (TRIP-3 AC4).
     func endTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
         isUpdatingTripStatus = true
@@ -626,20 +578,10 @@ class HomeViewModel {
         }
     }
 
-    /// Deletes the trip's CloudKit zone after a grace delay, best-effort in
-    /// the background — deliberately not awaited or blocking on the caller.
-    /// Two decisions this makes explicit, since the ticket flags both as open
-    /// questions rather than resolving them (docs/Sprint_3/task_2.md):
-    /// - **Delay, not immediate**: other participants only see this trip end
-    ///   via their own next poll of the (still-existing) `Trip` record: their
-    ///   access disappears the moment the zone is gone, so deleting it
-    ///   immediately risks yanking access out from under someone who hasn't
-    ///   even seen "ended" yet. A short grace window lets that poll land first.
-    /// - **Best-effort, not retried inline**: a failure here (e.g. network
-    ///   drop mid-delete) leaves a zone undeleted, which only costs unused
-    ///   CloudKit storage — a smaller cost than blocking the owner's own
-    ///   device on a network-dependent cleanup step after they've already
-    ///   been shown "trip ended".
+    /// Deletes the trip's zone after a grace delay, best-effort and
+    /// unawaited: immediate deletion could yank access from a participant
+    /// who hasn't polled "ended" yet, and a failed delete only costs unused
+    /// CloudKit storage — cheaper than blocking the owner on cleanup.
     private func scheduleZoneCleanup(for trip: Trip) {
         guard let tripID = trip.id else { return }
         let zoneID = tripID.zoneID
@@ -679,12 +621,10 @@ class HomeViewModel {
         }
     }
 
-    /// Removes the current user's own participant record from a trip. If the
-    /// departing participant was the owner, promotes a remaining participant
-    /// (TRIP-2) before reloading — explicit "leave" is the only trigger for
-    /// this per TRIP-2's ticket; inactivity/offline is deliberately not,
-    /// since AD-6's 30s–2min offline threshold makes going briefly offline a
-    /// routine occurrence, not a reliable "gone" signal.
+    /// If the departing participant was the owner, promotes a remaining one
+    /// (TRIP-2). Only explicit "leave" triggers this — inactivity/offline
+    /// deliberately doesn't, since AD-6's offline threshold makes brief
+    /// disconnects routine, not a reliable "gone" signal.
     func leaveTrip(_ trip: Trip) async {
         tripActionErrorMessage = nil
         print("🚪 User is leaving trip '\(trip.title)' (ID: \(trip.id?.recordName ?? "nil"))...")
@@ -712,9 +652,7 @@ class HomeViewModel {
             let wasOwner = participant.role == .owner
             try await participantService.removeParticipant(id: participantID)
 
-            // Optimistically remove the trip from the local list immediately
-            // so the UI updates instantly without waiting for a CloudKit re-fetch.
-            // Also persist to the blocklist so it stays hidden on future fetches.
+            // Optimistic local removal + blocklist so the UI updates before the re-fetch.
             if let tripID = trip.id {
                 TripStore.shared.markTripAsLeft(tripID)
                 TripStore.shared.trips.removeAll { $0.id == tripID }
@@ -750,13 +688,10 @@ class HomeViewModel {
         }
     }
 
-    /// TRIP-2's owner-departure reassignment: re-fetches the participant list
-    /// fresh from CloudKit (not the possibly-stale in-memory `participants`)
-    /// so the selection policy sees the true remaining set, then promotes the
-    /// earliest-joined participant via the conflict-safe `updateParticipant`.
-    /// If a racing device's transfer already landed — either the fresh fetch
-    /// already shows a new owner, or the conflict-safe save loses the race —
-    /// this is a no-op, not an error: exactly one transfer should win.
+    /// TRIP-2: re-fetches participants fresh from CloudKit (not the possibly
+    /// stale in-memory list) and promotes via the conflict-safe
+    /// `updateParticipant` — a racing device's transfer landing first makes
+    /// this a no-op, not an error.
     private func reassignOwnershipIfNeeded(tripID: CKRecord.ID?, departedUserID: CKRecord.ID) async {
         guard let tripID else { return }
 
@@ -764,10 +699,8 @@ class HomeViewModel {
             let remaining = try await participantService.fetchParticipants(for: tripID)
                 .filter { $0.userID != departedUserID }
 
+            // No one left (TRIP-3's separate concern) or a racing transfer already landed.
             guard var newOwner = OwnershipTransferPolicy.selectNewOwner(remaining: remaining) else {
-                // Either no one is left (TRIP-3's "last participant leaves"
-                // boundary, not this ticket's concern) or someone already
-                // holds `.owner` (a racing device's transfer already landed).
                 return
             }
 

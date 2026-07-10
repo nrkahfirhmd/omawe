@@ -1,23 +1,7 @@
-//
-//  LocationUpdate.swift
-//  Omawe
-//
-//  Created by Muhammad Bintang Al-Fath on 03/07/26.
-//
-
 import Foundation
 import SwiftData
 import CloudKit
 
-// LOC-4 decision (superseding the LOC-1 finding): this model is no longer
-// CloudKit-mirrored by SwiftData — its `ModelConfiguration` in OmaweApp.swift
-// now uses `cloudKitDatabase: .none`. It's kept as a local-only offline
-// write queue: `LocationSharingCoordinator` (LOC-2) captures a sample,
-// `LocationUpdateQueueService` (this ticket) persists it here durably, then
-// attempts to flush it through LOC-1's `CloudKitLocationSyncService`. A
-// queued item survives being killed before flush because it's on-disk
-// SwiftData storage, not in-memory. NFR-3's retry/backoff work feeds failed
-// sends back into this same queue rather than dropping them.
 @Model
 final class LocationUpdate {
     var id: UUID = UUID()

@@ -1,10 +1,3 @@
-//
-//  UserModel.swift
-//  Omawe
-//
-//  Created by Nurkahfi Rahmada on 30/06/26.
-//
-
 import Foundation
 
 struct UserModel {
