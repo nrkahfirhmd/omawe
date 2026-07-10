@@ -16,7 +16,7 @@ The team is developing Omawe as part of Challenge 4 at Apple Developer Academy @
 
 When we first came up with the idea for Omawe, we believed the technical implementation would be fairly straightforward. Since the app’s core purpose was simply to share trip progress among friends, we assumed we could build the entire experience using Apple’s native frameworks—ActivityKit for Live Activities, MapKit for maps and routing, Core Location for location tracking, and CloudKit for data synchronization. 
 
-Because of that assumption, we expected most of our effort would go into refining the user experience rather than solving complex technical problems. We planned to focus on making Live Activities feel truly useful and delightful by combining fluid animations, thoughtful haptic feedback, and interactive elements to create an experience that felt uniquely at home on iOS.
+Because of that assumption, we expected most of our effort would go into refining the user experience and learning app-extension rather than solving complex technical problems. We planned to focus on making Live Activities feel truly useful and delightful by combining fluid animations, thoughtful haptic feedback, and interactive elements to create an experience that felt uniquely at home on iOS.
 
 **Why We Believed That**
 
@@ -44,6 +44,7 @@ In short, we thought the challenge would be less about building the underlying i
 |---|---|---|
 | Apple's native frameworks would work together with minimal effort. | Integrating ActivityKit, CloudKit, Core Location, and MapKit required significantly more engineering than expected because each framework has different constraints and responsibilities. | Designed a dedicated architecture where each framework handles a specific responsibility instead of relying on automatic integration. |
 | Live Activities would be straightforward to build and update. | ActivityKit manages update frequency and lifecycle, and implementing interactive actions is more limited than expected. | Redesigned the Live Activity experience around system constraints and focused on glanceable information rather than frequent interactions. |
+| Button in Live Activities will be easy to implement. | There is 2 way to implement this, by using link or AppIntent . | We did it with link, but changes to AppIntent because link foreced us to open the lock screen in order for the action to happen. |
 | CloudKit could provide near real-time synchronization. | CloudKit is designed for data synchronization, not low-latency real-time communication. | Tried to optimizing synchronization intervals and designed the app around eventual consistency while maintaining a responsive user experience. |
 | CloudKit would be simple to set up during development. | Setting up containers, entitlements, sharing, and testing across multiple Apple IDs and devices proved considerably more complex. | Configured Apple Developer certificates, signing, and provisioning profiles to successfully build and test the app on physical iPhones. |
 | Most development would focus on UI polish and user experience. | A significant amount of time was instead spent understanding framework limitations, synchronization behavior, permissions, and infrastructure. | Balanced engineering effort between solving technical challenges and refining the overall user experience. |
@@ -57,7 +58,7 @@ Omawe combines multiple Apple frameworks, each with a specific responsibility. A
 
 To keep Live Activities up to date, CloudKit synchronizes trip and location data between participants using per-trip record zones, CKShare invitations, and silent push notifications. Core Location captures foreground and background location updates, while MapKit provides routing and ETA calculations with a rate-limit-aware fallback. SwiftData stores local app data separately from CloudKit’s synchronization flow, Sign in with Apple handles authentication, and os.Logger is used for logging.
 
-Our use case genuinely requires both ActivityKit and CloudKit. ActivityKit only presents information, while CloudKit synchronizes the real-time data behind it. Together, they enable the lock-screen-first experience that defines Omawe.
+Our use case genuinely requires ActivityKit, AppIntent, and CloudKit. ActivityKit only presents information, AppIntent for action in live activities, while CloudKit synchronizes the real-time data behind it. Together, they enable the lock-screen-first experience that defines Omawe.
 
 ### About Accessibility and Localization
 
