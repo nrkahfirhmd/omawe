@@ -49,6 +49,16 @@ OmaweTests/           Unit tests
 
 Omawe v1 is iOS-only, built around Live Activities and ActivityKit. Android support, multi-stop trips, and persistent friend groups are being considered for later versions — see [`trip-tracker-prd.md`](trip-tracker-prd.md) for the full product spec, goals, and non-goals.
 
+## TestFlight
+
+Want to try Omawe before it’s released?
+
+Join the public TestFlight beta using the link below:
+
+TestFlight: <https://testflight.apple.com/join/9b4DaTtE>
+
+Note: Omawe is currently under active development. Features, UI, and functionality may change between builds, and you may encounter bugs or incomplete features. For the best experience, test on a physical iPhone with Location Services and Live Activities enabled.
+
 ## Status
 
 Actively in development. See recent commits for progress on Live Activities, trip editing, and haptic feedback.
